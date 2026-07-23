@@ -90,10 +90,6 @@
                     </div>
                 </fieldset>
 
-                <div class="settings-auto-save-note" role="status">
-                    <i class="bi bi-check-circle" aria-hidden="true"></i>
-                    Perubahan tampilan diterapkan dan disimpan otomatis.
-                </div>
             </x-section-card>
 
             @can('pengaturan.view')
@@ -215,6 +211,10 @@
             @endcan
         </div>
     </div>
+
+    <div class="settings-save-toast" data-settings-save-toast role="status" aria-live="polite" hidden>
+        <i class="bi bi-check-circle" aria-hidden="true"></i>
+        Perubahan tampilan disimpan.
+    </div>
 </x-app-page>
 @endsection
-

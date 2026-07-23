@@ -6,6 +6,7 @@ use App\Http\Requests\Absensi\AbsensiCalendarRequest;
 use App\Http\Requests\Absensi\StoreAbsensiRequest;
 use App\Models\Karyawan;
 use App\Services\AbsensiService;
+use App\Support\PerPage;
 use Illuminate\Http\Request;
 
 class AbsensiController extends Controller
@@ -19,7 +20,10 @@ class AbsensiController extends Controller
     {
         $this->authorize('absensi.view');
 
-        $karyawans = $this->absensiService->daftarKaryawan($request->string('search')->trim()->value() ?: null);
+        $karyawans = $this->absensiService->daftarKaryawan(
+            $request->string('search')->trim()->value() ?: null,
+            PerPage::resolve($request),
+        );
 
         return view('absensi.index', compact('karyawans'));
     }

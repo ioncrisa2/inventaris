@@ -56,11 +56,9 @@
         @else
             Rp {{ number_format($baris['nilai'], 0, ',', '.') }}
         @endif
-        <span class="text-body-secondary small d-block">Ubah di Komponen Gaji</span>
     </td>
     @endif
 </tr>
 
 @once
 @endonce
-

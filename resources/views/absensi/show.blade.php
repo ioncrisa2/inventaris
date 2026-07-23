@@ -69,9 +69,15 @@ $namaHariSingkat = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Mingg
             </div>
 
             <div class="card-body">
+                <div class="calendar-legend" aria-label="Keterangan kalender">
+                    <span><i class="calendar-legend__swatch is-workday" aria-hidden="true"></i> Hari kerja</span>
+                    <span><i class="calendar-legend__swatch is-holiday" aria-hidden="true"></i> Hari libur (Minggu)</span>
+                    <span><i class="calendar-legend__swatch is-outside" aria-hidden="true"></i> Di luar bulan</span>
+                </div>
+
                 <div class="calendar-grid mb-2">
                     @foreach($namaHariSingkat as $namaHari)
-                    <div class="calendar-day-header">{{ $namaHari }}</div>
+                    <div class="calendar-day-header {{ $loop->last ? 'is-holiday' : '' }}">{{ $namaHari }}</div>
                     @endforeach
                 </div>
 
@@ -103,13 +109,23 @@ $namaHariSingkat = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Mingg
                             data-catatan="{{ $absensiHariIni->catatan ?? '' }}"
                             data-hari-minggu="{{ $cell['hari_minggu'] ? '1' : '0' }}"
                             aria-label="Isi absensi tanggal {{ $cell['tanggal']->translatedFormat('d F Y') }}">
-                            <span class="calendar-cell-date">{{ $cell['tanggal']->day }}</span>
+                            <span class="calendar-cell__top">
+                                <span class="calendar-cell-date">{{ $cell['tanggal']->day }}</span>
+                                @if($cell['hari_minggu'])
+                                    <span class="calendar-cell-holiday">Libur</span>
+                                @endif
+                            </span>
                             @if($badgeStatus)
                             <x-badge :color="$badgeStatus" :title="$absensiHariIni->status">{{ \App\Models\Absensi::CALENDAR_LABELS[$absensiHariIni->status] ?? $absensiHariIni->status }}</x-badge>
                             @endif
                         </button>
                         @else
-                        <span class="calendar-cell-date">{{ $cell['tanggal']->day }}</span>
+                        <span class="calendar-cell__top">
+                            <span class="calendar-cell-date">{{ $cell['tanggal']->day }}</span>
+                            @if($cell['hari_minggu'] && ! $cell['di_luar_bulan'])
+                                <span class="calendar-cell-holiday">Libur</span>
+                            @endif
+                        </span>
                         @if($badgeStatus)
                         <span class="badge {{ $badgeStatus }}" title="{{ $absensiHariIni->status }}">{{ \App\Models\Absensi::CALENDAR_LABELS[$absensiHariIni->status] ?? $absensiHariIni->status }}</span>
                         @endif

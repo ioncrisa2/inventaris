@@ -72,7 +72,11 @@
         </div>
     </div>
 
-    <x-form.section title="Komponen Gaji" description="Centang komponen yang berlaku, lalu sesuaikan metode atau nilainya untuk transaksi ini." />
+    <x-form.section title="Komponen Gaji" description="Centang komponen yang berlaku, lalu sesuaikan metode atau nilainya untuk transaksi ini.">
+        <x-slot:actions>
+            <a href="{{ route('komponen-gaji.index') }}" class="small">Ubah di Komponen Gaji</a>
+        </x-slot:actions>
+    </x-form.section>
 
     @foreach(['Tunjangan', 'Potongan'] as $jenisGrup)
     <div class="mb-4">

@@ -10,6 +10,7 @@ use App\Repositories\KomponenGajiRepository;
 use App\Repositories\TransaksiGajiRepository;
 use App\Rules\Decimal15Two;
 use App\Support\PenggajianCalculator;
+use App\Support\PerPage;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Collection;
@@ -28,9 +29,9 @@ class TransaksiGajiService
     /**
      * @param  array{search?: ?string, bulan?: ?string, tahun?: ?string}  $filters
      */
-    public function list(array $filters): LengthAwarePaginator
+    public function list(array $filters, int $perPage = PerPage::DEFAULT): LengthAwarePaginator
     {
-        return $this->transaksiGajiRepository->paginate($filters);
+        return $this->transaksiGajiRepository->paginate($filters, $perPage);
     }
 
     /**

@@ -10,7 +10,7 @@
 
     <x-slot:meta>
         <p>Tanggal cetak: {{ now()->translatedFormat('d F Y H:i') }}</p>
-        <p>Periode: {{ DateTime::createFromFormat('!m', $bulan)->format('F') }} {{ $tahun }}</p>
+        <p>Periode: {{ \Illuminate\Support\Carbon::createFromDate(2000, $bulan, 1)->translatedFormat('F') }} {{ $tahun }}</p>
         <p>Pegawai: {{ $selectedKaryawan?->nama_lengkap ?? 'Semua pegawai' }}</p>
     </x-slot:meta>
 </x-print.header>

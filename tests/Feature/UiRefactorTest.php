@@ -58,6 +58,12 @@ test('form inventaris melokalkan tanggal nominal dan file upload', function () {
         ->assertDontSee('Choose file');
 });
 
+test('document repeater shows its upload constraint once above all rows', function () {
+    $response = $this->get(route('barang.create'))->assertOk();
+
+    expect(substr_count($response->getContent(), 'PDF/JPG/PNG, maks. 5MB.'))->toBe(1);
+});
+
 test('halaman cetak barcode dan QR memakai ukuran label ringkas', function () {
     $barang = Barang::create([
         'kode_barang' => 'INV-001',

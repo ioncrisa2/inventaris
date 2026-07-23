@@ -8,6 +8,7 @@ use App\Http\Requests\User\UpdateUserRequest;
 use App\Models\User;
 use App\Repositories\UnitKerjaRepository;
 use App\Services\UserService;
+use App\Support\PerPage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
@@ -26,7 +27,10 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        $users = $this->userService->list($request->only(['search', 'role']));
+        $users = $this->userService->list(
+            $request->only(['search', 'role']),
+            PerPage::resolve($request),
+        );
         $roles = Role::orderBy('name')->get();
 
         return view('pengguna.index', compact('users', 'roles'));

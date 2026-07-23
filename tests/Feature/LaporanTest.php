@@ -155,3 +155,26 @@ test('employee report can be exported to excel with the selected filters', funct
             && $export->collection()->first()->nama_lengkap === 'Sari Honorer';
     });
 });
+
+test('all report pages use the same restrained summary grid', function () {
+    foreach ([
+        'laporan.inventaris',
+        'laporan.kepegawaian',
+        'laporan.absensi',
+        'laporan.penggajian',
+    ] as $routeName) {
+        $this->get(route($routeName))
+            ->assertOk()
+            ->assertSee('report-stat-grid', false)
+            ->assertSee('summary-card--plain', false);
+    }
+});
+
+test('attendance and payroll reports localize month names to Indonesian', function () {
+    foreach (['laporan.absensi', 'laporan.penggajian'] as $routeName) {
+        $this->get(route($routeName, ['bulan' => 7, 'tahun' => 2026]))
+            ->assertOk()
+            ->assertSee('Juli')
+            ->assertDontSee('July');
+    }
+});

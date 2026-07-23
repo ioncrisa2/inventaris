@@ -75,7 +75,7 @@ class KaryawanRepository
         return Karyawan::find($id);
     }
 
-    public function searchOrderedByName(?string $search): Collection
+    public function searchOrderedByName(?string $search, int $perPage = 10): LengthAwarePaginator
     {
         return Karyawan::query()
             ->with('unitKerja:id,nama_unit')
@@ -87,7 +87,8 @@ class KaryawanRepository
                 });
             })
             ->orderBy('nama_lengkap')
-            ->get();
+            ->paginate($perPage)
+            ->withQueryString();
     }
 
     public function create(array $data): Karyawan

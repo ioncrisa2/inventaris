@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\KomponenGaji;
 use App\Repositories\KomponenGajiRepository;
+use App\Support\PerPage;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
@@ -14,9 +15,9 @@ class KomponenGajiService
     /**
      * @param  array{search?: ?string, jenis?: ?string}  $filters
      */
-    public function list(array $filters): LengthAwarePaginator
+    public function list(array $filters, int $perPage = PerPage::DEFAULT): LengthAwarePaginator
     {
-        return $this->komponenGajiRepository->paginate($filters);
+        return $this->komponenGajiRepository->paginate($filters, $perPage);
     }
 
     public function store(array $data): KomponenGaji

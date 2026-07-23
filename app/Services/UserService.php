@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\User;
 use App\Repositories\UserRepository;
+use App\Support\PerPage;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -15,9 +16,9 @@ class UserService
     /**
      * @param  array{search?: ?string, role?: ?string}  $filters
      */
-    public function list(array $filters): LengthAwarePaginator
+    public function list(array $filters, int $perPage = PerPage::DEFAULT): LengthAwarePaginator
     {
-        return $this->userRepository->paginate($filters);
+        return $this->userRepository->paginate($filters, $perPage);
     }
 
     public function store(array $data): User

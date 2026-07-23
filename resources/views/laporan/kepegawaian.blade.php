@@ -52,16 +52,10 @@
                 </form>
         </x-filter-card>
 
-        <div class="row g-3 mb-4">
-            <div class="col-md-4">
-                <x-stat-card icon="bi-people" label="Total Karyawan" :value="number_format($totalKaryawan, 0, ',', '.')" />
-            </div>
-            <div class="col-md-4">
-                <x-stat-card icon="bi-person-check" label="Karyawan Aktif" :value="number_format($totalAktif, 0, ',', '.')" variant="info" />
-            </div>
-            <div class="col-md-4">
-                <x-stat-card icon="bi-cash-stack" label="Gaji Pokok Karyawan Aktif" :value="'Rp '.number_format($totalGajiAktif, 0, ',', '.')" variant="secondary" compact />
-            </div>
+        <div class="report-stat-grid mb-4">
+            <x-stat-card icon="bi-people" label="Total Karyawan" :value="number_format($totalKaryawan, 0, ',', '.')" plain />
+            <x-stat-card icon="bi-person-check" label="Karyawan Aktif" :value="number_format($totalAktif, 0, ',', '.')" plain />
+            <x-stat-card icon="bi-cash-stack" label="Gaji Pokok Karyawan Aktif" :value="'Rp '.number_format($totalGajiAktif, 0, ',', '.')" compact plain />
         </div>
 
         <div class="row g-4 mb-4">

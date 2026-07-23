@@ -696,3 +696,26 @@ test('transaksi gaji can be viewed and deleted', function () {
     $this->assertDatabaseMissing('transaksi_gaji', ['id' => $transaksi->id]);
     $this->assertDatabaseMissing('transaksi_gaji_detail', ['transaksi_gaji_id' => $transaksi->id]);
 });
+
+test('form only shows the component management link once', function () {
+    $response = $this->get(route('transaksi-gaji.create'))->assertOk();
+
+    expect(substr_count($response->getContent(), 'Ubah di Komponen Gaji'))->toBe(1);
+});
+
+test('detail groups allowances before deductions and separates the salary summary', function () {
+    $this->post(route('transaksi-gaji.store'), payloadGaji(
+        $this->karyawan,
+        $this->tunjanganJabatan,
+        $this->potonganBpjs,
+    ));
+
+    $transaksi = TransaksiGaji::firstOrFail();
+
+    $this->get(route('transaksi-gaji.show', $transaksi))
+        ->assertOk()
+        ->assertSeeInOrder(['Tunjangan', 'Tunjangan Jabatan', 'Potongan', 'Potongan BPJS'])
+        ->assertSee('payroll-component-group', false)
+        ->assertSee('payroll-summary', false)
+        ->assertDontSee('<tfoot>', false);
+});

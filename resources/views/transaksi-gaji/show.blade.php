@@ -42,8 +42,6 @@
                     <dt class="col-sm-4 text-muted">Periode</dt>
                     <dd class="col-sm-8">{{ $namaBulan[$transaksiGaji->bulan] }} {{ $transaksiGaji->tahun }}</dd>
 
-                    <dt class="col-sm-4 text-muted">Gaji Pokok</dt>
-                    <dd class="col-sm-8 fw-bold">Rp {{ number_format($transaksiGaji->gaji_pokok, 0, ',', '.') }}</dd>
                 </dl>
             </div>
         </div>
@@ -62,50 +60,63 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($transaksiGaji->details as $detail)
-                        <tr>
-                            <td>{{ $detail->nama_komponen_snapshot }}</td>
-                            <td>
-                                <x-badge :color="$detail->jenis_snapshot === 'Tunjangan' ? 'text-bg-success' : 'text-bg-secondary'">{{ $detail->jenis_snapshot }}</x-badge>
-                            </td>
-                            <td>{{ \App\Models\KomponenGaji::METODE_PERHITUNGAN[$detail->metode_perhitungan_snapshot] ?? $detail->metode_perhitungan_snapshot }}</td>
-                            <td class="text-end">
-                                @if($detail->metode_perhitungan_snapshot === 'persentase')
-                                    {{ rtrim(rtrim($detail->nilai_snapshot, '0'), '.') }}%
-                                @elseif($detail->metode_perhitungan_snapshot === 'per_kehadiran')
-                                    Rp {{ number_format($detail->nilai_snapshot, 0, ',', '.') }} /hari &times; {{ $detail->jumlah_hadir_snapshot ?? 0 }} hari hadir
-                                @else
-                                    Rp {{ number_format($detail->nilai_snapshot, 0, ',', '.') }}
+                        @if($transaksiGaji->details->isEmpty())
+                            <x-empty-row :colspan="5">Tidak ada komponen pada transaksi ini.</x-empty-row>
+                        @else
+                            @foreach(['Tunjangan', 'Potongan'] as $jenisGrup)
+                                @php
+                                    $detailGrup = $transaksiGaji->details->where('jenis_snapshot', $jenisGrup);
+                                @endphp
+                                @if($detailGrup->isNotEmpty())
+                                    <tr class="payroll-component-group">
+                                        <th colspan="5" scope="rowgroup">{{ $jenisGrup }}</th>
+                                    </tr>
+                                    @foreach($detailGrup as $detail)
+                                        <tr>
+                                            <td>{{ $detail->nama_komponen_snapshot }}</td>
+                                            <td>
+                                                <x-badge :color="$detail->jenis_snapshot === 'Tunjangan' ? 'text-bg-success' : 'text-bg-secondary'">{{ $detail->jenis_snapshot }}</x-badge>
+                                            </td>
+                                            <td>{{ \App\Models\KomponenGaji::METODE_PERHITUNGAN[$detail->metode_perhitungan_snapshot] ?? $detail->metode_perhitungan_snapshot }}</td>
+                                            <td class="text-end">
+                                                @if($detail->metode_perhitungan_snapshot === 'persentase')
+                                                    {{ rtrim(rtrim($detail->nilai_snapshot, '0'), '.') }}%
+                                                @elseif($detail->metode_perhitungan_snapshot === 'per_kehadiran')
+                                                    Rp {{ number_format($detail->nilai_snapshot, 0, ',', '.') }} /hari &times; {{ $detail->jumlah_hadir_snapshot ?? 0 }} hari hadir
+                                                @else
+                                                    Rp {{ number_format($detail->nilai_snapshot, 0, ',', '.') }}
+                                                @endif
+                                            </td>
+                                            <td class="text-end {{ $detail->jenis_snapshot === 'Tunjangan' ? 'text-success' : 'text-danger' }}">
+                                                {{ $detail->jenis_snapshot === 'Tunjangan' ? '+' : '-' }} Rp {{ number_format($detail->nominal_hasil, 0, ',', '.') }}
+                                            </td>
+                                        </tr>
+                                    @endforeach
                                 @endif
-                            </td>
-                            <td class="text-end {{ $detail->jenis_snapshot === 'Tunjangan' ? 'text-success' : 'text-danger' }}">
-                                {{ $detail->jenis_snapshot === 'Tunjangan' ? '+' : '-' }} Rp {{ number_format($detail->nominal_hasil, 0, ',', '.') }}
-                            </td>
-                        </tr>
-                        @empty
-                        <x-empty-row :colspan="5">Tidak ada komponen pada transaksi ini.</x-empty-row>
-                        @endforelse
+                            @endforeach
+                        @endif
                     </tbody>
-                    <tfoot>
-                        <tr>
-                            <td colspan="4" class="text-end">Gaji Pokok</td>
-                            <td class="text-end">Rp {{ number_format($transaksiGaji->gaji_pokok, 0, ',', '.') }}</td>
-                        </tr>
-                        <tr>
-                            <td colspan="4" class="text-end">Total Tunjangan</td>
-                            <td class="text-end text-success">+ Rp {{ number_format($totalTunjangan, 0, ',', '.') }}</td>
-                        </tr>
-                        <tr>
-                            <td colspan="4" class="text-end">Total Potongan</td>
-                            <td class="text-end text-danger">- Rp {{ number_format($totalPotongan, 0, ',', '.') }}</td>
-                        </tr>
-                        <tr class="table-active">
-                            <td colspan="4" class="text-end fw-bold">Gaji Bersih</td>
-                            <td class="text-end fw-bold">Rp {{ number_format($transaksiGaji->gaji_bersih, 0, ',', '.') }}</td>
-                        </tr>
-                    </tfoot>
                 </table>
             </div>
+
+            <dl class="payroll-summary">
+                <div>
+                    <dt>Gaji Pokok</dt>
+                    <dd>Rp {{ number_format($transaksiGaji->gaji_pokok, 0, ',', '.') }}</dd>
+                </div>
+                <div>
+                    <dt>Total Tunjangan</dt>
+                    <dd class="text-success">+ Rp {{ number_format($totalTunjangan, 0, ',', '.') }}</dd>
+                </div>
+                <div>
+                    <dt>Total Potongan</dt>
+                    <dd class="text-danger">- Rp {{ number_format($totalPotongan, 0, ',', '.') }}</dd>
+                </div>
+                <div class="payroll-summary__total">
+                    <dt>Gaji Bersih</dt>
+                    <dd>Rp {{ number_format($transaksiGaji->gaji_bersih, 0, ',', '.') }}</dd>
+                </div>
+            </dl>
         </div>
 
 </x-app-page>

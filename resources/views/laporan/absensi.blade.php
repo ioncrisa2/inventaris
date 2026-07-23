@@ -39,7 +39,7 @@
                         <select class="form-select @error('bulan') is-invalid @enderror" id="bulan" name="bulan">
                             @for($i = 1; $i <= 12; $i++)
                                 <option value="{{ $i }}" @selected((int) $bulan === $i)>
-                                    {{ DateTime::createFromFormat('!m', $i)->format('F') }}
+                                    {{ \Illuminate\Support\Carbon::createFromDate(2000, $i, 1)->translatedFormat('F') }}
                                 </option>
                             @endfor
                         </select>
@@ -65,29 +65,17 @@
                 </form>
         </x-filter-card>
 
-        <div class="row g-3 mb-4">
-            <div class="col-md-6 col-xl-2">
-                <x-stat-card icon="bi-person-check" label="Hadir" :value="number_format($totalHadir, 0, ',', '.')" variant="success" />
-            </div>
-            <div class="col-md-6 col-xl-2">
-                <x-stat-card icon="bi-envelope-check" label="Izin" :value="number_format($totalIzin, 0, ',', '.')" variant="warning" />
-            </div>
-            <div class="col-md-6 col-xl-2">
-                <x-stat-card icon="bi-heart-pulse" label="Sakit" :value="number_format($totalSakit, 0, ',', '.')" variant="info" />
-            </div>
-            <div class="col-md-6 col-xl-2">
-                <x-stat-card icon="bi-calendar2-week" label="Cuti" :value="number_format($totalCuti, 0, ',', '.')" />
-            </div>
-            <div class="col-md-6 col-xl-2">
-                <x-stat-card icon="bi-geo-alt" label="Dinas Luar Kota" :value="number_format($totalDinasLuarKota, 0, ',', '.')" variant="secondary" compact />
-            </div>
-            <div class="col-md-6 col-xl-2">
-                <x-stat-card icon="bi-person-x" label="Alpha" :value="number_format($totalAlpha, 0, ',', '.')" variant="danger" />
-            </div>
+        <div class="report-stat-grid mb-4">
+            <x-stat-card icon="bi-person-check" label="Hadir" :value="number_format($totalHadir, 0, ',', '.')" plain />
+            <x-stat-card icon="bi-envelope-check" label="Izin" :value="number_format($totalIzin, 0, ',', '.')" plain />
+            <x-stat-card icon="bi-heart-pulse" label="Sakit" :value="number_format($totalSakit, 0, ',', '.')" plain />
+            <x-stat-card icon="bi-calendar2-week" label="Cuti" :value="number_format($totalCuti, 0, ',', '.')" plain />
+            <x-stat-card icon="bi-geo-alt" label="Dinas Luar Kota" :value="number_format($totalDinasLuarKota, 0, ',', '.')" compact plain />
+            <x-stat-card icon="bi-person-x" label="Alpha" :value="number_format($totalAlpha, 0, ',', '.')" plain accent />
         </div>
 
         <div class="card">
-            <div class="card-header">Detail Absensi - {{ DateTime::createFromFormat('!m', $bulan)->format('F') }} {{ $tahun }}</div>
+            <div class="card-header">Detail Absensi - {{ \Illuminate\Support\Carbon::createFromDate(2000, $bulan, 1)->translatedFormat('F') }} {{ $tahun }}</div>
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">

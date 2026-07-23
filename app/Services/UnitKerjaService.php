@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\UnitKerja;
 use App\Repositories\UnitKerjaRepository;
+use App\Support\PerPage;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
@@ -11,9 +12,9 @@ class UnitKerjaService
 {
     public function __construct(private UnitKerjaRepository $unitKerjaRepository) {}
 
-    public function list(?string $search): LengthAwarePaginator
+    public function list(?string $search, int $perPage = PerPage::DEFAULT): LengthAwarePaginator
     {
-        return $this->unitKerjaRepository->paginate($search);
+        return $this->unitKerjaRepository->paginate($search, $perPage);
     }
 
     public function store(array $data): UnitKerja

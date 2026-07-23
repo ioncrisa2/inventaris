@@ -148,18 +148,6 @@
                     <x-form.input name="jumlah_anak" label="Jumlah Anak" type="number" :value="$karyawan->jumlah_anak" min="0" help="Opsional." />
                 </div>
 
-                @if($karyawan->exists)
-                <div class="col-md-6">
-                    <x-form.input
-                        name="tanggal_mengundurkan_diri"
-                        label="Tanggal Mengundurkan Diri"
-                        type="date"
-                        :value="$karyawan->tanggal_mengundurkan_diri?->format('Y-m-d')"
-                        help="Isi hanya kalau karyawan sudah keluar. Kosongkan kalau masih aktif."
-                    />
-                </div>
-                @endif
-
                 <div class="col-md-6">
                     @if($karyawan->exists && $karyawan->foto_karyawan)
                     <div class="current-image mb-2">

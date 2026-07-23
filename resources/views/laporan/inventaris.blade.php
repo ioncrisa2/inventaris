@@ -63,16 +63,10 @@
                 </form>
         </x-filter-card>
 
-        <div class="row g-3 mb-4">
-            <div class="col-md-4">
-                <x-stat-card icon="bi-box-seam" label="Total Barang" :value="number_format($totalBarang, 0, ',', '.')" />
-            </div>
-            <div class="col-md-4">
-                <x-stat-card icon="bi-cash-stack" label="Total Nilai Perolehan" :value="'Rp '.number_format($totalNilai, 0, ',', '.')" variant="secondary" compact />
-            </div>
-            <div class="col-md-4">
-                <x-stat-card icon="bi-tools" label="Perlu Perbaikan" :value="number_format($barangPerluPerbaikan, 0, ',', '.')" variant="danger" />
-            </div>
+        <div class="report-stat-grid mb-4">
+            <x-stat-card icon="bi-box-seam" label="Total Barang" :value="number_format($totalBarang, 0, ',', '.')" plain />
+            <x-stat-card icon="bi-cash-stack" label="Total Nilai Perolehan" :value="'Rp '.number_format($totalNilai, 0, ',', '.')" compact plain />
+            <x-stat-card icon="bi-tools" label="Perlu Perbaikan" :value="number_format($barangPerluPerbaikan, 0, ',', '.')" plain accent />
         </div>
 
         <div class="card mb-4">

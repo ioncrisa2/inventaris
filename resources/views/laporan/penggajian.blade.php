@@ -37,7 +37,7 @@
                         <select class="form-select @error('bulan') is-invalid @enderror" id="bulan" name="bulan">
                             @for($i = 1; $i <= 12; $i++)
                                 <option value="{{ $i }}" @selected((int) $bulan === $i)>
-                                    {{ DateTime::createFromFormat('!m', $i)->format('F') }}
+                                    {{ \Illuminate\Support\Carbon::createFromDate(2000, $i, 1)->translatedFormat('F') }}
                                 </option>
                             @endfor
                         </select>
@@ -63,22 +63,12 @@
                 </form>
         </x-filter-card>
 
-        <div class="row g-3 mb-4">
-            <div class="col-md-4">
-                <x-stat-card icon="bi-receipt" label="Total Transaksi" :value="number_format($totalTransaksi, 0, ',', '.')" />
-            </div>
-            <div class="col-md-4">
-                <x-stat-card icon="bi-cash-stack" label="Total Gaji Pokok" :value="'Rp '.number_format($totalGajiPokok, 0, ',', '.')" variant="info" compact />
-            </div>
-            <div class="col-md-4">
-                <x-stat-card icon="bi-wallet2" label="Total Gaji Bersih" :value="'Rp '.number_format($totalGajiBersih, 0, ',', '.')" variant="secondary" compact />
-            </div>
-            <div class="col-md-6">
-                <x-stat-card icon="bi-plus-circle" label="Total Tunjangan" :value="'Rp '.number_format($totalTunjangan, 0, ',', '.')" compact />
-            </div>
-            <div class="col-md-6">
-                <x-stat-card icon="bi-dash-circle" label="Total Potongan" :value="'Rp '.number_format($totalPotongan, 0, ',', '.')" compact />
-            </div>
+        <div class="report-stat-grid mb-4">
+            <x-stat-card icon="bi-receipt" label="Total Transaksi" :value="number_format($totalTransaksi, 0, ',', '.')" plain />
+            <x-stat-card icon="bi-cash-stack" label="Total Gaji Pokok" :value="'Rp '.number_format($totalGajiPokok, 0, ',', '.')" compact plain />
+            <x-stat-card icon="bi-wallet2" label="Total Gaji Bersih" :value="'Rp '.number_format($totalGajiBersih, 0, ',', '.')" compact plain />
+            <x-stat-card icon="bi-plus-circle" label="Total Tunjangan" :value="'Rp '.number_format($totalTunjangan, 0, ',', '.')" compact plain />
+            <x-stat-card icon="bi-dash-circle" label="Total Potongan" :value="'Rp '.number_format($totalPotongan, 0, ',', '.')" compact plain />
         </div>
 
         <div class="card mb-4">

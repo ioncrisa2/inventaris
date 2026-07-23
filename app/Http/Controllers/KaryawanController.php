@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\BulkDeleteRequest;
 use App\Http\Requests\Karyawan\StoreKaryawanRequest;
+use App\Http\Requests\Karyawan\UpdateEmploymentStatusRequest;
 use App\Http\Requests\Karyawan\UpdateKaryawanRequest;
 use App\Models\Karyawan;
 use App\Repositories\KaryawanRepository;
 use App\Repositories\UnitKerjaRepository;
 use App\Services\KaryawanService;
+use App\Support\PerPage;
 use Illuminate\Http\Request;
 
 class KaryawanController extends Controller
@@ -26,7 +28,10 @@ class KaryawanController extends Controller
      */
     public function index(Request $request)
     {
-        $karyawan = $this->karyawanService->list($request->only(['search', 'unit_kerja_id', 'status_karyawan', 'kelengkapan']));
+        $karyawan = $this->karyawanService->list(
+            $request->only(['search', 'unit_kerja_id', 'status_karyawan', 'kelengkapan']),
+            PerPage::resolve($request),
+        );
         $unitKerjas = $this->unitKerjaRepository->orderedList();
 
         return view('karyawan.index', compact('karyawan', 'unitKerjas'));
@@ -87,6 +92,18 @@ class KaryawanController extends Controller
         $this->karyawanService->update($karyawan, $request->validated());
 
         return redirect()->route('karyawan.index')->with('success', 'Karyawan berhasil diperbarui.');
+    }
+
+    public function updateEmploymentStatus(UpdateEmploymentStatusRequest $request, Karyawan $karyawan)
+    {
+        $tanggalKeluar = $request->validated('tanggal_mengundurkan_diri');
+        $this->karyawanService->updateEmploymentStatus($karyawan, $tanggalKeluar);
+
+        $message = $tanggalKeluar
+            ? 'Karyawan berhasil dinonaktifkan.'
+            : 'Karyawan berhasil diaktifkan kembali.';
+
+        return redirect()->route('karyawan.show', $karyawan)->with('success', $message);
     }
 
     /**

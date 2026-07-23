@@ -6,7 +6,9 @@ use App\Models\Absensi;
 use App\Models\Karyawan;
 use App\Repositories\AbsensiRepository;
 use App\Repositories\KaryawanRepository;
+use App\Support\PerPage;
 use Carbon\Carbon;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -18,12 +20,9 @@ class AbsensiService
         private DashboardCache $dashboardCache,
     ) {}
 
-    /**
-     * @return Collection<int, Karyawan>
-     */
-    public function daftarKaryawan(?string $search): Collection
+    public function daftarKaryawan(?string $search, int $perPage = PerPage::DEFAULT): LengthAwarePaginator
     {
-        return $this->karyawanRepository->searchOrderedByName($search);
+        return $this->karyawanRepository->searchOrderedByName($search, $perPage);
     }
 
     /**

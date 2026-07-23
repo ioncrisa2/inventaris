@@ -11,6 +11,7 @@ use App\Http\Requests\Laporan\InventarisLaporanRequest;
 use App\Http\Requests\Laporan\KepegawaianLaporanRequest;
 use App\Http\Requests\Laporan\PenggajianLaporanRequest;
 use App\Services\LaporanService;
+use App\Support\PerPage;
 use Maatwebsite\Excel\Facades\Excel;
 
 class LaporanController extends Controller
@@ -19,7 +20,7 @@ class LaporanController extends Controller
 
     public function inventaris(InventarisLaporanRequest $request)
     {
-        return view('laporan.inventaris', $this->laporanService->inventaris($request->validated()));
+        return view('laporan.inventaris', $this->laporanService->inventaris($request->validated(), PerPage::resolve($request)));
     }
 
     public function cetakInventaris(InventarisLaporanRequest $request)
@@ -40,7 +41,7 @@ class LaporanController extends Controller
         $tahun = $request->tahun();
 
         return view('laporan.absensi', [
-            ...$this->laporanService->absensi($request->validated(), $bulan, $tahun),
+            ...$this->laporanService->absensi($request->validated(), $bulan, $tahun, PerPage::resolve($request)),
             'bulan' => $bulan,
             'tahun' => $tahun,
         ]);
@@ -67,7 +68,7 @@ class LaporanController extends Controller
 
     public function kepegawaian(KepegawaianLaporanRequest $request)
     {
-        return view('laporan.kepegawaian', $this->laporanService->kepegawaian($request->validated()));
+        return view('laporan.kepegawaian', $this->laporanService->kepegawaian($request->validated(), PerPage::resolve($request)));
     }
 
     public function cetakKepegawaian(KepegawaianLaporanRequest $request)
@@ -88,7 +89,7 @@ class LaporanController extends Controller
         $tahun = $request->tahun();
 
         return view('laporan.penggajian', [
-            ...$this->laporanService->penggajian($request->validated(), $bulan, $tahun),
+            ...$this->laporanService->penggajian($request->validated(), $bulan, $tahun, PerPage::resolve($request)),
             'bulan' => $bulan,
             'tahun' => $tahun,
         ]);

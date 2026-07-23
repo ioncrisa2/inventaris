@@ -33,6 +33,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('unit-kerja', UnitKerjaController::class)->except(['show', 'create', 'edit']);
 
     Route::delete('karyawan/bulk', [KaryawanController::class, 'bulkDestroy'])->name('karyawan.bulk-destroy');
+    Route::patch('karyawan/{karyawan}/status-keaktifan', [KaryawanController::class, 'updateEmploymentStatus'])
+        ->name('karyawan.status-keaktifan.update');
     Route::resource('karyawan', KaryawanController::class);
 
     Route::post('karyawan/{karyawan}/dokumen', [DokumenKaryawanController::class, 'store'])->name('karyawan.dokumen.store');

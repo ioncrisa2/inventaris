@@ -10,6 +10,7 @@ use App\Models\Barang;
 use App\Repositories\RiwayatKondisiBarangRepository;
 use App\Repositories\UnitKerjaRepository;
 use App\Services\BarangService;
+use App\Support\PerPage;
 use Illuminate\Http\Request;
 
 class BarangController extends Controller
@@ -27,7 +28,10 @@ class BarangController extends Controller
      */
     public function index(Request $request)
     {
-        $barangs = $this->barangService->list($request->only(['search', 'unit_kerja_id', 'kategori', 'kondisi', 'kelengkapan']));
+        $barangs = $this->barangService->list(
+            $request->only(['search', 'unit_kerja_id', 'kategori', 'kondisi', 'kelengkapan']),
+            PerPage::resolve($request),
+        );
         $unitKerjas = $this->unitKerjaRepository->orderedList();
 
         return view('barang.index', compact('barangs', 'unitKerjas'));

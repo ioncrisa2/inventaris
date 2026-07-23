@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Karyawan;
 use App\Repositories\KaryawanRepository;
+use App\Support\PerPage;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -20,9 +21,9 @@ class KaryawanService
     /**
      * @param  array{search?: ?string, unit_kerja_id?: ?string, status_karyawan?: ?string, kelengkapan?: ?string}  $filters
      */
-    public function list(array $filters): LengthAwarePaginator
+    public function list(array $filters, int $perPage = PerPage::DEFAULT): LengthAwarePaginator
     {
-        return $this->karyawanRepository->paginate($filters);
+        return $this->karyawanRepository->paginate($filters, $perPage);
     }
 
     /**
@@ -63,6 +64,19 @@ class KaryawanService
 
             $this->simpanDokumen($karyawan, $dokumenBaris);
             $this->fileStorage->deleteAfterCommit('public', $fotoLama);
+            $this->dashboardCache->invalidateAfterCommit();
+
+            return $karyawan;
+        });
+    }
+
+    public function updateEmploymentStatus(Karyawan $karyawan, ?string $tanggalKeluar): Karyawan
+    {
+        return DB::transaction(function () use ($karyawan, $tanggalKeluar) {
+            $karyawan = $this->karyawanRepository->update($karyawan, [
+                'tanggal_mengundurkan_diri' => $tanggalKeluar,
+            ]);
+
             $this->dashboardCache->invalidateAfterCommit();
 
             return $karyawan;

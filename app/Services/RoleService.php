@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Repositories\RoleRepository;
+use App\Support\PerPage;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
@@ -11,9 +12,9 @@ class RoleService
 {
     public function __construct(private RoleRepository $roleRepository) {}
 
-    public function list(): LengthAwarePaginator
+    public function list(int $perPage = PerPage::DEFAULT): LengthAwarePaginator
     {
-        return $this->roleRepository->paginate();
+        return $this->roleRepository->paginate($perPage);
     }
 
     public function store(array $data): Role

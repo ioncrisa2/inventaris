@@ -8,6 +8,7 @@ use App\Http\Requests\TransaksiGaji\UpdateTransaksiGajiRequest;
 use App\Models\TransaksiGaji;
 use App\Repositories\KaryawanRepository;
 use App\Services\TransaksiGajiService;
+use App\Support\PerPage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -25,7 +26,10 @@ class TransaksiGajiController extends Controller
      */
     public function index(Request $request)
     {
-        $transaksiGaji = $this->transaksiGajiService->list($request->only(['search', 'bulan', 'tahun']));
+        $transaksiGaji = $this->transaksiGajiService->list(
+            $request->only(['search', 'bulan', 'tahun']),
+            PerPage::resolve($request),
+        );
 
         return view('transaksi-gaji.index', compact('transaksiGaji'));
     }

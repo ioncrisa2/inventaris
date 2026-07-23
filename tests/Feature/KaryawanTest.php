@@ -294,6 +294,47 @@ test('karyawan can be deleted', function () {
     $this->assertDatabaseMissing('karyawan', ['id' => $karyawan->id]);
 });
 
+test('employment status is managed separately from the regular edit form', function () {
+    $karyawan = Karyawan::create(payloadKaryawanDasar($this->unitKerja));
+
+    $this->get(route('karyawan.edit', $karyawan))
+        ->assertOk()
+        ->assertDontSee('name="tanggal_mengundurkan_diri"', false);
+
+    $this->get(route('karyawan.show', $karyawan))
+        ->assertOk()
+        ->assertSee('Nonaktifkan Karyawan')
+        ->assertSee(route('karyawan.status-keaktifan.update', $karyawan), false);
+
+    $this->patch(route('karyawan.status-keaktifan.update', $karyawan), [
+        '_modal' => 'employmentStatusModal',
+        'tanggal_mengundurkan_diri' => '2026-07-01',
+    ])->assertRedirect(route('karyawan.show', $karyawan));
+
+    expect($karyawan->fresh()->tanggal_mengundurkan_diri?->toDateString())->toBe('2026-07-01');
+
+    $this->patch(route('karyawan.status-keaktifan.update', $karyawan), [
+        '_modal' => 'employmentStatusModal',
+        'tanggal_mengundurkan_diri' => '',
+    ])->assertRedirect(route('karyawan.show', $karyawan));
+
+    expect($karyawan->fresh()->tanggal_mengundurkan_diri)->toBeNull();
+});
+
+test('employment status rejects a departure date before employment began', function () {
+    $karyawan = Karyawan::create(payloadKaryawanDasar($this->unitKerja));
+
+    $this->from(route('karyawan.show', $karyawan))
+        ->patch(route('karyawan.status-keaktifan.update', $karyawan), [
+            '_modal' => 'employmentStatusModal',
+            'tanggal_mengundurkan_diri' => '2019-12-31',
+        ])
+        ->assertRedirect(route('karyawan.show', $karyawan))
+        ->assertSessionHasErrors('tanggal_mengundurkan_diri');
+
+    expect($karyawan->fresh()->tanggal_mengundurkan_diri)->toBeNull();
+});
+
 /**
  * Payload minimal untuk Karyawan::create() langsung (bukan lewat HTTP, jadi
  * tidak divalidasi FormRequest) -- dipakai sebagai data awal di test yang

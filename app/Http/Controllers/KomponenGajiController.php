@@ -6,6 +6,7 @@ use App\Http\Requests\BulkDeleteRequest;
 use App\Http\Requests\KomponenGaji\KomponenGajiRequest;
 use App\Models\KomponenGaji;
 use App\Services\KomponenGajiService;
+use App\Support\PerPage;
 use Illuminate\Http\Request;
 
 class KomponenGajiController extends Controller
@@ -20,7 +21,10 @@ class KomponenGajiController extends Controller
      */
     public function index(Request $request)
     {
-        $komponenGaji = $this->komponenGajiService->list($request->only(['search', 'jenis']));
+        $komponenGaji = $this->komponenGajiService->list(
+            $request->only(['search', 'jenis']),
+            PerPage::resolve($request),
+        );
 
         return view('komponen-gaji.index', compact('komponenGaji'));
     }

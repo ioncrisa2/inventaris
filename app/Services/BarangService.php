@@ -7,6 +7,7 @@ use App\Repositories\BarangRepository;
 use App\Repositories\RiwayatKondisiBarangRepository;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Writer\SvgWriter;
+use App\Support\PerPage;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -27,9 +28,9 @@ class BarangService
     /**
      * @param  array{search?: ?string, unit_kerja_id?: ?string, kategori?: ?string, kondisi?: ?string, kelengkapan?: ?string}  $filters
      */
-    public function list(array $filters): LengthAwarePaginator
+    public function list(array $filters, int $perPage = PerPage::DEFAULT): LengthAwarePaginator
     {
-        return $this->barangRepository->paginate($filters);
+        return $this->barangRepository->paginate($filters, $perPage);
     }
 
     /**

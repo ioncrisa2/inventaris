@@ -704,7 +704,6 @@ a:hover {
     font-size: .8rem;
 }
 
-.settings-auto-save-note,
 .settings-callout {
     display: flex;
     align-items: flex-start;
@@ -717,14 +716,33 @@ a:hover {
     font-size: .8rem;
 }
 
-.settings-auto-save-note {
-    margin-top: 1.25rem;
-}
-
 .settings-callout i,
-.settings-auto-save-note i {
+.settings-save-toast i {
     margin-top: .05rem;
     flex: 0 0 auto;
+}
+
+.settings-save-toast {
+    position: fixed;
+    right: max(1rem, env(safe-area-inset-right));
+    bottom: max(1rem, env(safe-area-inset-bottom));
+    z-index: 1080;
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    max-width: min(360px, calc(100vw - 2rem));
+    border: var(--bs-border-width) solid var(--bs-success-border-subtle);
+    border-radius: .6rem;
+    background: var(--bs-body-bg);
+    box-shadow: var(--bs-box-shadow);
+    color: var(--bs-success-text-emphasis);
+    padding: .75rem 1rem;
+    font-size: .85rem;
+    font-weight: 600;
+}
+
+.settings-save-toast[hidden] {
+    display: none;
 }
 
 .settings-callout strong,
@@ -887,6 +905,17 @@ a:hover {
     font-weight: 700;
 }
 
+.form-section__heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.form-section__actions {
+    flex: 0 0 auto;
+}
+
 .form-section p {
     margin: .3rem 0 0;
     color: var(--bs-secondary-color);
@@ -938,6 +967,10 @@ a:hover {
     min-width: 0;
 }
 
+.data-table-card__toolbar:has(.filter-toolbar) {
+    flex: 1 1 auto;
+}
+
 .bulk-action-bar {
     border-top: var(--bs-border-width) solid var(--bs-border-color-translucent);
     background: rgba(var(--bs-primary-rgb), .055);
@@ -984,7 +1017,7 @@ a:hover {
 }
 
 .filter-toolbar {
-    justify-content: flex-end;
+    justify-content: flex-start;
 }
 
 .filter-form__search {
@@ -999,7 +1032,7 @@ a:hover {
 .filter-toolbar__active {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: flex-start;
     gap: .5rem;
 }
 
@@ -1007,7 +1040,7 @@ a:hover {
     display: flex;
     min-width: 0;
     flex-wrap: wrap;
-    justify-content: flex-end;
+    justify-content: flex-start;
     gap: .35rem;
 }
 
@@ -1105,6 +1138,54 @@ a:hover {
 .condition-badge--broken { background: #7f1d1d; color: #fff; }
 .condition-badge--lost { background: #343a40; color: #fff; }
 .condition-badge--archived { background: #6c757d; color: #fff; }
+
+.payroll-component-group th {
+    background: var(--bs-tertiary-bg);
+    color: var(--bs-secondary-color);
+    font-size: .75rem;
+    text-transform: uppercase;
+}
+
+.payroll-summary {
+    width: min(100%, 460px);
+    margin: 1.25rem 1.25rem 1.25rem auto;
+    border: var(--bs-border-width) solid var(--bs-border-color);
+    border-radius: .65rem;
+    background: var(--bs-tertiary-bg);
+    padding: .5rem 1rem;
+}
+
+.payroll-summary > div {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: .55rem 0;
+}
+
+.payroll-summary dt {
+    color: var(--bs-secondary-color);
+    font-weight: 500;
+}
+
+.payroll-summary dd {
+    margin: 0;
+    font-weight: 600;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.payroll-summary__total {
+    border-top: var(--bs-border-width) solid var(--bs-border-color);
+    color: var(--bs-emphasis-color);
+    font-size: 1rem;
+}
+
+.payroll-summary__total dt,
+.payroll-summary__total dd {
+    color: inherit;
+    font-weight: 700;
+}
 
 .pagination {
     --bs-pagination-border-radius: .48rem;
@@ -1514,6 +1595,16 @@ a:hover {
     color: var(--bs-warning-text-emphasis);
 }
 
+.report-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr));
+    gap: 1rem;
+}
+
+.report-stat-grid > .summary-card {
+    min-height: 100%;
+}
+
 .chart-container {
     min-height: 280px;
 }
@@ -1866,8 +1957,41 @@ a.data-quality-item:focus-visible {
 
 .calendar-grid {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: .5rem;
+}
+
+.calendar-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .65rem 1rem;
+    margin-bottom: 1rem;
+    color: var(--bs-secondary-color);
+    font-size: .75rem;
+}
+
+.calendar-legend > span {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+}
+
+.calendar-legend__swatch {
+    width: .8rem;
+    height: .8rem;
+    border: var(--bs-border-width) solid var(--bs-border-color);
+    border-radius: .2rem;
+    background: var(--bs-body-bg);
+}
+
+.calendar-legend__swatch.is-holiday {
+    border-color: rgba(var(--bs-danger-rgb), .35);
+    background: rgba(var(--bs-danger-rgb), .08);
+}
+
+.calendar-legend__swatch.is-outside {
+    border-style: dashed;
+    background: var(--bs-tertiary-bg);
 }
 
 .calendar-day-header {
@@ -1879,8 +2003,13 @@ a.data-quality-item:focus-visible {
     text-transform: uppercase;
 }
 
+.calendar-day-header.is-holiday {
+    color: var(--bs-danger-text-emphasis);
+}
+
 .calendar-cell {
     position: relative;
+    min-width: 0;
     min-height: 84px;
     border: var(--bs-border-width) solid var(--bs-border-color);
     border-radius: .5rem;
@@ -1894,7 +2023,8 @@ a.data-quality-item:focus-visible {
 }
 
 .calendar-cell.is-sunday {
-    background: var(--bs-tertiary-bg);
+    border-color: rgba(var(--bs-danger-rgb), .3);
+    background: rgba(var(--bs-danger-rgb), .06);
 }
 
 .calendar-cell.is-today {
@@ -1925,6 +2055,19 @@ a.data-quality-item:focus-visible {
     font-weight: 600;
 }
 
+.calendar-cell__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .25rem;
+}
+
+.calendar-cell-holiday {
+    color: var(--bs-danger-text-emphasis);
+    font-size: .65rem;
+    font-weight: 600;
+}
+
 .calendar-cell.is-outside .calendar-cell-date {
     color: var(--bs-secondary-color);
 }
@@ -1943,8 +2086,19 @@ a.data-quality-item:focus-visible {
         font-size: .75rem;
     }
 
+    .calendar-cell__top {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .calendar-cell-holiday {
+        font-size: .55rem;
+    }
+
     .calendar-day-header {
         font-size: .65rem;
+        overflow-wrap: anywhere;
     }
 }
 

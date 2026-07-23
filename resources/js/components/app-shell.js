@@ -2,6 +2,18 @@ import { Collapse } from 'bootstrap';
 
 document.addEventListener('DOMContentLoaded', () => {
     const sidebarToggle = document.getElementById('sidebarToggle');
+    const settingsSaveToast = document.querySelector('[data-settings-save-toast]');
+    let settingsToastTimer;
+
+    const showSettingsSaveToast = () => {
+        if (!settingsSaveToast) return;
+
+        window.clearTimeout(settingsToastTimer);
+        settingsSaveToast.hidden = false;
+        settingsToastTimer = window.setTimeout(() => {
+            settingsSaveToast.hidden = true;
+        }, 2500);
+    };
 
     sidebarToggle?.addEventListener('click', () => {
         const isIconOnly = document.documentElement.classList.toggle('sidebar-icon-only');
@@ -40,6 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.documentElement.dataset.layout = radio.value;
                 localStorage.setItem('app-layout', radio.value);
                 syncSelectedCard();
+                showSettingsSaveToast();
             });
         });
 
@@ -65,6 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 localStorage.setItem('color-mode', radio.value);
                 applyColorMode(radio.value);
+                showSettingsSaveToast();
             });
         });
 

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Repositories\KaryawanRepository;
 use App\Repositories\LaporanRepository;
 use App\Repositories\UnitKerjaRepository;
+use App\Support\PerPage;
 use Illuminate\Database\Eloquent\Builder;
 
 class LaporanService
@@ -15,10 +16,10 @@ class LaporanService
         private KaryawanRepository $karyawanRepository,
     ) {}
 
-    public function inventaris(array $filters): array
+    public function inventaris(array $filters, int $perPage = PerPage::DEFAULT): array
     {
         $query = $this->laporanRepository->inventarisQuery($filters);
-        $barangs = (clone $query)->latest()->paginate(10)->withQueryString();
+        $barangs = (clone $query)->latest()->paginate($perPage)->withQueryString();
         $ringkasan = $this->laporanRepository->ringkasanInventaris($query);
 
         return [
@@ -52,12 +53,12 @@ class LaporanService
             ->orderBy('kode_barang');
     }
 
-    public function absensi(array $filters, int $bulan, int $tahun): array
+    public function absensi(array $filters, int $bulan, int $tahun, int $perPage = PerPage::DEFAULT): array
     {
         $query = $this->laporanRepository->absensiQuery($filters, $bulan, $tahun);
 
         return [
-            'absensis' => (clone $query)->orderBy('tanggal')->paginate(10)->withQueryString(),
+            'absensis' => (clone $query)->orderBy('tanggal')->paginate($perPage)->withQueryString(),
             'karyawans' => $this->karyawanRepository->orderedList(),
             'selectedKaryawanId' => $filters['karyawan_id'] ?? null,
             'selectedKaryawan' => $this->selectedKaryawan($filters['karyawan_id'] ?? null),
@@ -85,10 +86,10 @@ class LaporanService
             ->orderBy('karyawan_id');
     }
 
-    public function kepegawaian(array $filters): array
+    public function kepegawaian(array $filters, int $perPage = PerPage::DEFAULT): array
     {
         $query = $this->laporanRepository->kepegawaianQuery($filters);
-        $karyawans = (clone $query)->latest()->paginate(10)->withQueryString();
+        $karyawans = (clone $query)->latest()->paginate($perPage)->withQueryString();
         $ringkasan = $this->laporanRepository->ringkasanKepegawaian($query);
 
         return [
@@ -122,11 +123,11 @@ class LaporanService
             ->orderBy('nama_lengkap');
     }
 
-    public function penggajian(array $filters, int $bulan, int $tahun): array
+    public function penggajian(array $filters, int $bulan, int $tahun, int $perPage = PerPage::DEFAULT): array
     {
         $query = $this->laporanRepository->penggajianQuery($filters, $bulan, $tahun);
         [$totalTunjangan, $totalPotongan] = $this->laporanRepository->totalTunjanganPotongan($query);
-        $transaksiGaji = (clone $query)->latest()->paginate(10)->withQueryString();
+        $transaksiGaji = (clone $query)->latest()->paginate($perPage)->withQueryString();
         $ringkasan = $this->laporanRepository->ringkasanPenggajian($query);
 
         return [

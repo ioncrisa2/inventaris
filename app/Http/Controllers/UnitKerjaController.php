@@ -7,6 +7,7 @@ use App\Http\Requests\UnitKerja\StoreUnitKerjaRequest;
 use App\Http\Requests\UnitKerja\UpdateUnitKerjaRequest;
 use App\Models\UnitKerja;
 use App\Services\UnitKerjaService;
+use App\Support\PerPage;
 use Illuminate\Http\Request;
 
 class UnitKerjaController extends Controller
@@ -21,7 +22,10 @@ class UnitKerjaController extends Controller
      */
     public function index(Request $request)
     {
-        $unitKerja = $this->unitKerjaService->list($request->string('search')->trim()->value() ?: null);
+        $unitKerja = $this->unitKerjaService->list(
+            $request->string('search')->trim()->value() ?: null,
+            PerPage::resolve($request),
+        );
 
         return view('unit-kerja.index', compact('unitKerja'));
     }

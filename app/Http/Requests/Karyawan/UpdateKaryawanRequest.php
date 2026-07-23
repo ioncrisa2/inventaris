@@ -33,7 +33,6 @@ class UpdateKaryawanRequest extends FormRequest
             'tahun_lulus' => ['required', 'integer', 'min:1950', 'max:'.now()->year],
             'nama_pasangan' => ['nullable', 'string', 'max:255'],
             'jumlah_anak' => ['nullable', 'integer', 'min:0'],
-            'tanggal_mengundurkan_diri' => ['nullable', 'date', 'after_or_equal:tanggal_masuk_kerja'],
             'foto_karyawan' => [
                 Rule::requiredIf(fn () => blank($this->route('karyawan')?->foto_karyawan)),
                 'nullable',

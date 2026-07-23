@@ -9,7 +9,7 @@
             subtitle="{{ $karyawan->nik }} — {{ $karyawan->jabatan }} — {{ $karyawan->unitKerja?->nama_unit ?? 'Belum ditentukan' }}"
         >
             <x-slot:actions>
-                <div class="d-flex gap-2">
+                <div class="d-flex flex-wrap gap-2">
                     <a class="btn btn-success" href="{{ route('absensi.show', $karyawan) }}">
                         <i class="bi bi-calendar-check"></i>
                         Lihat Absensi
@@ -18,6 +18,12 @@
                         <i class="bi bi-pencil"></i>
                         Edit
                     </a>
+                    @can('update', $karyawan)
+                        <button class="btn btn-outline-warning" type="button" data-bs-toggle="modal" data-bs-target="#employmentStatusModal">
+                            <i class="bi bi-person-dash" aria-hidden="true"></i>
+                            {{ $karyawan->tanggal_mengundurkan_diri ? 'Atur Status' : 'Nonaktifkan Karyawan' }}
+                        </button>
+                    @endcan
                     <a class="btn btn-light" href="{{ route('karyawan.index') }}">Kembali</a>
                 </div>
             </x-slot:actions>
@@ -194,4 +200,30 @@
         </div>
 
 </x-app-page>
+
+@can('update', $karyawan)
+    <x-modal-form
+        id="employmentStatusModal"
+        title="{{ $karyawan->tanggal_mengundurkan_diri ? 'Atur Status Keaktifan' : 'Nonaktifkan Karyawan' }}"
+        :action="route('karyawan.status-keaktifan.update', $karyawan)"
+        method="PATCH"
+        submit-label="Simpan Status"
+        submit-variant="warning"
+        :data-auto-show-modal="$errors->has('tanggal_mengundurkan_diri') && old('_modal') === 'employmentStatusModal'"
+    >
+        <input type="hidden" name="_modal" value="employmentStatusModal">
+        <x-form.input
+            name="tanggal_mengundurkan_diri"
+            label="Tanggal Keluar"
+            type="date"
+            :value="old('tanggal_mengundurkan_diri', $karyawan->tanggal_mengundurkan_diri?->format('Y-m-d'))"
+            :required="is_null($karyawan->tanggal_mengundurkan_diri)"
+            :min="$karyawan->tanggal_masuk_kerja?->format('Y-m-d')"
+            :max="now()->toDateString()"
+            :help="$karyawan->tanggal_mengundurkan_diri
+                ? 'Ubah tanggal jika perlu, atau kosongkan untuk mengaktifkan kembali karyawan.'
+                : 'Status nonaktif mulai berlaku pada tanggal yang dipilih.'"
+        />
+    </x-modal-form>
+@endcan
 @endsection

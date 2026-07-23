@@ -7,6 +7,8 @@ use App\Http\Requests\Role\StoreRoleRequest;
 use App\Http\Requests\Role\UpdateRoleRequest;
 use App\Services\RoleService;
 use App\Support\PermissionCatalog;
+use App\Support\PerPage;
+use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
 
 class RoleController extends Controller
@@ -16,11 +18,11 @@ class RoleController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $this->authorize('role.view');
 
-        $roles = $this->roleService->list();
+        $roles = $this->roleService->list(PerPage::resolve($request));
 
         return view('role.index', compact('roles'));
     }

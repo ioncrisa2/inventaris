@@ -45,6 +45,15 @@ test('staff can access appearance settings but cannot manage inventory numbering
     ])->assertForbidden();
 });
 
+test('appearance settings use a transient toast instead of a permanent success callout', function () {
+    $this->actingAs(adminUser())
+        ->get(route('pengaturan.edit'))
+        ->assertOk()
+        ->assertSee('data-settings-save-toast', false)
+        ->assertSee('Perubahan tampilan disimpan.')
+        ->assertDontSee('Perubahan tampilan diterapkan dan disimpan otomatis.');
+});
+
 test('pengaturan rejects unknown tokens', function () {
     $this->actingAs(adminUser());
 

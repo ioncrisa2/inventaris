@@ -1,6 +1,6 @@
 @props(['paginator'])
 
-@if($paginator->hasPages())
+@if($paginator->total() > 0)
 <div {{ $attributes->merge(['class' => 'card-footer']) }}>
     {{ $paginator->links() }}
 </div>
