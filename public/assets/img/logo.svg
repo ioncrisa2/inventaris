@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <!-- Box body -->
+  <rect x="4" y="18" width="28" height="22" rx="3" fill="#0e7c6b" opacity="0.15"/>
+  <rect x="4" y="18" width="28" height="22" rx="3" fill="none" stroke="#0e7c6b" stroke-width="2.5"/>
+  <!-- Box lid -->
+  <path d="M2 18 L18 8 L34 18" fill="none" stroke="#0e7c6b" stroke-width="2.5" stroke-linejoin="round"/>
+  <!-- Box tape -->
+  <line x1="18" y1="8" x2="18" y2="30" stroke="#0e7c6b" stroke-width="1.5" stroke-dasharray="3 2"/>
+  <!-- Person head -->
+  <circle cx="38" cy="14" r="5" fill="#d4a24e"/>
+  <!-- Person body -->
+  <path d="M38 19 C32 19 30 24 30 28 L46 28 C46 24 44 19 38 19Z" fill="#d4a24e" opacity="0.85"/>
+  <!-- Checkmark in box -->
+  <polyline points="12,30 16,34 24,26" fill="none" stroke="#0e7c6b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

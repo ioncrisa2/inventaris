@@ -1,0 +1,261 @@
+@page {
+    size: A4 landscape;
+    margin: 14mm;
+}
+
+@page page-a4-portrait { size: A4 portrait; margin: 14mm; }
+@page page-a4-landscape { size: A4 landscape; margin: 14mm; }
+@page page-a5-portrait { size: A5 portrait; margin: 14mm; }
+@page page-a5-landscape { size: A5 landscape; margin: 14mm; }
+@page page-a6-portrait { size: A6 portrait; margin: 14mm; }
+@page page-a6-landscape { size: A6 landscape; margin: 14mm; }
+@page page-letter-portrait { size: Letter portrait; margin: 14mm; }
+@page page-letter-landscape { size: Letter landscape; margin: 14mm; }
+@page page-legal-portrait { size: Legal portrait; margin: 14mm; }
+@page page-legal-landscape { size: Legal landscape; margin: 14mm; }
+@page page-barcode-label { size: 50mm 30mm; margin: 2mm; }
+@page page-qr-label { size: 50mm 50mm; margin: 2.5mm; }
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    color: #111827;
+    background: #f3f4f6;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.screen-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+    width: calc(100% - 32px);
+    max-width: var(--print-preview-max-width, 1120px);
+    margin: 16px auto 0;
+}
+
+.screen-actions a,
+.screen-actions button {
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: #fff;
+    color: #111827;
+    padding: 8px 12px;
+    font: inherit;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.print-page {
+    width: calc(100% - 32px);
+    max-width: var(--print-preview-max-width, 1120px);
+    min-height: 780px;
+    margin: 16px auto;
+    padding: 28px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+}
+
+.page-layout--a4-portrait { --print-preview-max-width: 794px; }
+.page-layout--a4-landscape { --print-preview-max-width: 1120px; }
+.page-layout--a5-portrait { --print-preview-max-width: 790px; }
+.page-layout--a5-landscape { --print-preview-max-width: 1120px; }
+.page-layout--a6-portrait { --print-preview-max-width: 380px; }
+.page-layout--a6-landscape { --print-preview-max-width: 520px; }
+.page-layout--letter-portrait { --print-preview-max-width: 1140px; }
+.page-layout--letter-landscape { --print-preview-max-width: 1440px; }
+.page-layout--legal-portrait { --print-preview-max-width: 1140px; }
+.page-layout--legal-landscape { --print-preview-max-width: 1600px; }
+.page-layout--barcode-label { --print-preview-max-width: 50mm; }
+.page-layout--qr-label { --print-preview-max-width: 50mm; }
+.page-layout--a4-portrait .print-page { page: page-a4-portrait; }
+.page-layout--a4-landscape .print-page { page: page-a4-landscape; }
+.page-layout--a5-portrait .print-page { page: page-a5-portrait; }
+.page-layout--a5-landscape .print-page { page: page-a5-landscape; }
+.page-layout--a6-portrait .print-page { page: page-a6-portrait; }
+.page-layout--a6-landscape .print-page { page: page-a6-landscape; }
+.page-layout--letter-portrait .print-page { page: page-letter-portrait; }
+.page-layout--letter-landscape .print-page { page: page-letter-landscape; }
+.page-layout--legal-portrait .print-page { page: page-legal-portrait; }
+.page-layout--legal-landscape .print-page { page: page-legal-landscape; }
+.page-layout--barcode-label .print-page {
+    page: page-barcode-label;
+    min-height: 30mm;
+    padding: 2mm;
+}
+.page-layout--qr-label .print-page {
+    page: page-qr-label;
+    min-height: 50mm;
+    padding: 2.5mm;
+}
+
+.report-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    padding-bottom: 16px;
+    margin-bottom: 18px;
+    border-bottom: 2px solid #095349;
+}
+
+.report-title { margin: 0 0 6px; font-size: 22px; line-height: 1.2; }
+.report-subtitle,
+.report-meta { margin: 0; color: #4b5563; }
+.report-meta { text-align: right; }
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+.summary-item { border: 1px solid #d1d5db; padding: 10px; }
+.summary-label { margin-bottom: 4px; color: #4b5563; font-size: 11px; }
+.summary-value { font-size: 16px; font-weight: 700; }
+.section-title { margin: 18px 0 8px; font-size: 14px; }
+
+table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+th,
+td { border: 1px solid #d1d5db; padding: 7px; vertical-align: top; }
+th { background: #f3f4f6; text-align: left; }
+tfoot td { background: #f9fafb; font-weight: 700; }
+.text-end { text-align: right; }
+.text-center { text-align: center; }
+.muted { color: #6b7280; }
+
+.signature-row {
+    display: grid;
+    grid-template-columns: 1fr 240px;
+    gap: 24px;
+    margin-top: 28px;
+}
+
+.signature-box { text-align: center; }
+.signature-space { height: 54px; }
+
+/* Barcode tunggal */
+.asset-label { position: relative; text-align: center; }
+.asset-label__logo { position: absolute; top: 0; left: 0; width: 6mm; height: 6mm; object-fit: contain; }
+.asset-label__type,
+.qr-label__type { margin-bottom: 8px; color: #6b7280; font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.asset-label__name { margin: 0 0 1mm; padding-inline: 7mm; font-size: 9px; line-height: 1.2; }
+.asset-label__barcode { width: 100%; margin: 0 auto 1mm; }
+.asset-label__barcode svg { display: block; width: 100%; height: 12mm; }
+.asset-label__code { margin: 0; font-family: "Courier New", monospace; font-size: 9px; font-weight: 700; letter-spacing: .04em; }
+
+/* QR code tunggal */
+.qr-label { text-align: center; }
+.qr-label__name { margin: 0 0 1mm; font-size: 9px; line-height: 1.2; }
+.qr-label__code { margin: 0 0 1.5mm; color: #4b5563; font-family: "Courier New", monospace; font-size: 8px; font-weight: 700; }
+.qr-label__image { width: 26mm; margin: 0 auto; }
+.qr-label__image svg { display: block; width: 100%; height: auto; }
+.qr-label__hint { margin: 0; color: #6b7280; font-size: 11px; }
+
+/* Barcode massal dan panel pengaturan cetak */
+:root { --barcode-label-gap: 7mm; }
+.screen-actions__summary { margin-right: auto; color: #6b7280; font-size: 11px; }
+.screen-actions__settings[aria-expanded="true"] { border-color: #0e7c6b; color: #095349; background: #d9efec; }
+
+.screen-settings {
+    width: calc(100% - 32px);
+    max-width: var(--print-preview-max-width, 1120px);
+    margin: 10px auto 0;
+    padding: 16px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, .06);
+}
+
+.screen-settings[hidden] { display: none; }
+.screen-settings__header { display: flex; align-items: start; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+.screen-settings__header h2 { margin: 0 0 2px; font-size: 15px; }
+.screen-settings__header p { margin: 0; color: #6b7280; font-size: 11px; }
+.screen-settings__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.print-setting-field,
+.print-setting-field fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+.print-setting-field label,
+.print-setting-field legend { display: block; margin-bottom: 6px; color: #374151; font-size: 11px; font-weight: 700; }
+.print-setting-field select { width: 100%; min-height: 38px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; color: #111827; padding: 7px 10px; font: inherit; }
+.orientation-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.orientation-option { position: relative; }
+.orientation-option input { position: absolute; opacity: 0; pointer-events: none; }
+.orientation-option span { display: flex; align-items: center; justify-content: center; min-height: 38px; border: 1px solid #d1d5db; border-radius: 6px; cursor: pointer; }
+.orientation-option input:checked + span { border-color: #0e7c6b; color: #095349; background: #d9efec; font-weight: 700; }
+.orientation-option input:focus-visible + span,
+.print-setting-field select:focus-visible,
+.print-setting-field input[type="range"]:focus-visible { outline: 3px solid rgba(14, 124, 107, .25); outline-offset: 2px; }
+.spacing-control { display: grid; grid-template-columns: minmax(0, 1fr) 52px; align-items: center; gap: 10px; min-height: 38px; }
+.spacing-control input[type="range"] { width: 100%; accent-color: #0e7c6b; }
+.spacing-control output { border: 1px solid #d1d5db; border-radius: 6px; padding: 5px 7px; background: #f9fafb; text-align: center; font-variant-numeric: tabular-nums; }
+.screen-settings__reset { border: 0; background: transparent; color: #4b5563; padding: 4px; font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; white-space: nowrap; }
+
+.bulk-barcode-header { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 2px solid #111827; }
+.bulk-barcode-header h1 { margin: 0 0 3px; font-size: 20px; }
+.bulk-barcode-header p { margin: 0; color: #6b7280; }
+.barcode-label-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--barcode-label-gap); }
+.barcode-label { position: relative; break-inside: avoid; min-width: 0; padding: 8mm; border: 1px dashed #9ca3af; text-align: center; }
+.barcode-label__logo { position: absolute; top: 4mm; left: 4mm; width: 9mm; height: 9mm; object-fit: contain; }
+.barcode-label__name { margin: 0 0 3px; padding-inline: 12mm; font-size: 12px; line-height: 1.25; overflow-wrap: anywhere; }
+.barcode-label__unit { margin: 0 0 9px; color: #6b7280; font-size: 9px; }
+.barcode-label__image { margin: 0 auto 7px; }
+.barcode-label__image svg { display: block; width: 100%; height: 52px; }
+.barcode-label__code { margin: 0; font-family: "Courier New", monospace; font-size: 11px; font-weight: 700; letter-spacing: .04em; }
+
+.print-page[data-label-spacing="0"] { --barcode-label-gap: 0mm; }
+.print-page[data-label-spacing="1"] { --barcode-label-gap: 1mm; }
+.print-page[data-label-spacing="2"] { --barcode-label-gap: 2mm; }
+.print-page[data-label-spacing="3"] { --barcode-label-gap: 3mm; }
+.print-page[data-label-spacing="4"] { --barcode-label-gap: 4mm; }
+.print-page[data-label-spacing="5"] { --barcode-label-gap: 5mm; }
+.print-page[data-label-spacing="6"] { --barcode-label-gap: 6mm; }
+.print-page[data-label-spacing="7"] { --barcode-label-gap: 7mm; }
+.print-page[data-label-spacing="8"] { --barcode-label-gap: 8mm; }
+.print-page[data-label-spacing="9"] { --barcode-label-gap: 9mm; }
+.print-page[data-label-spacing="10"] { --barcode-label-gap: 10mm; }
+.print-page[data-label-spacing="11"] { --barcode-label-gap: 11mm; }
+.print-page[data-label-spacing="12"] { --barcode-label-gap: 12mm; }
+.print-page[data-label-spacing="13"] { --barcode-label-gap: 13mm; }
+.print-page[data-label-spacing="14"] { --barcode-label-gap: 14mm; }
+.print-page[data-label-spacing="15"] { --barcode-label-gap: 15mm; }
+.print-page[data-label-spacing="16"] { --barcode-label-gap: 16mm; }
+.print-page[data-label-spacing="17"] { --barcode-label-gap: 17mm; }
+.print-page[data-label-spacing="18"] { --barcode-label-gap: 18mm; }
+.print-page[data-label-spacing="19"] { --barcode-label-gap: 19mm; }
+.print-page[data-label-spacing="20"] { --barcode-label-gap: 20mm; }
+
+/* Slip gaji */
+.slip-brand { display: flex; align-items: center; gap: 12px; }
+.slip-logo { height: 44px; width: auto; }
+.slip-org-name { font-size: 15px; font-weight: 700; }
+.slip-org-sub { font-size: 11px; color: #6b7280; }
+.slip-title { margin-top: 10px; }
+.info-card { border: 1px solid #d1d5db; padding: 12px 14px; margin-bottom: 18px; }
+.info-grid { display: grid; grid-template-columns: 130px 1fr; row-gap: 6px; column-gap: 10px; margin: 0; }
+.info-grid dt { color: #6b7280; }
+.info-grid dd { margin: 0; font-weight: 600; }
+.amount-positive { color: #15803d; }
+.amount-negative { color: #b91c1c; }
+.total-row td { background: #f9fafb; font-weight: 700; }
+.grand-total-row td { background: #095349; color: #fff; font-size: 14px; font-weight: 700; }
+
+@media print {
+    body { background: #fff; }
+    .no-print { display: none !important; }
+    .screen-actions,
+    .screen-settings { display: none !important; }
+    .print-page { min-height: auto; margin: 0; padding: 0; border: 0; }
+    .bulk-barcode-header { display: none; }
+}
+
+@media (max-width: 720px) {
+    .screen-settings__grid { grid-template-columns: 1fr; }
+    .screen-actions__summary { width: 100%; }
+}
