@@ -1,58 +1,78 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+<p align="center"><strong>PUSKOSIPA PHS</strong></p>
+<p align="center">Sistem Inventaris &amp; Kepegawaian &mdash; aplikasi internal untuk mengelola unit kerja, karyawan, absensi, inventaris barang, dan penggajian dalam satu tempat.</p>
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## Tentang Aplikasi
 
-## About Laravel
+PUSKOSIPA PHS adalah aplikasi web berbasis Laravel untuk mendukung operasional kepegawaian dan inventaris sebuah instansi: data unit kerja & karyawan, rekap absensi bulanan, inventaris barang per unit kerja, penggajian, hingga laporan siap cetak/export. Antarmuka sepenuhnya berbahasa Indonesia dan hak akses diatur per role (Admin/Staff) memakai [spatie/laravel-permission](https://spatie.be/docs/laravel-permission).
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+### Fitur Utama
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- **Kepegawaian** — Unit Kerja, data Karyawan (dengan dokumen & foto pendukung), dan Absensi harian lewat kalender bulanan.
+- **Inventaris** — Pendataan barang per unit kerja, riwayat kondisi, foto/dokumen pendukung, serta cetak barcode & QR code.
+- **Penggajian** — Komponen gaji (tunjangan/potongan) dan transaksi gaji bulanan per karyawan, dihitung otomatis dari gaji pokok & kehadiran.
+- **Laporan** — Laporan Inventaris, Absensi, Kepegawaian, dan Penggajian; masing-masing bisa dilihat di layar, dicetak, atau diexport ke Excel.
+- **Administrasi** — Manajemen Pengguna, Role & Hak Akses, dan Pengaturan Aplikasi (format kode barang otomatis, dsb).
+- Tabel data konsisten di seluruh halaman: pencarian & filter, bulk action, dan paginasi dengan jumlah baris per halaman yang bisa diatur (10/25/50/100).
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Teknologi
 
-## Learning Laravel
+- [Laravel 13](https://laravel.com) (PHP 8.4) dengan pola **Controller → Service → Repository** dan Form Request untuk validasi.
+- Blade + komponen Blade reusable, [Bootstrap 5](https://getbootstrap.com), [Vite](https://vite.dev).
+- SQLite secara default untuk pengembangan lokal (bisa diganti ke MySQL/MariaDB lewat `.env`).
+- [Pest](https://pestphp.com) untuk automated testing (Feature test per modul).
+- [maatwebsite/excel](https://docs.laravel-excel.com), [endroid/qr-code](https://github.com/endroid/qr-code), dan [picqer/php-barcode-generator](https://github.com/picqer/php-barcode-generator) untuk export laporan serta cetak barcode/QR barang.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Instalasi
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+Prasyarat: PHP 8.4+, Composer, Node.js 18+, dan npm.
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone https://github.com/ioncrisa2/inventaris.git
+cd inventaris
+composer setup
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+`composer setup` akan menyalin `.env.example` ke `.env`, generate `APP_KEY`, menjalankan migrasi, lalu install & build asset frontend. Untuk mengisi data contoh (unit kerja, karyawan, absensi, barang, penggajian, dan akun demo), jalankan:
 
-## Contributing
+```bash
+php artisan db:seed
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Menjalankan Aplikasi
 
-## Code of Conduct
+```bash
+composer dev
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Perintah di atas menjalankan `php artisan serve`, worker queue, dan Vite dev server sekaligus. Alternatif manual:
 
-## Security Vulnerabilities
+```bash
+php artisan serve
+npm run dev
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### Testing
 
-## License
+```bash
+composer test
+# atau
+php artisan test
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Akun Demo
+
+Setelah `php artisan db:seed`, gunakan salah satu akun berikut (password default: `password`, diatur lewat `DEMO_USER_PASSWORD` di `.env`):
+
+| Email                    | Role  | Unit Kerja |
+| ------------------------ | ----- | ---------- |
+| admin@example.com        | Admin | IT         |
+| it@example.com           | Staff | IT         |
+| staff@example.com        | Staff | Keuangan   |
+| sdm@example.com          | Staff | SDM        |
+| operasional@example.com  | Staff | Operasional|
+| umum@example.com         | Staff | Bag. Umum  |
+| logistik@example.com     | Staff | Logistik   |
+
+## Lisensi
+
+Proyek ini dibangun di atas framework [Laravel](https://laravel.com), yang open-source di bawah [lisensi MIT](https://opensource.org/licenses/MIT).
