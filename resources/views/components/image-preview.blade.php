@@ -6,7 +6,7 @@
 ])
 
 <div {{ $attributes->class(['image-preview', "image-preview--{$size}"]) }}>
-    @if($src)
+    @if ($src)
         <img src="{{ $src }}" alt="{{ $alt }}">
     @else
         <div class="image-preview__empty" role="img" aria-label="{{ $alt }} belum tersedia">

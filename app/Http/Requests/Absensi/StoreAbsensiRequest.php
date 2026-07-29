@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Absensi;
 
 use App\Models\Absensi;
+use App\Services\HariOperasionalService;
 use Carbon\Carbon;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
@@ -10,6 +11,11 @@ use Illuminate\Validation\Rule;
 
 class StoreAbsensiRequest extends FormRequest
 {
+    public function __construct(private HariOperasionalService $hariOperasionalService)
+    {
+        parent::__construct();
+    }
+
     public function authorize(): bool
     {
         return $this->user()->can('absensi.create');
@@ -25,7 +31,8 @@ class StoreAbsensiRequest extends FormRequest
     }
 
     /**
-     * Hari Minggu hanya menerima status non-hari-kerja yang relevan.
+     * Hari libur (Minggu atau libur nasional) hanya menerima status
+     * non-hari-kerja yang relevan.
      */
     public function after(): array
     {
@@ -36,10 +43,10 @@ class StoreAbsensiRequest extends FormRequest
                 }
 
                 $tanggalAbsensi = Carbon::parse($this->input('tanggal'));
-                $statusDiizinkanDiHariLibur = in_array($this->input('status'), Absensi::SUNDAY_ALLOWED_STATUSES, true);
+                $statusDiizinkanDiHariLibur = in_array($this->input('status'), Absensi::LIBUR_ALLOWED_STATUSES, true);
 
-                if ($tanggalAbsensi->isSunday() && ! $statusDiizinkanDiHariLibur) {
-                    $validator->errors()->add('absensi', 'Hari Minggu hanya dapat dicatat dengan status Izin, Sakit, atau Dinas Luar Kota.');
+                if ($this->hariOperasionalService->isLiburPada($tanggalAbsensi) && ! $statusDiizinkanDiHariLibur) {
+                    $validator->errors()->add('absensi', 'Hari libur (Minggu/libur nasional) hanya dapat dicatat dengan status Izin, Sakit, atau Dinas Luar Kota.');
                 }
             },
         ];

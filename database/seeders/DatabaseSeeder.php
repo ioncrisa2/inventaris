@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
                 PermissionSeeder::class,
                 UnitKerjaSeeder::class,
                 PengaturanSeeder::class,
+                HariLiburSeeder::class,
                 UserSeeder::class,
                 KaryawanSeeder::class,
                 AbsensiSeeder::class,

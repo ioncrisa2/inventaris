@@ -116,6 +116,31 @@ test('master data update does not change condition history', function () {
     expect(RiwayatKondisiBarang::where('barang_id', $barang->id)->count())->toBe(1);
 });
 
+test('barang detail page shows the fiscal depreciation schedule', function () {
+    $barang = Barang::create([
+        'kode_barang' => 'INV-DEP',
+        'nama_barang' => 'Laptop Penyusutan',
+        'kategori' => 'Bukan Bangunan - Kelompok 1',
+        'unit_kerja_id' => $this->unitKerja->id,
+        'tanggal_perolehan' => '2020-01-15',
+        'harga_perolehan' => 4800000,
+    ]);
+
+    // Kelompok 1 = 4 tahun (48 bulan), Rp4.800.000 / 48 = Rp100.000/bulan.
+    // Tahun 2020 (mulai Januari): 12 bulan x Rp100.000 = Rp1.200.000.
+    // Tahun 2023 (tahun terakhir): sisa nilai buku dihabiskan, nilai buku akhir jadi nol.
+    $this->get(route('barang.show', $barang))
+        ->assertOk()
+        ->assertSee('Rincian Penyusutan')
+        ->assertSee('Garis Lurus')
+        ->assertSee('4 tahun')
+        ->assertViewHas('jadwalPenyusutan', function ($jadwal) {
+            return array_keys($jadwal) === [2020, 2021, 2022, 2023]
+                && $jadwal[2020]['penyusutan_tahun_ini'] === '1200000.00'
+                && $jadwal[2023]['nilai_buku_akhir_tahun'] === '0.00';
+        });
+});
+
 test('condition inspections are appended even when the status is unchanged', function () {
     $barang = Barang::create([
         'kode_barang' => 'INV-001',

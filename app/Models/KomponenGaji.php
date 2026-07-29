@@ -9,7 +9,7 @@ class KomponenGaji extends Model
     public const METODE_PERHITUNGAN = [
         'nominal_tetap' => 'Nominal Tetap',
         'persentase' => 'Persentase',
-        'per_kehadiran' => 'Per Kehadiran',
+        'per_hari' => 'Per Hari (Range Tanggal)',
     ];
 
     protected $table = 'komponen_gaji';

@@ -6,10 +6,12 @@ use App\Exports\AbsensiExport;
 use App\Exports\InventarisExport;
 use App\Exports\KepegawaianExport;
 use App\Exports\PenggajianExport;
+use App\Exports\PenyusutanExport;
 use App\Http\Requests\Laporan\AbsensiLaporanRequest;
 use App\Http\Requests\Laporan\InventarisLaporanRequest;
 use App\Http\Requests\Laporan\KepegawaianLaporanRequest;
 use App\Http\Requests\Laporan\PenggajianLaporanRequest;
+use App\Http\Requests\Laporan\PenyusutanLaporanRequest;
 use App\Services\LaporanService;
 use App\Support\PerPage;
 use Maatwebsite\Excel\Facades\Excel;
@@ -112,5 +114,27 @@ class LaporanController extends Controller
         $transaksiGaji = $this->laporanService->penggajianExportRows($request->validated(), $request->bulan(), $request->tahun());
 
         return Excel::download(new PenggajianExport($transaksiGaji), 'laporan-penggajian.xlsx');
+    }
+
+    public function penyusutan(PenyusutanLaporanRequest $request)
+    {
+        $tahun = $request->tahun();
+
+        return view('laporan.penyusutan', [
+            ...$this->laporanService->penyusutan($request->validated(), $tahun, PerPage::resolve($request)),
+            'tahun' => $tahun,
+        ]);
+    }
+
+    public function cetakPenyusutan(PenyusutanLaporanRequest $request)
+    {
+        return view('laporan.cetak.penyusutan', $this->laporanService->penyusutanCetak($request->validated(), $request->tahun()));
+    }
+
+    public function exportPenyusutan(PenyusutanLaporanRequest $request)
+    {
+        $rows = $this->laporanService->penyusutanExportRows($request->validated(), $request->tahun());
+
+        return Excel::download(new PenyusutanExport($rows), 'laporan-penyusutan.xlsx');
     }
 }

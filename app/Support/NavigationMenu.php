@@ -26,20 +26,15 @@ class NavigationMenu
             ],
             [
                 'type' => 'group',
-                'key' => 'kepegawaian',
-                'label' => 'Kepegawaian',
+                'key' => 'sdm-kehadiran',
+                'label' => 'SDM & Kehadiran',
                 'items' => [
                     ['label' => 'Unit Kerja', 'icon' => 'bi-building', 'route' => 'unit-kerja.index', 'active_routes' => ['unit-kerja.*'], 'permission' => 'unit-kerja.view'],
                     ['label' => 'Karyawan', 'icon' => 'bi-people', 'route' => 'karyawan.index', 'active_routes' => ['karyawan.*'], 'permission' => 'karyawan.view'],
                     ['label' => 'Absensi', 'icon' => 'bi-calendar3', 'route' => 'absensi.index', 'active_routes' => ['absensi.*'], 'permission' => 'absensi.view'],
-                ],
-            ],
-            [
-                'type' => 'group',
-                'key' => 'inventaris',
-                'label' => 'Inventaris',
-                'items' => [
-                    ['label' => 'Inventaris Barang', 'icon' => 'bi-box-seam', 'route' => 'barang.index', 'active_routes' => ['barang.*'], 'permission' => 'barang.view'],
+                    ['label' => 'Hari Libur', 'icon' => 'bi-calendar-x', 'route' => 'hari-libur.index', 'active_routes' => ['hari-libur.*'], 'permission' => 'hari-libur.view'],
+                    ['label' => 'Laporan Kepegawaian', 'icon' => 'bi-bar-chart-line', 'route' => 'laporan.kepegawaian', 'active_routes' => ['laporan.kepegawaian'], 'permission' => 'laporan.kepegawaian.view'],
+                    ['label' => 'Laporan Absensi', 'icon' => 'bi-calendar-check', 'route' => 'laporan.absensi', 'active_routes' => ['laporan.absensi'], 'permission' => 'laporan.absensi.view'],
                 ],
             ],
             [
@@ -49,17 +44,17 @@ class NavigationMenu
                 'items' => [
                     ['label' => 'Komponen Gaji', 'icon' => 'bi-sliders', 'route' => 'komponen-gaji.index', 'active_routes' => ['komponen-gaji.*'], 'permission' => 'komponen-gaji.view'],
                     ['label' => 'Transaksi Gaji', 'icon' => 'bi-cash-stack', 'route' => 'transaksi-gaji.index', 'active_routes' => ['transaksi-gaji.*'], 'permission' => 'transaksi-gaji.view'],
+                    ['label' => 'Laporan Penggajian', 'icon' => 'bi-cash-coin', 'route' => 'laporan.penggajian', 'active_routes' => ['laporan.penggajian'], 'permission' => 'laporan.penggajian.view'],
                 ],
             ],
             [
                 'type' => 'group',
-                'key' => 'laporan',
-                'label' => 'Laporan',
+                'key' => 'manajemen-aset',
+                'label' => 'Manajemen Aset',
                 'items' => [
+                    ['label' => 'Inventaris Barang', 'icon' => 'bi-box-seam', 'route' => 'barang.index', 'active_routes' => ['barang.*'], 'permission' => 'barang.view'],
+                    ['label' => 'Penyusutan Aset', 'icon' => 'bi-graph-down', 'route' => 'laporan.penyusutan', 'active_routes' => ['laporan.penyusutan'], 'permission' => 'laporan.penyusutan.view'],
                     ['label' => 'Laporan Inventaris', 'icon' => 'bi-clipboard-data', 'route' => 'laporan.inventaris', 'active_routes' => ['laporan.inventaris'], 'permission' => 'laporan.inventaris.view'],
-                    ['label' => 'Laporan Absensi', 'icon' => 'bi-calendar-check', 'route' => 'laporan.absensi', 'active_routes' => ['laporan.absensi'], 'permission' => 'laporan.absensi.view'],
-                    ['label' => 'Laporan Kepegawaian', 'icon' => 'bi-bar-chart-line', 'route' => 'laporan.kepegawaian', 'active_routes' => ['laporan.kepegawaian'], 'permission' => 'laporan.kepegawaian.view'],
-                    ['label' => 'Laporan Penggajian', 'icon' => 'bi-cash-coin', 'route' => 'laporan.penggajian', 'active_routes' => ['laporan.penggajian'], 'permission' => 'laporan.penggajian.view'],
                 ],
             ],
             [

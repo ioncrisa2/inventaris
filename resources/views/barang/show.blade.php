@@ -58,7 +58,7 @@ $kondisi = $barang->kondisiTerakhir?->kondisi ?? 'Belum diperiksa';
             </div>
 
             <div class="col-lg-7">
-                <x-data-table-card title="Riwayat Kondisi" subtitle="Catatan pemeriksaan dan biaya perbaikan." class="h-100">
+                <x-data-table title="Riwayat Kondisi" subtitle="Catatan pemeriksaan dan biaya perbaikan." class="h-100">
                     <x-slot:toolbar>
                         <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="modal" data-bs-target="#modalCatatKondisi">
                             <i class="bi bi-plus-circle"></i>
@@ -89,7 +89,42 @@ $kondisi = $barang->kondisiTerakhir?->kondisi ?? 'Belum diperiksa';
                                 @endforelse
                             </tbody>
                         </table>
-                </x-data-table-card>
+                </x-data-table>
+            </div>
+        </div>
+
+        <div class="row g-4 mt-0">
+            <div class="col-12">
+                <x-data-table
+                    title="Rincian Penyusutan"
+                    subtitle="Metode Garis Lurus, masa manfaat {{ \App\Support\PenyusutanCalculator::masaManfaatTahun($barang->kategori) }} tahun ({{ $barang->kategori }}) — dasar pelaporan SPT."
+                >
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Tahun</th>
+                                <th class="text-end">Penyusutan Tahun Berjalan</th>
+                                <th class="text-end">Akumulasi Penyusutan</th>
+                                <th class="text-end">Nilai Buku Akhir Tahun</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($jadwalPenyusutan as $tahun => $r)
+                            <tr class="{{ $tahun === now()->year ? 'table-active' : '' }}">
+                                <td>
+                                    <strong>{{ $tahun }}</strong>
+                                    @if($tahun === now()->year)
+                                        <x-badge color="bg-primary" class="ms-1">Berjalan</x-badge>
+                                    @endif
+                                </td>
+                                <td class="text-end">Rp {{ number_format($r['penyusutan_tahun_ini'], 0, ',', '.') }}</td>
+                                <td class="text-end">Rp {{ number_format($r['akumulasi_akhir_tahun'], 0, ',', '.') }}</td>
+                                <td class="text-end">Rp {{ number_format($r['nilai_buku_akhir_tahun'], 0, ',', '.') }}</td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </x-data-table>
             </div>
         </div>
 
@@ -132,55 +167,52 @@ $kondisi = $barang->kondisiTerakhir?->kondisi ?? 'Belum diperiksa';
 
         <div class="row g-4 mt-0">
             <div class="col-12">
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center gap-3">
-                        <span>Dokumen Pendukung</span>
+                <x-data-table title="Dokumen Pendukung">
+                    <x-slot:toolbar>
                         <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="modal" data-bs-target="#modalUploadDokumen">
                             <i class="bi bi-plus-circle"></i>
                             Unggah Dokumen
                         </button>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Jenis</th>
-                                    <th>Nama File</th>
-                                    <th>Tanggal Unggah</th>
-                                    <th class="text-nowrap table-col-width-120">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($barang->dokumen as $dokumen)
-                                <tr>
-                                    <td>{{ $dokumen->jenis_dokumen }}</td>
-                                    <td>{{ $dokumen->nama_asli }}</td>
-                                    <td>{{ $dokumen->created_at->translatedFormat('d F Y') }}</td>
-                                    <td class="text-nowrap">
-                                        <div class="table-actions">
-                                            <a
-                                                class="btn btn-sm btn-action btn-action-neutral"
-                                                href="{{ route('barang.dokumen.download', [$barang, $dokumen]) }}"
-                                                target="_blank"
-                                                aria-label="Lihat {{ $dokumen->nama_asli }}"
-                                                title="Lihat/Unduh">
-                                                <i class="bi bi-eye"></i>
-                                            </a>
-                                            <x-delete-button
-                                                :url="route('barang.dokumen.destroy', [$barang, $dokumen])"
-                                                :message="'Yakin ingin menghapus dokumen &quot;'.$dokumen->nama_asli.'&quot;?'"
-                                                :label="'Hapus '.$dokumen->nama_asli"
-                                            />
-                                        </div>
-                                    </td>
-                                </tr>
-                                @empty
-                                <x-empty-row :colspan="4">Belum ada dokumen.</x-empty-row>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                    </x-slot:toolbar>
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Jenis</th>
+                                <th>Nama File</th>
+                                <th>Tanggal Unggah</th>
+                                <th class="text-nowrap table-col-width-120">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($barang->dokumen as $dokumen)
+                            <tr>
+                                <td>{{ $dokumen->jenis_dokumen }}</td>
+                                <td>{{ $dokumen->nama_asli }}</td>
+                                <td>{{ $dokumen->created_at->translatedFormat('d F Y') }}</td>
+                                <td class="text-nowrap">
+                                    <div class="table-actions">
+                                        <a
+                                            class="btn btn-sm btn-action btn-action-neutral"
+                                            href="{{ route('barang.dokumen.download', [$barang, $dokumen]) }}"
+                                            target="_blank"
+                                            aria-label="Lihat {{ $dokumen->nama_asli }}"
+                                            title="Lihat/Unduh">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <x-delete-button
+                                            :url="route('barang.dokumen.destroy', [$barang, $dokumen])"
+                                            :message="'Yakin ingin menghapus dokumen &quot;'.$dokumen->nama_asli.'&quot;?'"
+                                            :label="'Hapus '.$dokumen->nama_asli"
+                                        />
+                                    </div>
+                                </td>
+                            </tr>
+                            @empty
+                            <x-empty-row :colspan="4">Belum ada dokumen.</x-empty-row>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </x-data-table>
             </div>
         </div>
 

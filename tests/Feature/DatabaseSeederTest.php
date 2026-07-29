@@ -29,7 +29,7 @@ test('database seeder creates a complete usable demo dataset', function () {
     $this->seed(DatabaseSeeder::class);
 
     expect(SeederDataset::counts())->toBe([
-        'permissions' => 43,
+        'permissions' => 48,
         'roles' => 2,
         'users' => 7,
         'units' => 6,
@@ -43,7 +43,8 @@ test('database seeder creates a complete usable demo dataset', function () {
         'salary_components' => 7,
         'payrolls' => 39,
         'payroll_details' => 273,
-        'settings' => 2,
+        'settings' => 3,
+        'national_holidays' => 3,
     ]);
 
     $admin = User::where('email', 'admin@example.com')->firstOrFail();
@@ -51,8 +52,8 @@ test('database seeder creates a complete usable demo dataset', function () {
     expect(Hash::check((string) config('demo.user_password'), $admin->password))->toBeTrue()
         ->and($admin->hasRole('Admin'))->toBeTrue()
         ->and($staff->hasRole('Staff'))->toBeTrue()
-        ->and($admin->getAllPermissions())->toHaveCount(43)
-        ->and($staff->getAllPermissions())->toHaveCount(22)
+        ->and($admin->getAllPermissions())->toHaveCount(48)
+        ->and($staff->getAllPermissions())->toHaveCount(24)
         ->and(UnitKerja::whereNull('kode')->count())->toBe(0)
         ->and(Karyawan::whereNotNull('atasan_langsung_id')->count())->toBe(9)
         ->and(Karyawan::whereNotNull('foto_karyawan')->count())->toBe(12)
@@ -60,9 +61,9 @@ test('database seeder creates a complete usable demo dataset', function () {
         ->and(Absensi::where('status', 'Cuti')->exists())->toBeTrue()
         ->and(Absensi::where('status', 'Dinas Luar Kota')->exists())->toBeTrue();
 
-    expect(TransaksiGajiDetail::where('metode_perhitungan_snapshot', 'per_kehadiran')->count())->toBe(39)
-        ->and(TransaksiGajiDetail::where('metode_perhitungan_snapshot', 'per_kehadiran')->whereNull('jumlah_hadir_snapshot')->count())->toBe(0)
-        ->and(TransaksiGajiDetail::where('metode_perhitungan_snapshot', 'per_kehadiran')->where('nominal_hasil', '>', 0)->count())->toBe(39);
+    expect(TransaksiGajiDetail::where('metode_perhitungan_snapshot', 'per_hari')->count())->toBe(39)
+        ->and(TransaksiGajiDetail::where('metode_perhitungan_snapshot', 'per_hari')->whereNull('jumlah_hari_snapshot')->count())->toBe(0)
+        ->and(TransaksiGajiDetail::where('metode_perhitungan_snapshot', 'per_hari')->where('nominal_hasil', '>', 0)->count())->toBe(39);
 
     if (DB::getDriverName() === 'sqlite') {
         expect(DB::select('PRAGMA foreign_key_check'))->toBe([]);

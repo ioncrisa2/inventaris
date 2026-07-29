@@ -77,6 +77,24 @@ class LaporanRepository
     }
 
     /**
+     * @param  array{unit_kerja_id?: ?string, kategori?: ?string}  $filters
+     */
+    public function penyusutanQuery(array $filters, int $tahun): Builder
+    {
+        $akhirTahun = CarbonImmutable::create($tahun, 12, 31)->toDateString();
+
+        return Barang::query()
+            ->with('unitKerja:id,nama_unit')
+            ->where('tanggal_perolehan', '<=', $akhirTahun)
+            ->when($filters['unit_kerja_id'] ?? null, function ($query, $unitKerjaId) {
+                $query->where('unit_kerja_id', $unitKerjaId);
+            })
+            ->when($filters['kategori'] ?? null, function ($query, $kategori) {
+                $query->where('kategori', $kategori);
+            });
+    }
+
+    /**
      * @param  array{karyawan_id?: ?string}  $filters
      */
     public function absensiQuery(array $filters, int $bulan, int $tahun): Builder

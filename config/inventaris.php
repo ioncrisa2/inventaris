@@ -69,6 +69,26 @@ return [
         'Bangunan - Bukan Permanen' => 'Bangunan NP.',
     ],
     /**
+     * Masa manfaat fiskal (tahun) per golongan, sesuai UU PPh Pasal 11 &
+     * PMK 96/PMK.03/2009 — bukan nilai bebas yang bisa diubah admin, karena
+     * ini dipakai sebagai dasar perhitungan penyusutan untuk pelaporan SPT.
+     */
+    'masa_manfaat_penyusutan' => [
+        'Bukan Bangunan - Kelompok 1' => 4,
+        'Bukan Bangunan - Kelompok 2' => 8,
+        'Bukan Bangunan - Kelompok 3' => 16,
+        'Bukan Bangunan - Kelompok 4' => 20,
+        'Bangunan - Permanen' => 20,
+        'Bangunan - Bukan Permanen' => 10,
+    ],
+    /**
+     * Metode penyusutan yang dipakai untuk semua golongan saat ini (garis
+     * lurus). Bangunan menurut UU PPh memang wajib garis lurus; golongan
+     * Bukan Bangunan sebenarnya boleh saldo menurun, tapi kebijakan
+     * perusahaan saat ini menyamakan semuanya ke garis lurus.
+     */
+    'metode_penyusutan_default' => 'garis_lurus',
+    /**
      * Jenis dokumen pendukung barang (nota pembelian, kartu garansi, dst.),
      * dipakai oleh repeater upload dokumen di form barang.
      */

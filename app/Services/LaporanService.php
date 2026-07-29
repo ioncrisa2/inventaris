@@ -2,11 +2,14 @@
 
 namespace App\Services;
 
+use App\Models\Barang;
 use App\Repositories\KaryawanRepository;
 use App\Repositories\LaporanRepository;
 use App\Repositories\UnitKerjaRepository;
+use App\Support\PenyusutanCalculator;
 use App\Support\PerPage;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 
 class LaporanService
 {
@@ -164,6 +167,80 @@ class LaporanService
     {
         return $this->laporanRepository->penggajianQuery($filters, $bulan, $tahun)
             ->orderBy('karyawan_id');
+    }
+
+    public function penyusutan(array $filters, int $tahun, int $perPage = PerPage::DEFAULT): array
+    {
+        $query = $this->laporanRepository->penyusutanQuery($filters, $tahun);
+        $barangs = (clone $query)->latest()->paginate($perPage)->withQueryString();
+        $rincian = $this->rincianPenyusutan($barangs->getCollection(), $tahun);
+
+        return [
+            'barangs' => $barangs,
+            'rincian' => $rincian,
+            'unitKerjas' => $this->unitKerjaRepository->orderedList(),
+            ...$this->ringkasanPenyusutan($barangs->getCollection(), $rincian),
+        ];
+    }
+
+    public function penyusutanCetak(array $filters, int $tahun): array
+    {
+        $query = $this->laporanRepository->penyusutanQuery($filters, $tahun);
+        $barangs = (clone $query)->orderBy('tanggal_perolehan')->orderBy('kode_barang')->get();
+        $rincian = $this->rincianPenyusutan($barangs, $tahun);
+
+        return [
+            'barangs' => $barangs,
+            'rincian' => $rincian,
+            'tahun' => $tahun,
+            'selectedUnitKerja' => $this->selectedUnitKerja($filters['unit_kerja_id'] ?? null),
+            ...$this->ringkasanPenyusutan($barangs, $rincian),
+        ];
+    }
+
+    /**
+     * @return Collection<int, array{barang: Barang, metode: string, masa_manfaat_tahun: int, bulan_mulai: \Illuminate\Support\Carbon, bulan_selesai: \Illuminate\Support\Carbon, akumulasi_awal_tahun: string, penyusutan_tahun_ini: string, akumulasi_akhir_tahun: string, nilai_buku_akhir_tahun: string}>
+     */
+    public function penyusutanExportRows(array $filters, int $tahun): Collection
+    {
+        $barangs = $this->laporanRepository->penyusutanQuery($filters, $tahun)
+            ->orderBy('tanggal_perolehan')
+            ->orderBy('kode_barang')
+            ->get();
+
+        $rincian = $this->rincianPenyusutan($barangs, $tahun);
+
+        return $barangs->map(fn (Barang $barang) => ['barang' => $barang, ...$rincian->get($barang->id)]);
+    }
+
+    /**
+     * @return Collection<int, array> Rincian penyusutan tahun $tahun, keyed per barang id.
+     */
+    private function rincianPenyusutan(Collection $barangs, int $tahun): Collection
+    {
+        return $barangs->mapWithKeys(fn (Barang $barang) => [
+            $barang->id => PenyusutanCalculator::hitungTahunan(
+                $barang->kategori,
+                (string) $barang->harga_perolehan,
+                $barang->tanggal_perolehan,
+                $tahun,
+            ),
+        ]);
+    }
+
+    /**
+     * @return array{totalAset: int, totalHargaPerolehan: string, totalAkumulasiAwalTahun: string, totalPenyusutanTahunIni: string, totalAkumulasiPenyusutan: string, totalNilaiBuku: string}
+     */
+    private function ringkasanPenyusutan(Collection $barangs, Collection $rincian): array
+    {
+        return [
+            'totalAset' => $barangs->count(),
+            'totalHargaPerolehan' => (string) $barangs->reduce(fn ($total, Barang $barang) => bcadd($total, (string) $barang->harga_perolehan, 2), '0.00'),
+            'totalAkumulasiAwalTahun' => $rincian->reduce(fn ($total, $r) => bcadd($total, $r['akumulasi_awal_tahun'], 2), '0.00'),
+            'totalPenyusutanTahunIni' => $rincian->reduce(fn ($total, $r) => bcadd($total, $r['penyusutan_tahun_ini'], 2), '0.00'),
+            'totalAkumulasiPenyusutan' => $rincian->reduce(fn ($total, $r) => bcadd($total, $r['akumulasi_akhir_tahun'], 2), '0.00'),
+            'totalNilaiBuku' => $rincian->reduce(fn ($total, $r) => bcadd($total, $r['nilai_buku_akhir_tahun'], 2), '0.00'),
+        ];
     }
 
     private function selectedUnitKerja(?string $unitKerjaId)

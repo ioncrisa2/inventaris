@@ -22,7 +22,7 @@
 
         <x-flash-alert />
 
-        <x-data-table-card :paginator="$unitKerja">
+        <x-data-table :paginator="$unitKerja">
             <x-slot:toolbar>
                 <x-filter-form :action="route('unit-kerja.index')" :reset-route="route('unit-kerja.index')" :has-filters="request()->hasAny(['search'])" submit-label="Cari"
                     submit-icon="bi-search">
@@ -100,7 +100,7 @@
                     @endforelse
                 </tbody>
             </table>
-        </x-data-table-card>
+        </x-data-table>
     </x-app-page>
 
     <x-modal-form id="createUnitKerjaModal" title="Tambah Unit Kerja" :action="route('unit-kerja.store')"

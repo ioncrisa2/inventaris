@@ -5,13 +5,13 @@
 ])
 
 <section {{ $attributes->class(['card section-card']) }}>
-    @if($title || isset($actions))
+    @if ($title || isset($actions))
         <div class="card-header section-card__header">
             <div>
-                @if($title)
+                @if ($title)
                     <h2>{{ $title }}</h2>
                 @endif
-                @if($subtitle)
+                @if ($subtitle)
                     <p>{{ $subtitle }}</p>
                 @endif
             </div>
@@ -21,7 +21,7 @@
         </div>
     @endif
 
-    @if($flush)
+    @if ($flush)
         {{ $slot }}
     @else
         <div class="card-body">{{ $slot }}</div>

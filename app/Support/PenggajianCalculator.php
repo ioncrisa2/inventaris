@@ -10,13 +10,15 @@ class PenggajianCalculator
      * - nominal_tetap: nilai adalah nominal Rupiah, dipakai apa adanya.
      * - persentase: nilai adalah angka persentase (mis. 5 = 5%), dihitung
      *   dari $gajiPokok.
-     * - per_kehadiran: nilai adalah nominal Rupiah per hari hadir, dikalikan
-     *   $jumlahHadir (jumlah hari berstatus Hadir pada bulan/tahun transaksi).
+     * - per_hari: nilai adalah nominal Rupiah per hari, dikalikan
+     *   $jumlahHari (jumlah hari operasional pada rentang tanggal yang
+     *   diinput manual saat transaksi dibuat — hari libur sesuai setting
+     *   Hari Operasional tidak dihitung, lihat HariOperasionalService).
      *
      * Seluruh operasi pakai bcmath (bukan float) supaya perhitungan uang
      * tidak kena masalah presisi floating-point.
      */
-    public static function hitungNominal(string $metodePerhitungan, string $nilai, ?string $gajiPokok = null, ?int $jumlahHadir = null): string
+    public static function hitungNominal(string $metodePerhitungan, string $nilai, ?string $gajiPokok = null, ?int $jumlahHari = null): string
     {
         if ($metodePerhitungan === 'persentase') {
             $dasar = $gajiPokok ?? '0';
@@ -25,8 +27,8 @@ class PenggajianCalculator
             return self::round2($hasil);
         }
 
-        if ($metodePerhitungan === 'per_kehadiran') {
-            $hasil = bcmul($nilai, (string) ($jumlahHadir ?? 0), 10);
+        if ($metodePerhitungan === 'per_hari') {
+            $hasil = bcmul($nilai, (string) ($jumlahHari ?? 0), 10);
 
             return self::round2($hasil);
         }

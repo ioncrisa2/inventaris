@@ -7,6 +7,39 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
+test('admin can view and update hari operasional', function () {
+    $this->actingAs(adminUser());
+
+    $this->get(route('pengaturan.edit'))
+        ->assertOk()
+        ->assertSee('Hari Operasional');
+
+    $this->put(route('pengaturan.hari-operasional.update'), [
+        'hari_operasional' => [1, 2, 3, 4, 5],
+    ])->assertRedirect(route('pengaturan.edit'));
+
+    $this->assertDatabaseHas('pengaturan', [
+        'key' => 'hari_operasional',
+        'value' => '[1,2,3,4,5]',
+    ]);
+});
+
+test('hari operasional update requires at least one day', function () {
+    $this->actingAs(adminUser());
+
+    $this->put(route('pengaturan.hari-operasional.update'), [
+        'hari_operasional' => [],
+    ])->assertSessionHasErrors('hari_operasional');
+});
+
+test('staff cannot update hari operasional', function () {
+    $this->actingAs(staffUser());
+
+    $this->put(route('pengaturan.hari-operasional.update'), [
+        'hari_operasional' => [1, 2, 3, 4, 5],
+    ])->assertForbidden();
+});
+
 test('admin can view and update pengaturan', function () {
     $this->actingAs(adminUser());
 

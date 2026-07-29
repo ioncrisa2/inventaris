@@ -12,12 +12,12 @@ const perbaruiTampilanNilaiKomponen = (mode) => {
         suffix.classList.remove('d-none');
         input.max = '100';
         help.textContent = 'Persentase dihitung dari gaji pokok karyawan. Isi angka 0-100, contoh: 5 berarti 5%.';
-    } else if (metode.value === 'per_kehadiran') {
+    } else if (metode.value === 'per_hari') {
         prefix.classList.remove('d-none');
         suffix.textContent = '/hari';
         suffix.classList.remove('d-none');
         input.removeAttribute('max');
-        help.textContent = 'Nominal Rupiah per hari hadir, dikalikan otomatis dengan jumlah hari berstatus Hadir pada bulan transaksi.';
+        help.textContent = 'Nominal Rupiah per hari, dikalikan dengan jumlah hari pada rentang tanggal yang diinput manual saat membuat transaksi gaji.';
     } else {
         prefix.classList.remove('d-none');
         suffix.classList.add('d-none');

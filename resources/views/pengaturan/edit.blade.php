@@ -31,6 +31,13 @@
                             <small>Pola kode barang baru</small>
                         </span>
                     </a>
+                    <a href="#hari-operasional" class="settings-nav__link">
+                        <i class="bi bi-calendar-week" aria-hidden="true"></i>
+                        <span>
+                            <strong>Hari Operasional</strong>
+                            <small>Dasar hitung uang makan</small>
+                        </span>
+                    </a>
                     @endcan
                 </div>
             </nav>
@@ -205,6 +212,84 @@
                     <x-detail-item label="Template" :value="$formatKodeBarang" emphasis />
                     <x-detail-item label="Jumlah digit urut" :value="$digitNomorUrut.' digit'" />
                     <x-detail-item label="Contoh kode" :value="$contohKodeBarang" emphasis />
+                </x-detail-list>
+                @endcan
+            </x-section-card>
+            @endcan
+
+            @can('pengaturan.view')
+            <x-section-card
+                id="hari-operasional"
+                title="Hari Operasional"
+                subtitle="Tentukan hari kerja yang jadi dasar hitung jumlah hari untuk komponen gaji bermetode &quot;Per Hari (Range Tanggal)&quot;, seperti Tunjangan Uang Makan."
+                class="settings-section"
+            >
+                @can('pengaturan.update')
+                <form method="POST" action="{{ route('pengaturan.hari-operasional.update') }}" id="hariOperasionalForm">
+                    @csrf
+                    @method('PUT')
+
+                    <div class="settings-callout mb-4">
+                        <i class="bi bi-info-circle" aria-hidden="true"></i>
+                        <div>
+                            <strong>Hari yang tidak dicentang dianggap libur</strong>
+                            <p>Hari libur tidak dihitung saat menjumlahkan hari pada rentang tanggal komponen "Per Hari".</p>
+                        </div>
+                    </div>
+
+                    <fieldset class="settings-fieldset">
+                        <legend>Hari kerja</legend>
+                        @error('hari_operasional')
+                            <div class="invalid-feedback d-block mb-2">{{ $message }}</div>
+                        @enderror
+                        <div class="d-flex flex-wrap gap-3">
+                            @foreach(\App\Services\HariOperasionalService::NAMA_HARI as $nomorHari => $namaHari)
+                            <div class="form-check">
+                                <input
+                                    class="form-check-input"
+                                    type="checkbox"
+                                    name="hari_operasional[]"
+                                    value="{{ $nomorHari }}"
+                                    id="hari_operasional_{{ $nomorHari }}"
+                                    @checked(in_array($nomorHari, old('hari_operasional', $hariOperasional ?? [])))
+                                >
+                                <label class="form-check-label" for="hari_operasional_{{ $nomorHari }}">{{ $namaHari }}</label>
+                            </div>
+                            @endforeach
+                        </div>
+                        <div class="form-text mt-2">
+                            Ini cuma pola hari dalam seminggu. Tanggal libur nasional (Idul Fitri, HUT RI, dll) diatur
+                            terpisah di menu
+                            @can('hari-libur.view')
+                                <a href="{{ route('hari-libur.index') }}">Hari Libur</a>.
+                            @else
+                                Hari Libur.
+                            @endcan
+                        </div>
+                    </fieldset>
+
+                    <div class="d-flex flex-wrap justify-content-end gap-2 mt-4 pt-4 border-top">
+                        <a href="{{ route('dashboard') }}" class="btn btn-light">Batal</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save" aria-hidden="true"></i>
+                            Simpan Hari Operasional
+                        </button>
+                    </div>
+                </form>
+                @else
+                <div class="settings-callout">
+                    <i class="bi bi-lock" aria-hidden="true"></i>
+                    <div>
+                        <strong>Akses hanya-baca</strong>
+                        <p>Anda dapat melihat hari operasional, tetapi tidak memiliki izin untuk mengubahnya.</p>
+                    </div>
+                </div>
+                <x-detail-list class="detail-list--single mt-3">
+                    <x-detail-item
+                        label="Hari operasional"
+                        :value="collect($hariOperasional)->map(fn ($hari) => \App\Services\HariOperasionalService::NAMA_HARI[$hari] ?? $hari)->implode(', ')"
+                        emphasis
+                    />
                 </x-detail-list>
                 @endcan
             </x-section-card>

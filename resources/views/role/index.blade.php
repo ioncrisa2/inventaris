@@ -17,7 +17,7 @@
 
         <x-flash-alert />
 
-        <x-data-table-card :paginator="$roles">
+        <x-data-table :paginator="$roles">
                 <table class="table table-hover align-middle mb-0">
                     <thead>
                         <tr>
@@ -60,6 +60,6 @@
                         @endforelse
                     </tbody>
                 </table>
-        </x-data-table-card>
+        </x-data-table>
 </x-app-page>
 @endsection

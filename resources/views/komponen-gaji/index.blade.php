@@ -23,7 +23,7 @@
 
         <x-flash-alert />
 
-        <x-data-table-card :paginator="$komponenGaji">
+        <x-data-table :paginator="$komponenGaji">
             <x-slot:toolbar>
                 <x-filter-form
                     :action="route('komponen-gaji.index')"
@@ -90,14 +90,14 @@
                                 {{ \App\Models\KomponenGaji::METODE_PERHITUNGAN[$data->metode_perhitungan] ?? $data->metode_perhitungan }}
                                 @if($data->metode_perhitungan === 'persentase')
                                     <span class="text-body-secondary small">(dasar: gaji pokok)</span>
-                                @elseif($data->metode_perhitungan === 'per_kehadiran')
-                                    <span class="text-body-secondary small">(dikali hari hadir bulan berjalan)</span>
+                                @elseif($data->metode_perhitungan === 'per_hari')
+                                    <span class="text-body-secondary small">(dikali jumlah hari sesuai rentang tanggal yang diinput saat transaksi dibuat)</span>
                                 @endif
                             </td>
                             <td class="text-end">
                                 @if($data->metode_perhitungan === 'persentase')
                                     {{ rtrim(rtrim($data->nilai_default, '0'), '.') }}%
-                                @elseif($data->metode_perhitungan === 'per_kehadiran')
+                                @elseif($data->metode_perhitungan === 'per_hari')
                                     Rp {{ number_format($data->nilai_default, 0, ',', '.') }} /hari
                                 @else
                                     Rp {{ number_format($data->nilai_default, 0, ',', '.') }}
@@ -134,7 +134,7 @@
                         @endforelse
                     </tbody>
                 </table>
-        </x-data-table-card>
+        </x-data-table>
 </x-app-page>
 
 @foreach(['create' => 'createKomponenGajiModal', 'edit' => 'editKomponenGajiModal'] as $mode => $modalId)
@@ -194,7 +194,7 @@
                             >
                                 <option value="nominal_tetap" @selected(($mode === 'create' ? $createOld('metode_perhitungan', 'nominal_tetap') : $editOld('metode_perhitungan', 'nominal_tetap')) === 'nominal_tetap')>Nominal Tetap</option>
                                 <option value="persentase" @selected(($mode === 'create' ? $createOld('metode_perhitungan', 'nominal_tetap') : $editOld('metode_perhitungan', 'nominal_tetap')) === 'persentase')>Persentase</option>
-                                <option value="per_kehadiran" @selected(($mode === 'create' ? $createOld('metode_perhitungan', 'nominal_tetap') : $editOld('metode_perhitungan', 'nominal_tetap')) === 'per_kehadiran')>Per Kehadiran</option>
+                                <option value="per_hari" @selected(($mode === 'create' ? $createOld('metode_perhitungan', 'nominal_tetap') : $editOld('metode_perhitungan', 'nominal_tetap')) === 'per_hari')>Per Hari (Range Tanggal)</option>
                             </select>
                             @if($mode === 'create' ? $createErr('metode_perhitungan') : $editErr('metode_perhitungan'))
                                 <div class="invalid-feedback d-block">{{ $errors->first('metode_perhitungan') }}</div>

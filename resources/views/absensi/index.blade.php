@@ -6,7 +6,7 @@
 <x-app-page>
     <x-page-header title="Absensi" subtitle="Pilih karyawan untuk melihat dan mengisi kalender absensinya." />
 
-    <x-data-table-card :paginator="$karyawans">
+    <x-data-table :paginator="$karyawans">
         <x-slot:toolbar>
             <x-filter-form
                 :action="route('absensi.index')"
@@ -68,6 +68,6 @@
                 @endforelse
             </tbody>
         </table>
-    </x-data-table-card>
+    </x-data-table>
 </x-app-page>
 @endsection

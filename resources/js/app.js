@@ -6,6 +6,7 @@ import './components/localized-inputs';
 import './components/modals';
 import './pages/absensi';
 import './pages/dashboard';
+import './pages/hari-libur';
 import './pages/komponen-gaji';
 import './pages/pengaturan';
 import './pages/role';

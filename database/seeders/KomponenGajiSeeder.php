@@ -41,7 +41,7 @@ class KomponenGajiSeeder extends Seeder
             [
                 'nama_komponen' => 'Tunjangan Uang Makan',
                 'jenis' => 'Tunjangan',
-                'metode_perhitungan' => 'per_kehadiran',
+                'metode_perhitungan' => 'per_hari',
                 'nilai_default' => 30000,
                 'dasar_persentase' => null,
             ],

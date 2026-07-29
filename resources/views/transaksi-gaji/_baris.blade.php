@@ -26,7 +26,7 @@
         <select name="{{ $namaField }}[metode_perhitungan]" id="{{ $idAwalan }}_metode" class="form-select form-select-sm" data-salary-calculation-method>
             <option value="nominal_tetap" @selected($baris['metode'] === 'nominal_tetap')>Nominal Tetap</option>
             <option value="persentase" @selected($baris['metode'] === 'persentase')>Persentase</option>
-            <option value="per_kehadiran" @selected($baris['metode'] === 'per_kehadiran')>Per Kehadiran</option>
+            <option value="per_hari" @selected($baris['metode'] === 'per_hari')>Per Hari (Range Tanggal)</option>
         </select>
     </td>
     <td>
@@ -43,6 +43,10 @@
             >
             <span class="input-group-text d-none" id="{{ $idAwalan }}_suffix">%</span>
         </div>
+        <div class="salary-date-range mt-2 {{ $baris['metode'] === 'per_hari' ? '' : 'd-none' }}" id="{{ $idAwalan }}_rentang">
+            <x-form.input name="{{ $namaField }}[tanggal_awal]" type="date" label="Dari Tanggal" :value="$baris['tanggal_awal'] ?? null" />
+            <x-form.input name="{{ $namaField }}[tanggal_akhir]" type="date" label="Sampai Tanggal" :value="$baris['tanggal_akhir'] ?? null" />
+        </div>
     </td>
     @else
     <td>
@@ -51,8 +55,12 @@
     <td>
         @if($baris['metode'] === 'persentase')
             {{ rtrim(rtrim($baris['nilai'], '0'), '.') }}%
-        @elseif($baris['metode'] === 'per_kehadiran')
+        @elseif($baris['metode'] === 'per_hari')
             Rp {{ number_format($baris['nilai'], 0, ',', '.') }} /hari
+            <div class="salary-date-range mt-2">
+                <x-form.input name="{{ $namaField }}[tanggal_awal]" type="date" label="Dari Tanggal" :value="$baris['tanggal_awal'] ?? null" required />
+                <x-form.input name="{{ $namaField }}[tanggal_akhir]" type="date" label="Sampai Tanggal" :value="$baris['tanggal_akhir'] ?? null" required />
+            </div>
         @else
             Rp {{ number_format($baris['nilai'], 0, ',', '.') }}
         @endif

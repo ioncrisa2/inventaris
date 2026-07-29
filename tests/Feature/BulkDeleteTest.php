@@ -2,6 +2,7 @@
 
 use App\Models\Absensi;
 use App\Models\Barang;
+use App\Models\HariLibur;
 use App\Models\Karyawan;
 use App\Models\KomponenGaji;
 use App\Models\RiwayatKondisiBarang;
@@ -51,7 +52,6 @@ test('crud index tables expose permission-aware bulk selection', function () {
         ['karyawan.index', 'karyawan.bulk-destroy', 'karyawan'],
         ['unit-kerja.index', 'unit-kerja.bulk-destroy', 'unit-kerja'],
         ['komponen-gaji.index', 'komponen-gaji.bulk-destroy', 'komponen-gaji'],
-        ['transaksi-gaji.index', 'transaksi-gaji.bulk-destroy', 'transaksi-gaji'],
         ['pengguna.index', 'pengguna.bulk-destroy', 'pengguna'],
     ];
 
@@ -62,6 +62,25 @@ test('crud index tables expose permission-aware bulk selection', function () {
             ->assertSee('data-bulk-select-all="'.$group.'"', false)
             ->assertSee('Hapus Terpilih');
     }
+});
+
+test('hari libur tahun detail page exposes permission-aware bulk selection', function () {
+    $this->get(route('hari-libur.tahun', ['tahun' => 2026]))
+        ->assertOk()
+        ->assertSee(route('hari-libur.bulk-destroy'), false)
+        ->assertSee('data-bulk-select-all="hari-libur"', false)
+        ->assertSee('Hapus Terpilih');
+});
+
+test('transaksi gaji karyawan detail page exposes permission-aware bulk selection', function () {
+    $unit = UnitKerja::create(['nama_unit' => 'IT']);
+    $karyawan = bulkTestKaryawan($unit, 'EMP-BULK');
+
+    $this->get(route('transaksi-gaji.karyawan', $karyawan))
+        ->assertOk()
+        ->assertSee(route('transaksi-gaji.bulk-destroy'), false)
+        ->assertSee('data-bulk-select-all="transaksi-gaji"', false)
+        ->assertSee('Hapus Terpilih');
 });
 
 test('role management deliberately avoids bulk deletion controls', function () {
@@ -125,9 +144,10 @@ test('clean records can be bulk deleted across every supported master table', fu
     ]);
     $user = User::factory()->create();
     $role = Role::create(['name' => 'Role Sementara', 'guard_name' => 'web']);
+    $hariLibur = HariLibur::create(['tanggal' => '2026-08-17', 'keterangan' => 'HUT RI']);
 
     $this->delete(route('transaksi-gaji.bulk-destroy'), ['ids' => [$transaksi->id]])
-        ->assertRedirect(route('transaksi-gaji.index'));
+        ->assertRedirect(route('transaksi-gaji.karyawan', ['karyawan' => $karyawan->id]));
     $this->delete(route('karyawan.bulk-destroy'), ['ids' => [$karyawan->id]])
         ->assertRedirect(route('karyawan.index'));
     $this->delete(route('unit-kerja.bulk-destroy'), ['ids' => [$unit->id]])
@@ -138,6 +158,8 @@ test('clean records can be bulk deleted across every supported master table', fu
         ->assertRedirect(route('pengguna.index'));
     $this->delete(route('role.bulk-destroy'), ['ids' => [$role->id]])
         ->assertRedirect(route('role.index'));
+    $this->delete(route('hari-libur.bulk-destroy'), ['ids' => [$hariLibur->id]])
+        ->assertRedirect(route('hari-libur.tahun', ['tahun' => 2026]));
 
     $this->assertDatabaseMissing('transaksi_gaji', ['id' => $transaksi->id]);
     $this->assertDatabaseMissing('karyawan', ['id' => $karyawan->id]);
@@ -145,6 +167,7 @@ test('clean records can be bulk deleted across every supported master table', fu
     $this->assertDatabaseMissing('komponen_gaji', ['id' => $komponen->id]);
     $this->assertDatabaseMissing('users', ['id' => $user->id]);
     $this->assertDatabaseMissing('roles', ['id' => $role->id]);
+    $this->assertDatabaseMissing('hari_libur', ['id' => $hariLibur->id]);
 });
 
 test('bulk delete validates that at least one row is selected', function () {

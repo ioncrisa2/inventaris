@@ -28,8 +28,8 @@ test('payroll seed remains complete across a year boundary', function () {
         ->all();
 
     expect($periode)->toBe(['2026-10', '2026-11', '2026-12'])
-        ->and(TransaksiGajiDetail::where('metode_perhitungan_snapshot', 'per_kehadiran')->count())->toBe(39)
-        ->and(TransaksiGajiDetail::where('metode_perhitungan_snapshot', 'per_kehadiran')->where('nominal_hasil', '<=', 0)->count())->toBe(0)
+        ->and(TransaksiGajiDetail::where('metode_perhitungan_snapshot', 'per_hari')->count())->toBe(39)
+        ->and(TransaksiGajiDetail::where('metode_perhitungan_snapshot', 'per_hari')->where('nominal_hasil', '<=', 0)->count())->toBe(0)
         ->and(TransaksiGajiDetail::whereHas('transaksiGaji', fn ($query) => $query->where('bulan', 12)->where('tahun', 2026))->count())->toBe(91)
         ->and(TransaksiGajiDetail::whereHas('transaksiGaji', fn ($query) => $query->where('bulan', 1)->where('tahun', 2027))->count())->toBe(0);
 });

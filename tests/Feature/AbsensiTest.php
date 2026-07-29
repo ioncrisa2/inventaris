@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Absensi;
+use App\Models\HariLibur;
 use App\Models\Karyawan;
 use App\Models\UnitKerja;
 use Carbon\Carbon;
@@ -94,7 +95,7 @@ describe('absensi show (kalender)', function () {
             ->assertSee($namaBulan.' 2026')
             ->assertSee('Cuti')
             ->assertSee('Dinas Luar Kota')
-            ->assertSee('Hari libur (Minggu)')
+            ->assertSee('Hari libur (Minggu & nasional)')
             ->assertSee('Di luar bulan')
             ->assertSee('calendar-cell-holiday', false)
             ->assertViewHas('totalHadir', 1)
@@ -102,6 +103,31 @@ describe('absensi show (kalender)', function () {
             ->assertViewHas('totalSakit', 0)
             ->assertViewHas('totalCuti', 1)
             ->assertViewHas('totalDinasLuarKota', 1);
+    });
+
+    it('marks a national holiday date as libur with its keterangan, even on a weekday', function () {
+        $karyawan = Karyawan::create([
+            'nik' => 'EMP-001',
+            'nama_lengkap' => 'Budi Aktif',
+            'tanggal_lahir' => '1990-01-01',
+            'unit_kerja_id' => $this->unitKerja->id,
+            'jabatan' => 'Staf IT',
+            'status_karyawan' => 'Tetap',
+            'gaji_pokok' => 7000000,
+        ]);
+
+        // 2026-03-18 adalah hari Rabu (bukan Minggu).
+        HariLibur::create(['tanggal' => '2026-03-18', 'keterangan' => 'Cuti Bersama']);
+
+        $this->get(route('absensi.show', ['karyawan' => $karyawan, 'bulan' => 3, 'tahun' => 2026]))
+            ->assertOk()
+            ->assertViewHas('mingguKalender', function ($mingguKalender) {
+                $selRabu = collect($mingguKalender)
+                    ->flatten(1)
+                    ->firstWhere(fn ($cell) => $cell['tanggal']->toDateString() === '2026-03-18');
+
+                return $selRabu['libur'] === true && $selRabu['libur_keterangan'] === 'Cuti Bersama';
+            });
     });
 
     it('defaults to the current month and year when none are given', function () {
@@ -232,6 +258,40 @@ describe('absensi store', function () {
             'tanggal' => $hariMinggu,
             'status' => 'Cuti',
         ])->assertSessionHasErrors('absensi');
+    });
+
+    it('only allows approved non-working statuses on a configured national holiday', function () {
+        $karyawan = Karyawan::create([
+            'nik' => 'EMP-001',
+            'nama_lengkap' => 'Budi Aktif',
+            'tanggal_lahir' => '1990-01-01',
+            'unit_kerja_id' => $this->unitKerja->id,
+            'jabatan' => 'Staf IT',
+            'status_karyawan' => 'Tetap',
+            'gaji_pokok' => 7000000,
+        ]);
+
+        $tanggalLibur = now()->subDays(10);
+        if ($tanggalLibur->isSunday()) {
+            $tanggalLibur = $tanggalLibur->subDay();
+        }
+        $tanggalLibur = $tanggalLibur->toDateString();
+
+        HariLibur::create(['tanggal' => $tanggalLibur, 'keterangan' => 'Cuti Bersama']);
+
+        $this->post(route('absensi.store', $karyawan), [
+            'tanggal' => $tanggalLibur,
+            'status' => 'Hadir',
+        ])->assertSessionHasErrors('absensi');
+
+        expect(Absensi::where('karyawan_id', $karyawan->id)->whereDate('tanggal', $tanggalLibur)->exists())->toBeFalse();
+
+        $this->post(route('absensi.store', $karyawan), [
+            'tanggal' => $tanggalLibur,
+            'status' => 'Izin',
+        ])->assertRedirect();
+
+        expect(Absensi::where('karyawan_id', $karyawan->id)->whereDate('tanggal', $tanggalLibur)->where('status', 'Izin')->exists())->toBeTrue();
     });
 
     it('rejects dates in the future', function () {

@@ -162,6 +162,7 @@ test('all report pages use the same restrained summary grid', function () {
         'laporan.kepegawaian',
         'laporan.absensi',
         'laporan.penggajian',
+        'laporan.penyusutan',
     ] as $routeName) {
         $this->get(route($routeName))
             ->assertOk()

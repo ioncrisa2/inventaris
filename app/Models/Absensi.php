@@ -15,8 +15,8 @@ class Absensi extends Model
         'Alpha',
     ];
 
-    /** Status yang tetap masuk akal dicatat pada hari Minggu. */
-    public const SUNDAY_ALLOWED_STATUSES = [
+    /** Status yang tetap masuk akal dicatat pada hari libur (Minggu/nasional). */
+    public const LIBUR_ALLOWED_STATUSES = [
         'Izin',
         'Sakit',
         'Dinas Luar Kota',

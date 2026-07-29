@@ -1,6 +1,7 @@
-@props(['name', 'label' => null, 'type' => 'text', 'value' => null, 'required' => false, 'help' => null])
+@props(['name', 'label' => null, 'type' => 'text', 'value' => null, 'required' => false, 'help' => null, 'id' => null])
 
 @php
+    $id ??= $name;
     $resolvedValue = old($name, $value);
     $isDate = $type === 'date';
     $dateIsoValue = '';
@@ -22,7 +23,7 @@
 
 <div>
     @if($label)
-    <label for="{{ $name }}" class="form-label">
+    <label for="{{ $id }}" class="form-label">
         {{ $label }}
         @if($required)<span class="text-danger">*</span>@endif
     </label>
@@ -32,7 +33,7 @@
     <div class="input-group localized-date" data-local-date-group>
         <input
             type="text"
-            id="{{ $name }}"
+            id="{{ $id }}"
             value="{{ $dateDisplayValue }}"
             placeholder="dd/mm/yyyy"
             inputmode="numeric"
@@ -64,7 +65,7 @@
     <input
         type="{{ $type }}"
         name="{{ $name }}"
-        id="{{ $name }}"
+        id="{{ $id }}"
         value="{{ $resolvedValue }}"
         @if($required) required @endif
         {{ $attributes->merge(['class' => 'form-control'])->class(['is-invalid' => $errors->has($name)]) }}

@@ -4,13 +4,13 @@ namespace App\Services;
 
 use App\Models\KomponenGaji;
 use App\Models\TransaksiGaji;
-use App\Repositories\AbsensiRepository;
 use App\Repositories\KaryawanRepository;
 use App\Repositories\KomponenGajiRepository;
 use App\Repositories\TransaksiGajiRepository;
 use App\Rules\Decimal15Two;
 use App\Support\PenggajianCalculator;
 use App\Support\PerPage;
+use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Collection;
@@ -23,15 +23,20 @@ class TransaksiGajiService
         private TransaksiGajiRepository $transaksiGajiRepository,
         private KomponenGajiRepository $komponenGajiRepository,
         private KaryawanRepository $karyawanRepository,
-        private AbsensiRepository $absensiRepository,
+        private HariOperasionalService $hariOperasionalService,
     ) {}
 
-    /**
-     * @param  array{search?: ?string, bulan?: ?string, tahun?: ?string}  $filters
-     */
-    public function list(array $filters, int $perPage = PerPage::DEFAULT): LengthAwarePaginator
+    public function karyawanList(?string $search, int $perPage = PerPage::DEFAULT): LengthAwarePaginator
     {
-        return $this->transaksiGajiRepository->paginate($filters, $perPage);
+        return $this->transaksiGajiRepository->karyawanList($search, $perPage);
+    }
+
+    /**
+     * @param  array{bulan?: ?string, tahun?: ?string}  $filters
+     */
+    public function listForKaryawan(int $karyawanId, array $filters, int $perPage = PerPage::DEFAULT): LengthAwarePaginator
+    {
+        return $this->transaksiGajiRepository->paginateForKaryawan($karyawanId, $filters, $perPage);
     }
 
     /**
@@ -122,8 +127,6 @@ class TransaksiGajiService
                 ->get()
                 ->keyBy('id')
             : collect();
-        $jumlahHadir = $this->absensiRepository->hitungHadir($karyawan->id, $bulan, $tahun);
-
         $totalTunjangan = '0.00';
         $totalPotongan = '0.00';
         $barisSiapSimpan = [];
@@ -134,7 +137,6 @@ class TransaksiGajiService
                 $kunci,
                 $row,
                 $gajiPokok,
-                $jumlahHadir,
                 $transaksiGaji,
                 $komponenById,
                 $detailCustomById,
@@ -175,13 +177,12 @@ class TransaksiGajiService
     }
 
     /**
-     * @return array{komponen_gaji_id: ?int, nama_komponen_snapshot: string, jenis_snapshot: string, metode_perhitungan_snapshot: string, nilai_snapshot: string, dasar_persentase_snapshot: ?string, jumlah_hadir_snapshot: ?int, nominal_hasil: string}
+     * @return array{komponen_gaji_id: ?int, nama_komponen_snapshot: string, jenis_snapshot: string, metode_perhitungan_snapshot: string, nilai_snapshot: string, dasar_persentase_snapshot: ?string, tanggal_awal_snapshot: ?string, tanggal_akhir_snapshot: ?string, jumlah_hari_snapshot: ?int, nominal_hasil: string}
      */
     private function siapkanBaris(
         string $kunci,
         array $row,
         string $gajiPokok,
-        int $jumlahHadir,
         ?TransaksiGaji $transaksiGaji,
         Collection $komponenById,
         Collection $detailCustomById,
@@ -199,9 +200,13 @@ class TransaksiGajiService
             $jenisSnapshot = $komponen->jenis;
             $komponenGajiId = $komponen->id;
             // Baris master tidak boleh dikunci nilainya dari client: metode &
-            // nilai selalu diambil dari Komponen Gaji saat ini, bukan dari $row.
+            // nilai selalu diambil dari Komponen Gaji saat ini, bukan dari
+            // $row. Pengecualian: rentang tanggal untuk metode per_hari
+            // memang input per-transaksi dan hanya tersedia dari $row.
             $metode = $komponen->metode_perhitungan;
             $nilai = (string) $komponen->nilai_default;
+            $tanggalAwal = $row['tanggal_awal'] ?? null;
+            $tanggalAkhir = $row['tanggal_akhir'] ?? null;
         } elseif (preg_match('/\Acustom_([1-9]\d*)\z/', $kunci, $matches) && $transaksiGaji) {
             $detailYatim = $detailCustomById->get((int) $matches[1]);
 
@@ -216,6 +221,8 @@ class TransaksiGajiService
             $komponenGajiId = null;
             $metode = $row['metode_perhitungan'] ?? null;
             $nilai = Decimal15Two::normalizeNonNegative($row['nilai'] ?? null);
+            $tanggalAwal = $row['tanggal_awal'] ?? null;
+            $tanggalAkhir = $row['tanggal_akhir'] ?? null;
 
             if (! in_array($metode, array_keys(KomponenGaji::METODE_PERHITUNGAN), true)
                 || $nilai === null
@@ -239,8 +246,32 @@ class TransaksiGajiService
         }
 
         $dasarSnapshot = $metode === 'persentase' ? 'gaji_pokok' : null;
-        $jumlahHadirSnapshot = $metode === 'per_kehadiran' ? $jumlahHadir : null;
-        $nominalHasil = PenggajianCalculator::hitungNominal($metode, $nilai, $gajiPokok, $jumlahHadirSnapshot);
+        $tanggalAwalSnapshot = null;
+        $tanggalAkhirSnapshot = null;
+        $jumlahHariSnapshot = null;
+
+        if ($metode === 'per_hari') {
+            try {
+                $awalCarbon = Carbon::parse($tanggalAwal)->startOfDay();
+                $akhirCarbon = Carbon::parse($tanggalAkhir)->startOfDay();
+            } catch (\Exception) {
+                throw ValidationException::withMessages([
+                    "baris.{$kunci}.tanggal_awal" => 'Rentang tanggal tidak valid.',
+                ]);
+            }
+
+            if ($akhirCarbon->lt($awalCarbon)) {
+                throw ValidationException::withMessages([
+                    "baris.{$kunci}.tanggal_akhir" => 'Tanggal akhir tidak boleh sebelum tanggal awal.',
+                ]);
+            }
+
+            $tanggalAwalSnapshot = $awalCarbon->toDateString();
+            $tanggalAkhirSnapshot = $akhirCarbon->toDateString();
+            $jumlahHariSnapshot = $this->hariOperasionalService->jumlahHariOperasional($awalCarbon, $akhirCarbon);
+        }
+
+        $nominalHasil = PenggajianCalculator::hitungNominal($metode, $nilai, $gajiPokok, $jumlahHariSnapshot);
 
         if (Decimal15Two::normalizeNonNegative($nominalHasil) === null) {
             throw ValidationException::withMessages([
@@ -255,7 +286,9 @@ class TransaksiGajiService
             'metode_perhitungan_snapshot' => $metode,
             'nilai_snapshot' => $nilai,
             'dasar_persentase_snapshot' => $dasarSnapshot,
-            'jumlah_hadir_snapshot' => $jumlahHadirSnapshot,
+            'tanggal_awal_snapshot' => $tanggalAwalSnapshot,
+            'tanggal_akhir_snapshot' => $tanggalAkhirSnapshot,
+            'jumlah_hari_snapshot' => $jumlahHariSnapshot,
             'nominal_hasil' => $nominalHasil,
         ];
     }
@@ -334,6 +367,12 @@ class TransaksiGajiService
                 // mengubahnya, edit master di halaman Komponen Gaji.
                 'metode' => $komponen->metode_perhitungan,
                 'nilai' => (string) $komponen->nilai_default,
+                'tanggal_awal' => $oldBaris !== null
+                    ? data_get($oldBaris, "{$kunci}.tanggal_awal")
+                    : $detail?->tanggal_awal_snapshot?->format('Y-m-d'),
+                'tanggal_akhir' => $oldBaris !== null
+                    ? data_get($oldBaris, "{$kunci}.tanggal_akhir")
+                    : $detail?->tanggal_akhir_snapshot?->format('Y-m-d'),
             ];
         })->all();
 
@@ -351,6 +390,8 @@ class TransaksiGajiService
                         'checked' => $oldBaris !== null ? data_get($oldBaris, "{$kunci}.pakai") !== null : true,
                         'metode' => data_get($oldBaris, "{$kunci}.metode_perhitungan") ?? $detail->metode_perhitungan_snapshot,
                         'nilai' => data_get($oldBaris, "{$kunci}.nilai") ?? $detail->nilai_snapshot,
+                        'tanggal_awal' => data_get($oldBaris, "{$kunci}.tanggal_awal") ?? $detail->tanggal_awal_snapshot?->format('Y-m-d'),
+                        'tanggal_akhir' => data_get($oldBaris, "{$kunci}.tanggal_akhir") ?? $detail->tanggal_akhir_snapshot?->format('Y-m-d'),
                     ];
                 })
                 ->values()

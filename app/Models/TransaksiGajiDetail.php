@@ -16,13 +16,17 @@ class TransaksiGajiDetail extends Model
         'metode_perhitungan_snapshot',
         'nilai_snapshot',
         'dasar_persentase_snapshot',
-        'jumlah_hadir_snapshot',
+        'tanggal_awal_snapshot',
+        'tanggal_akhir_snapshot',
+        'jumlah_hari_snapshot',
         'nominal_hasil',
     ];
 
     protected $casts = [
         'nilai_snapshot' => 'decimal:2',
         'nominal_hasil' => 'decimal:2',
+        'tanggal_awal_snapshot' => 'date',
+        'tanggal_akhir_snapshot' => 'date',
     ];
 
     public function transaksiGaji()

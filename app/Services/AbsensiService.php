@@ -18,6 +18,7 @@ class AbsensiService
         private AbsensiRepository $absensiRepository,
         private KaryawanRepository $karyawanRepository,
         private DashboardCache $dashboardCache,
+        private HariOperasionalService $hariOperasionalService,
     ) {}
 
     public function daftarKaryawan(?string $search, int $perPage = PerPage::DEFAULT): LengthAwarePaginator
@@ -52,6 +53,7 @@ class AbsensiService
         $today = today();
         $mulaiGrid = $awalBulan->copy()->startOfWeek(Carbon::MONDAY);
         $akhirGrid = $akhirBulan->copy()->endOfWeek(Carbon::SUNDAY);
+        $liburDalamGrid = $this->hariOperasionalService->liburDalamRentang($mulaiGrid, $akhirGrid);
 
         $mingguKalender = [];
         $tanggalBerjalan = $mulaiGrid->copy();
@@ -60,12 +62,15 @@ class AbsensiService
             $minggu = [];
 
             for ($i = 0; $i < 7; $i++) {
+                $tanggalKey = $tanggalBerjalan->format('Y-m-d');
+
                 $minggu[] = [
                     'tanggal' => $tanggalBerjalan->copy(),
                     'di_luar_bulan' => ! $tanggalBerjalan->isSameMonth($awalBulan),
-                    'hari_minggu' => $tanggalBerjalan->isSunday(),
+                    'libur' => $liburDalamGrid->has($tanggalKey),
+                    'libur_keterangan' => $liburDalamGrid->get($tanggalKey),
                     'masa_depan' => $tanggalBerjalan->gt($today),
-                    'absensi' => $absensiPerTanggal->get($tanggalBerjalan->format('Y-m-d')),
+                    'absensi' => $absensiPerTanggal->get($tanggalKey),
                 ];
 
                 $tanggalBerjalan->addDay();

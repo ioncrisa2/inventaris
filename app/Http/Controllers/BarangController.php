@@ -10,6 +10,7 @@ use App\Models\Barang;
 use App\Repositories\RiwayatKondisiBarangRepository;
 use App\Repositories\UnitKerjaRepository;
 use App\Services\BarangService;
+use App\Support\PenyusutanCalculator;
 use App\Support\PerPage;
 use Illuminate\Http\Request;
 
@@ -66,8 +67,13 @@ class BarangController extends Controller
     {
         $barang->load('unitKerja', 'kondisiTerakhir', 'fotoPendukung', 'dokumen');
         $riwayatKondisi = $this->riwayatKondisiBarangRepository->terbaruUntuk($barang);
+        $jadwalPenyusutan = PenyusutanCalculator::jadwalTahunan(
+            $barang->kategori,
+            (string) $barang->harga_perolehan,
+            $barang->tanggal_perolehan,
+        );
 
-        return view('barang.show', compact('barang', 'riwayatKondisi'));
+        return view('barang.show', compact('barang', 'riwayatKondisi', 'jadwalPenyusutan'));
     }
 
     /**

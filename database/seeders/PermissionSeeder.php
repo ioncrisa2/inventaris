@@ -47,6 +47,7 @@ class PermissionSeeder extends Seeder
                 'karyawan.update',
                 'absensi.view',
                 'absensi.create',
+                'hari-libur.view',
                 'barang.view',
                 'barang.create',
                 'barang.update',
@@ -56,6 +57,7 @@ class PermissionSeeder extends Seeder
                 'laporan.absensi.view',
                 'laporan.kepegawaian.view',
                 'laporan.penggajian.view',
+                'laporan.penyusutan.view',
             ]));
 
         $registrar->forgetCachedPermissions();

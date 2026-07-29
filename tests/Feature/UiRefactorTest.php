@@ -98,7 +98,7 @@ test('halaman daftar tidak mengulang eyebrow dan judul card tabel', function () 
         ->assertSee('<h1>Unit Kerja</h1>', false)
         ->assertSee('Cari unit kerja...')
         ->assertDontSee('page-header__eyebrow', false)
-        ->assertDontSee('data-table-card__heading', false)
+        ->assertDontSee('data-table-section__heading', false)
         ->assertDontSee('Daftar Unit Kerja');
 });
 

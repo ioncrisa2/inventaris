@@ -31,14 +31,14 @@ test('gaji pokok null dianggap nol untuk persentase', function () {
     expect(PenggajianCalculator::hitungNominal('persentase', '10', null))->toBe('0.00');
 });
 
-test('per kehadiran dikalikan dari nilai per hari dan jumlah hadir', function () {
-    expect(PenggajianCalculator::hitungNominal('per_kehadiran', '15000', null, 20))->toBe('300000.00');
+test('per hari dikalikan dari nilai per hari dan jumlah hari pada rentang tanggal', function () {
+    expect(PenggajianCalculator::hitungNominal('per_hari', '15000', null, 20))->toBe('300000.00');
 });
 
-test('per kehadiran dengan jumlah hadir null dianggap nol', function () {
-    expect(PenggajianCalculator::hitungNominal('per_kehadiran', '15000', null, null))->toBe('0.00');
+test('per hari dengan jumlah hari null dianggap nol', function () {
+    expect(PenggajianCalculator::hitungNominal('per_hari', '15000', null, null))->toBe('0.00');
 });
 
-test('per kehadiran dengan nol hari hadir menghasilkan nol', function () {
-    expect(PenggajianCalculator::hitungNominal('per_kehadiran', '15000', null, 0))->toBe('0.00');
+test('per hari dengan nol hari menghasilkan nol', function () {
+    expect(PenggajianCalculator::hitungNominal('per_hari', '15000', null, 0))->toBe('0.00');
 });

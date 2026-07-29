@@ -1,12 +1,4 @@
-@props([
-    'icon',
-    'label',
-    'value',
-    'variant' => null,
-    'compact' => false,
-    'plain' => false,
-    'accent' => false,
-])
+@props(['icon', 'label', 'value', 'variant' => null, 'compact' => false, 'plain' => false, 'accent' => false])
 
 @php
     $variantClass = $variant ? "summary-card--{$variant}" : '';
@@ -14,7 +6,8 @@
     $accentClass = $accent ? 'summary-card--accent' : '';
 @endphp
 
-<div {{ $attributes->merge(['class' => trim("card summary-card {$variantClass} {$plainClass} {$accentClass} h-100")]) }}>
+<div
+    {{ $attributes->merge(['class' => trim("card summary-card {$variantClass} {$plainClass} {$accentClass} h-100")]) }}>
     <div class="card-body">
         <div class="card-icon"><i class="bi {{ $icon }}" aria-hidden="true"></i></div>
         <div class="card-info">

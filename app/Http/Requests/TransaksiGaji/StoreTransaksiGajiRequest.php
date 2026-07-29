@@ -6,6 +6,7 @@ use App\Models\KomponenGaji;
 use App\Rules\Decimal15Two;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Validator as ValidatorFacade;
 use Illuminate\Validation\Rule;
 
 class StoreTransaksiGajiRequest extends FormRequest
@@ -78,11 +79,10 @@ class StoreTransaksiGajiRequest extends FormRequest
                     }
                 }
 
-                $masterIdsValid = KomponenGaji::query()
+                $komponenMasterById = KomponenGaji::query()
                     ->whereKey(array_values(array_unique($masterIds)))
-                    ->pluck('id')
-                    ->map(fn ($id) => (int) $id)
-                    ->flip();
+                    ->get()
+                    ->keyBy(fn (KomponenGaji $komponen) => (int) $komponen->id);
 
                 $transaksiGaji = $this->route('transaksi_gaji');
                 $customIdsValid = $transaksiGaji
@@ -106,9 +106,16 @@ class StoreTransaksiGajiRequest extends FormRequest
                     $kunci = (string) $kunci;
 
                     if (preg_match('/\Amaster_([1-9]\d*)\z/', $kunci, $matches)) {
-                        if (! $masterIdsValid->has((int) $matches[1])) {
+                        $komponenMaster = $komponenMasterById->get((int) $matches[1]);
+
+                        if (! $komponenMaster) {
                             $validator->errors()->add("baris.{$kunci}", 'Komponen gaji yang dipilih sudah tidak tersedia.');
 
+                            continue;
+                        }
+
+                        if ($komponenMaster->metode_perhitungan === 'per_hari'
+                            && ! $this->validasiRentangTanggal($validator, $kunci, $row)) {
                             continue;
                         }
 
@@ -143,8 +150,14 @@ class StoreTransaksiGajiRequest extends FormRequest
                         $validator->errors()->add("baris.{$kunci}.nilai", 'Nilai persentase harus berada antara 0 sampai 100.');
                     }
 
+                    if ($metode === 'per_hari') {
+                        $this->validasiRentangTanggal($validator, $kunci, $row);
+                    }
+
                     if (! $validator->errors()->has("baris.{$kunci}.metode_perhitungan")
-                        && ! $validator->errors()->has("baris.{$kunci}.nilai")) {
+                        && ! $validator->errors()->has("baris.{$kunci}.nilai")
+                        && ! $validator->errors()->has("baris.{$kunci}.tanggal_awal")
+                        && ! $validator->errors()->has("baris.{$kunci}.tanggal_akhir")) {
                         $adaBarisSah = true;
                     }
                 }
@@ -154,6 +167,37 @@ class StoreTransaksiGajiRequest extends FormRequest
                 }
             },
         ];
+    }
+
+    /**
+     * Validasi rentang tanggal (dari-sampai) untuk baris dengan metode
+     * per_hari. Dipakai baik untuk baris master (Tunjangan Uang Makan, dsb.)
+     * maupun baris custom, karena rentang tanggal memang input per-transaksi.
+     */
+    private function validasiRentangTanggal(Validator $validator, string $kunci, array $row): bool
+    {
+        $subValidator = ValidatorFacade::make($row, [
+            'tanggal_awal' => ['required', 'date'],
+            'tanggal_akhir' => ['required', 'date', 'after_or_equal:tanggal_awal'],
+        ], [
+            'tanggal_awal.required' => 'Tanggal awal wajib diisi.',
+            'tanggal_awal.date' => 'Tanggal awal tidak valid.',
+            'tanggal_akhir.required' => 'Tanggal akhir wajib diisi.',
+            'tanggal_akhir.date' => 'Tanggal akhir tidak valid.',
+            'tanggal_akhir.after_or_equal' => 'Tanggal akhir tidak boleh sebelum tanggal awal.',
+        ]);
+
+        if ($subValidator->fails()) {
+            foreach ($subValidator->errors()->messages() as $field => $messages) {
+                foreach ($messages as $message) {
+                    $validator->errors()->add("baris.{$kunci}.{$field}", $message);
+                }
+            }
+
+            return false;
+        }
+
+        return true;
     }
 
     protected function transaksiGajiId(): ?int

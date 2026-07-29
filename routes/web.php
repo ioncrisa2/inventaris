@@ -7,6 +7,8 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DokumenBarangController;
 use App\Http\Controllers\DokumenKaryawanController;
 use App\Http\Controllers\FotoBarangController;
+use App\Http\Controllers\HariLiburController;
+use App\Http\Controllers\HariLiburSinkronisasiController;
 use App\Http\Controllers\KaryawanController;
 use App\Http\Controllers\KomponenGajiController;
 use App\Http\Controllers\LaporanController;
@@ -47,6 +49,12 @@ Route::middleware('auth')->group(function () {
         Route::post('/{karyawan}', [AbsensiController::class, 'store'])->name('store');
     });
 
+    Route::delete('hari-libur/bulk', [HariLiburController::class, 'bulkDestroy'])->name('hari-libur.bulk-destroy');
+    Route::get('hari-libur/sinkronisasi', [HariLiburSinkronisasiController::class, 'create'])->name('hari-libur.sinkronisasi.create');
+    Route::post('hari-libur/sinkronisasi', [HariLiburSinkronisasiController::class, 'store'])->name('hari-libur.sinkronisasi.store');
+    Route::get('hari-libur/{tahun}', [HariLiburController::class, 'tahun'])->whereNumber('tahun')->name('hari-libur.tahun');
+    Route::resource('hari-libur', HariLiburController::class)->except(['show', 'create', 'edit']);
+
     Route::post('barang/barcode/bulk', [BarangController::class, 'barcodeMassal'])->name('barang.barcode.bulk');
     Route::delete('barang/bulk', [BarangController::class, 'bulkDestroy'])->name('barang.bulk-destroy');
     Route::get('barang/{barang}/barcode', [BarangController::class, 'barcode'])->name('barang.barcode');
@@ -68,6 +76,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('komponen-gaji', KomponenGajiController::class)->except(['show', 'create', 'edit']);
 
     Route::delete('transaksi-gaji/bulk', [TransaksiGajiController::class, 'bulkDestroy'])->name('transaksi-gaji.bulk-destroy');
+    Route::get('transaksi-gaji/karyawan/{karyawan}', [TransaksiGajiController::class, 'karyawan'])->name('transaksi-gaji.karyawan');
     Route::resource('transaksi-gaji', TransaksiGajiController::class);
 
     Route::get('transaksi-gaji/{transaksiGaji}/cetak', [TransaksiGajiController::class, 'cetak'])
@@ -102,6 +111,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/laporan/penggajian/export', [LaporanController::class, 'exportPenggajian'])
         ->name('laporan.penggajian.export');
 
+    Route::get('/laporan/penyusutan', [LaporanController::class, 'penyusutan'])
+        ->name('laporan.penyusutan');
+    Route::get('/laporan/penyusutan/cetak', [LaporanController::class, 'cetakPenyusutan'])
+        ->name('laporan.penyusutan.cetak');
+    Route::get('/laporan/penyusutan/export', [LaporanController::class, 'exportPenyusutan'])
+        ->name('laporan.penyusutan.export');
+
     Route::delete('pengguna/bulk', [UserController::class, 'bulkDestroy'])->name('pengguna.bulk-destroy');
     Route::resource('pengguna', UserController::class)->except(['show']);
 
@@ -110,6 +126,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('pengaturan', [PengaturanController::class, 'edit'])->name('pengaturan.edit');
     Route::put('pengaturan', [PengaturanController::class, 'update'])->name('pengaturan.update');
+    Route::put('pengaturan/hari-operasional', [PengaturanController::class, 'updateHariOperasional'])->name('pengaturan.hari-operasional.update');
 
     Route::get('/profile', [ProfileController::class, 'show'])
         ->name('profile.show');

@@ -15,7 +15,7 @@
 
         <x-flash-alert />
 
-        <x-data-table-card :paginator="$karyawan">
+        <x-data-table :paginator="$karyawan">
             <x-slot:toolbar>
                 <x-filter-form
                     :action="route('karyawan.index')"
@@ -143,6 +143,6 @@
                         @endforelse
                     </tbody>
                 </table>
-        </x-data-table-card>
+        </x-data-table>
 </x-app-page>
 @endsection

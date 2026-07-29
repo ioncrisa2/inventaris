@@ -2,23 +2,37 @@
 
 namespace App\Repositories;
 
+use App\Models\Karyawan;
 use App\Models\TransaksiGaji;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class TransaksiGajiRepository
 {
     /**
-     * @param  array{search?: ?string, bulan?: ?string, tahun?: ?string}  $filters
+     * Daftar karyawan yang punya minimal satu transaksi gaji, beserta
+     * jumlahnya — dipakai halaman index (cluster per karyawan).
      */
-    public function paginate(array $filters, int $perPage = 10): LengthAwarePaginator
+    public function karyawanList(?string $search, int $perPage = 10): LengthAwarePaginator
+    {
+        return Karyawan::query()
+            ->whereHas('transaksiGaji')
+            ->withCount('transaksiGaji')
+            ->with('unitKerja:id,nama_unit')
+            ->when($search, function ($query, $search) {
+                $query->where('nama_lengkap', 'like', "%{$search}%");
+            })
+            ->orderBy('nama_lengkap')
+            ->paginate($perPage)
+            ->withQueryString();
+    }
+
+    /**
+     * @param  array{bulan?: ?string, tahun?: ?string}  $filters
+     */
+    public function paginateForKaryawan(int $karyawanId, array $filters, int $perPage = 10): LengthAwarePaginator
     {
         return TransaksiGaji::query()
-            ->with('karyawan.unitKerja:id,nama_unit')
-            ->when($filters['search'] ?? null, function ($query, $search) {
-                $query->whereHas('karyawan', function ($query) use ($search) {
-                    $query->where('nama_lengkap', 'like', "%{$search}%");
-                });
-            })
+            ->where('karyawan_id', $karyawanId)
             ->when($filters['bulan'] ?? null, function ($query, $bulan) {
                 $query->where('bulan', (int) $bulan);
             })

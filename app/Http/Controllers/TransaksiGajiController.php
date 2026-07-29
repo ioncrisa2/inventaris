@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\BulkDeleteRequest;
 use App\Http\Requests\TransaksiGaji\StoreTransaksiGajiRequest;
 use App\Http\Requests\TransaksiGaji\UpdateTransaksiGajiRequest;
+use App\Models\Karyawan;
 use App\Models\TransaksiGaji;
 use App\Repositories\KaryawanRepository;
 use App\Services\TransaksiGajiService;
@@ -22,16 +23,32 @@ class TransaksiGajiController extends Controller
     }
 
     /**
-     * Display a listing of the resource.
+     * Display a listing of the resource, clustered per karyawan.
      */
     public function index(Request $request)
     {
-        $transaksiGaji = $this->transaksiGajiService->list(
-            $request->only(['search', 'bulan', 'tahun']),
+        $karyawanList = $this->transaksiGajiService->karyawanList(
+            $request->string('search')->trim()->value() ?: null,
             PerPage::resolve($request),
         );
 
-        return view('transaksi-gaji.index', compact('transaksiGaji'));
+        return view('transaksi-gaji.index', compact('karyawanList'));
+    }
+
+    /**
+     * Display the full list of transaksi gaji for one specific karyawan.
+     */
+    public function karyawan(Request $request, Karyawan $karyawan)
+    {
+        $this->authorize('viewAny', TransaksiGaji::class);
+
+        $transaksiGaji = $this->transaksiGajiService->listForKaryawan(
+            $karyawan->id,
+            $request->only(['bulan', 'tahun']),
+            PerPage::resolve($request),
+        );
+
+        return view('transaksi-gaji.karyawan', compact('karyawan', 'transaksiGaji'));
     }
 
     /**
@@ -112,9 +129,12 @@ class TransaksiGajiController extends Controller
      */
     public function destroy(TransaksiGaji $transaksiGaji)
     {
+        $karyawanId = $transaksiGaji->karyawan_id;
+
         $this->transaksiGajiService->destroy($transaksiGaji);
 
-        return redirect()->route('transaksi-gaji.index')->with('success', 'Transaksi gaji berhasil dihapus.');
+        return redirect()->route('transaksi-gaji.karyawan', ['karyawan' => $karyawanId])
+            ->with('success', 'Transaksi gaji berhasil dihapus.');
     }
 
     public function bulkDestroy(BulkDeleteRequest $request)
@@ -124,11 +144,16 @@ class TransaksiGajiController extends Controller
         $transaksiGaji = TransaksiGaji::query()->whereKey($request->validated('ids'))->get();
         abort_unless($transaksiGaji->count() === count($request->validated('ids')), 422, 'Sebagian transaksi gaji sudah tidak tersedia.');
 
+        $karyawanTerlibat = $transaksiGaji->pluck('karyawan_id')->unique();
+
         DB::transaction(fn () => $transaksiGaji->each(
             fn (TransaksiGaji $transaksi) => $this->transaksiGajiService->destroy($transaksi)
         ));
 
-        return redirect()->route('transaksi-gaji.index')
-            ->with('success', $transaksiGaji->count().' transaksi gaji berhasil dihapus.');
+        $redirect = $karyawanTerlibat->count() === 1
+            ? redirect()->route('transaksi-gaji.karyawan', ['karyawan' => $karyawanTerlibat->first()])
+            : redirect()->route('transaksi-gaji.index');
+
+        return $redirect->with('success', $transaksiGaji->count().' transaksi gaji berhasil dihapus.');
     }
 }

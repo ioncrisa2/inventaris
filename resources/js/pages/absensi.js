@@ -6,14 +6,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const inputTanggal = modal.querySelector('[name="tanggal"]');
     const selectStatus = modal.querySelector('[name="status"]');
     const textareaCatatan = modal.querySelector('[name="catatan"]');
-    const statusHariMinggu = JSON.parse(modal.dataset.sundayAllowedStatuses || '[]');
+    const statusLibur = JSON.parse(modal.dataset.liburAllowedStatuses || '[]');
 
-    const terapkanBatasanHariMinggu = (hariMinggu) => {
+    const terapkanBatasanHariLibur = (libur) => {
         selectStatus.querySelectorAll('option').forEach((opsi) => {
-            opsi.disabled = hariMinggu && !statusHariMinggu.includes(opsi.value);
+            opsi.disabled = libur && !statusLibur.includes(opsi.value);
         });
 
-        if (hariMinggu && !statusHariMinggu.includes(selectStatus.value)) {
+        if (libur && !statusLibur.includes(selectStatus.value)) {
             selectStatus.value = 'Izin';
         }
     };
@@ -24,13 +24,13 @@ document.addEventListener('DOMContentLoaded', () => {
             modalTanggalLabel.textContent = tombol.dataset.tanggalLabel;
             selectStatus.value = tombol.dataset.status || 'Hadir';
             textareaCatatan.value = tombol.dataset.catatan || '';
-            terapkanBatasanHariMinggu(tombol.dataset.hariMinggu === '1');
+            terapkanBatasanHariLibur(tombol.dataset.libur === '1');
         });
     });
 
     selectStatus.addEventListener('change', () => {
         const selector = `.calendar-cell-button[data-tanggal="${CSS.escape(inputTanggal.value)}"]`;
         const tombolAktif = document.querySelector(selector);
-        terapkanBatasanHariMinggu(tombolAktif?.dataset.hariMinggu === '1');
+        terapkanBatasanHariLibur(tombolAktif?.dataset.libur === '1');
     });
 });

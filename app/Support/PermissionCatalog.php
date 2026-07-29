@@ -50,6 +50,15 @@ class PermissionCatalog
                     'absensi.create' => 'Input Absensi',
                 ],
             ],
+            'hari-libur' => [
+                'label' => 'Hari Libur',
+                'permissions' => [
+                    'hari-libur.view' => 'Lihat',
+                    'hari-libur.create' => 'Tambah',
+                    'hari-libur.update' => 'Ubah',
+                    'hari-libur.delete' => 'Hapus',
+                ],
+            ],
             'barang' => [
                 'label' => 'Inventaris Barang',
                 'permissions' => [
@@ -84,6 +93,7 @@ class PermissionCatalog
                     'laporan.absensi.view' => 'Laporan Absensi',
                     'laporan.kepegawaian.view' => 'Laporan Kepegawaian',
                     'laporan.penggajian.view' => 'Laporan Penggajian',
+                    'laporan.penyusutan.view' => 'Laporan Penyusutan',
                 ],
             ],
             'pengguna' => [

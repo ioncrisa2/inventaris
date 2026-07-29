@@ -7,6 +7,7 @@ use App\Models\Barang;
 use App\Models\DokumenBarang;
 use App\Models\DokumenKaryawan;
 use App\Models\FotoBarang;
+use App\Models\HariLibur;
 use App\Models\Karyawan;
 use App\Models\KomponenGaji;
 use App\Models\Pengaturan;
@@ -38,6 +39,7 @@ final class SeederDataset
             'payrolls' => TransaksiGaji::count(),
             'payroll_details' => TransaksiGajiDetail::count(),
             'settings' => Pengaturan::count(),
+            'national_holidays' => HariLibur::count(),
         ];
     }
 }

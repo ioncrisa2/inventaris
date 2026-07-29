@@ -46,9 +46,8 @@
             </div>
         </div>
 
-        <div class="card content-narrow">
-            <div class="card-header">Rincian Komponen Gaji</div>
-            <div class="table-responsive">
+        <div class="content-narrow">
+            <x-data-table title="Rincian Komponen Gaji">
                 <table class="table align-middle mb-0">
                     <thead>
                         <tr>
@@ -81,8 +80,11 @@
                                             <td class="text-end">
                                                 @if($detail->metode_perhitungan_snapshot === 'persentase')
                                                     {{ rtrim(rtrim($detail->nilai_snapshot, '0'), '.') }}%
-                                                @elseif($detail->metode_perhitungan_snapshot === 'per_kehadiran')
-                                                    Rp {{ number_format($detail->nilai_snapshot, 0, ',', '.') }} /hari &times; {{ $detail->jumlah_hadir_snapshot ?? 0 }} hari hadir
+                                                @elseif($detail->metode_perhitungan_snapshot === 'per_hari')
+                                                    Rp {{ number_format($detail->nilai_snapshot, 0, ',', '.') }} /hari &times; {{ $detail->jumlah_hari_snapshot ?? 0 }} hari
+                                                    @if($detail->tanggal_awal_snapshot && $detail->tanggal_akhir_snapshot)
+                                                        <span class="text-body-secondary small d-block">{{ $detail->tanggal_awal_snapshot->format('d/m/Y') }} s.d. {{ $detail->tanggal_akhir_snapshot->format('d/m/Y') }}</span>
+                                                    @endif
                                                 @else
                                                     Rp {{ number_format($detail->nilai_snapshot, 0, ',', '.') }}
                                                 @endif
@@ -97,7 +99,7 @@
                         @endif
                     </tbody>
                 </table>
-            </div>
+            </x-data-table>
 
             <dl class="payroll-summary">
                 <div>

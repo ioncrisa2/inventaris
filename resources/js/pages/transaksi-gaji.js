@@ -3,6 +3,7 @@ const perbaruiSuffixNilai = (select) => {
     const prefix = document.getElementById(`${idAwalan}_prefix`);
     const suffix = document.getElementById(`${idAwalan}_suffix`);
     const input = document.getElementById(`${idAwalan}_nilai`);
+    const rentang = document.getElementById(`${idAwalan}_rentang`);
     if (!prefix || !suffix || !input) return;
 
     if (select.value === 'persentase') {
@@ -10,15 +11,18 @@ const perbaruiSuffixNilai = (select) => {
         suffix.textContent = '%';
         suffix.classList.remove('d-none');
         input.max = '100';
-    } else if (select.value === 'per_kehadiran') {
+        rentang?.classList.add('d-none');
+    } else if (select.value === 'per_hari') {
         prefix.classList.remove('d-none');
         suffix.textContent = '/hari';
         suffix.classList.remove('d-none');
         input.removeAttribute('max');
+        rentang?.classList.remove('d-none');
     } else {
         prefix.classList.remove('d-none');
         suffix.classList.add('d-none');
         input.removeAttribute('max');
+        rentang?.classList.add('d-none');
     }
 };
 
