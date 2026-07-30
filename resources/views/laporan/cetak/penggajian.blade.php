@@ -2,8 +2,10 @@
 
 @section('title', 'Cetak Laporan Penggajian')
 @section('back_url', route('laporan.penggajian', request()->query()))
+@section('print_layout', 'payroll-landscape')
 
 @section('content')
+<div class="payroll-print-report">
 <x-print.header>
     <h1 class="report-title">Laporan Penggajian</h1>
     <p class="report-subtitle">Rekap gaji yang dibayarkan per periode dan unit kerja.</p>
@@ -15,7 +17,7 @@
     </x-slot:meta>
 </x-print.header>
 
-<section class="summary-grid">
+<section class="summary-grid payroll-print-summary" aria-label="Ringkasan penggajian">
     <x-print.summary-item label="Total Transaksi" :value="number_format($totalTransaksi, 0, ',', '.')" />
     <x-print.summary-item label="Total Gaji Pokok" :value="'Rp '.number_format($totalGajiPokok, 0, ',', '.')" />
     <x-print.summary-item label="Total Tunjangan" :value="'Rp '.number_format($totalTunjangan, 0, ',', '.')" />
@@ -43,6 +45,13 @@
             <tr><td colspan="3" class="text-center muted">Tidak ada transaksi gaji pada periode ini.</td></tr>
         @endforelse
     </tbody>
+    <tfoot>
+        <tr>
+            <td>Total Keseluruhan</td>
+            <td class="text-end">{{ number_format($totalTransaksi, 0, ',', '.') }}</td>
+            <td class="text-end">Rp {{ number_format($totalGajiBersih, 0, ',', '.') }}</td>
+        </tr>
+    </tfoot>
 </table>
 
 <h2 class="section-title">Detail Transaksi Gaji</h2>
@@ -77,4 +86,5 @@
 </table>
 
 <x-print.signature />
+</div>
 @endsection

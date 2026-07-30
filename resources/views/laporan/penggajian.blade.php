@@ -4,9 +4,25 @@
 
 @section('content')
 <x-app-page>
+        @php
+            $penggajianActiveFilterCount = (request()->filled('unit_kerja_id') ? 1 : 0)
+                + ((int) $bulan !== now()->month ? 1 : 0)
+                + ((int) $tahun !== now()->year ? 1 : 0);
+
+            $penggajianSelectedUnit = request()->filled('unit_kerja_id')
+                ? ($unitKerjas->firstWhere('id', (int) request('unit_kerja_id'))?->nama_unit ?? 'Unit tidak tersedia')
+                : 'Semua unit kerja';
+
+            $penggajianPeriod = \Illuminate\Support\Carbon::createFromDate(2000, $bulan, 1)->translatedFormat('F').' '.$tahun;
+        @endphp
+
         <x-page-header title="Laporan Penggajian" subtitle="Pembayaran gaji per periode dan unit kerja.">
             <x-slot:actions>
-                <div class="d-flex gap-2 d-print-none">
+                <div class="d-flex flex-wrap gap-2 d-print-none">
+                    <x-report-filter-button
+                        target="penggajianReportFilter"
+                        :active-count="$penggajianActiveFilterCount"
+                    />
                     <a class="btn btn-outline-primary" href="{{ route('laporan.penggajian.cetak', request()->query()) }}" target="_blank" rel="noopener">
                         <i class="bi bi-printer"></i>
                         Cetak
@@ -19,61 +35,98 @@
             </x-slot:actions>
         </x-page-header>
 
-        <x-filter-card>
-                <form action="{{ route('laporan.penggajian') }}" method="GET" class="row g-3 align-items-end">
-                    <div class="col-md-5 col-xl-4">
-                        <label class="form-label" for="unit_kerja_id">Unit Kerja</label>
-                        <select class="form-select @error('unit_kerja_id') is-invalid @enderror" id="unit_kerja_id" name="unit_kerja_id">
-                            <option value="">Semua unit kerja</option>
-                            @foreach($unitKerjas as $unit)
-                                <option value="{{ $unit->id }}" @selected((string) request('unit_kerja_id') === (string) $unit->id)>{{ $unit->nama_unit }}</option>
-                            @endforeach
-                        </select>
-                        @error('unit_kerja_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                    </div>
+        <x-report-filter-summary
+            :items="[
+                ['label' => 'Periode', 'value' => $penggajianPeriod],
+                ['label' => 'Unit', 'value' => $penggajianSelectedUnit],
+            ]"
+        />
 
-                    <div class="col-md-3 col-xl-2">
-                        <label class="form-label" for="bulan">Bulan</label>
-                        <select class="form-select @error('bulan') is-invalid @enderror" id="bulan" name="bulan">
-                            @for($i = 1; $i <= 12; $i++)
-                                <option value="{{ $i }}" @selected((int) $bulan === $i)>
-                                    {{ \Illuminate\Support\Carbon::createFromDate(2000, $i, 1)->translatedFormat('F') }}
-                                </option>
-                            @endfor
-                        </select>
-                        @error('bulan') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                    </div>
+        <x-report-filter-modal
+            id="penggajianReportFilter"
+            title="Filter Laporan Penggajian"
+            :action="route('laporan.penggajian')"
+            :reset-url="route('laporan.penggajian')"
+            :has-filters="$penggajianActiveFilterCount > 0"
+            :has-errors="$errors->any()"
+        >
+            <div class="col-12">
+                <label class="form-label" for="penggajian_unit_kerja_id">Unit Kerja</label>
+                <select class="form-select @error('unit_kerja_id') is-invalid @enderror" id="penggajian_unit_kerja_id" name="unit_kerja_id">
+                    <option value="">Semua unit kerja</option>
+                    @foreach($unitKerjas as $unit)
+                        <option value="{{ $unit->id }}" @selected((string) old('unit_kerja_id', request('unit_kerja_id')) === (string) $unit->id)>
+                            {{ $unit->nama_unit }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('unit_kerja_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            </div>
 
-                    <div class="col-md-3 col-xl-2">
-                        <label class="form-label" for="tahun">Tahun</label>
-                        <select class="form-select @error('tahun') is-invalid @enderror" id="tahun" name="tahun">
-                            @for($y = date('Y'); $y >= 2020; $y--)
-                                <option value="{{ $y }}" @selected((int) $tahun === $y)>{{ $y }}</option>
-                            @endfor
-                        </select>
-                        @error('tahun') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                    </div>
+            <div class="col-md-6">
+                <label class="form-label" for="penggajian_bulan">Bulan</label>
+                <select class="form-select @error('bulan') is-invalid @enderror" id="penggajian_bulan" name="bulan">
+                    @for($i = 1; $i <= 12; $i++)
+                        <option value="{{ $i }}" @selected((int) old('bulan', $bulan) === $i)>
+                            {{ \Illuminate\Support\Carbon::createFromDate(2000, $i, 1)->translatedFormat('F') }}
+                        </option>
+                    @endfor
+                </select>
+                @error('bulan') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            </div>
 
-                    <div class="col-xl-4 d-flex gap-2">
-                        <button class="btn btn-primary" type="submit">Terapkan</button>
-                        @if(request()->hasAny(['unit_kerja_id']))
-                            <a class="btn btn-light" href="{{ route('laporan.penggajian', ['bulan' => $bulan, 'tahun' => $tahun]) }}">Reset</a>
-                        @endif
-                    </div>
-                </form>
-        </x-filter-card>
+            <div class="col-md-6">
+                <label class="form-label" for="penggajian_tahun">Tahun</label>
+                <select class="form-select @error('tahun') is-invalid @enderror" id="penggajian_tahun" name="tahun">
+                    @for($y = date('Y'); $y >= 2020; $y--)
+                        <option value="{{ $y }}" @selected((int) old('tahun', $tahun) === $y)>{{ $y }}</option>
+                    @endfor
+                </select>
+                @error('tahun') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            </div>
+        </x-report-filter-modal>
 
-        <div class="report-stat-grid mb-4">
+        <x-report-tabs
+            label="Bagian laporan penggajian"
+            :tabs="[
+                'penggajian-ringkasan' => [
+                    'label' => 'Ringkasan',
+                    'description' => 'Ikhtisar nominal penggajian.',
+                    'icon' => 'bi-grid-1x2',
+                ],
+                'penggajian-unit' => [
+                    'label' => 'Rekap per Unit',
+                    'description' => 'Transaksi dan gaji bersih per unit.',
+                    'icon' => 'bi-diagram-3',
+                ],
+                'penggajian-detail' => [
+                    'label' => 'Detail Transaksi',
+                    'description' => 'Daftar transaksi pada periode ini.',
+                    'icon' => 'bi-table',
+                ],
+            ]"
+        >
+            <x-report-tab-pane
+                id="penggajian-ringkasan"
+                title="Ringkasan Penggajian"
+                description="Nilai utama penggajian pada periode dan unit kerja yang dipilih."
+                active
+            >
+        <div class="report-stat-grid">
             <x-stat-card icon="bi-receipt" label="Total Transaksi" :value="number_format($totalTransaksi, 0, ',', '.')" plain />
             <x-stat-card icon="bi-cash-stack" label="Total Gaji Pokok" :value="'Rp '.number_format($totalGajiPokok, 0, ',', '.')" compact plain />
             <x-stat-card icon="bi-wallet2" label="Total Gaji Bersih" :value="'Rp '.number_format($totalGajiBersih, 0, ',', '.')" compact plain />
             <x-stat-card icon="bi-plus-circle" label="Total Tunjangan" :value="'Rp '.number_format($totalTunjangan, 0, ',', '.')" compact plain />
             <x-stat-card icon="bi-dash-circle" label="Total Potongan" :value="'Rp '.number_format($totalPotongan, 0, ',', '.')" compact plain />
         </div>
+            </x-report-tab-pane>
 
-        <div class="card mb-4">
-            <div class="card-header">Rekapitulasi per Unit Kerja</div>
-            <div class="table-responsive">
+            <x-report-tab-pane
+                id="penggajian-unit"
+                title="Rekapitulasi per Unit Kerja"
+                description="Jumlah transaksi dan total gaji bersih pada setiap unit kerja."
+            >
+            <div class="table-responsive report-tab-table">
                 <table class="table table-hover mb-0">
                     <thead class="table-light">
                         <tr>
@@ -93,13 +146,23 @@
                             <x-empty-row :colspan="3">Tidak ada transaksi gaji pada periode ini.</x-empty-row>
                         @endforelse
                     </tbody>
+                    <tfoot class="table-light">
+                        <tr>
+                            <th scope="row">Total Keseluruhan</th>
+                            <th class="text-end">{{ number_format($totalTransaksi, 0, ',', '.') }}</th>
+                            <th class="text-end">Rp {{ number_format($totalGajiBersih, 0, ',', '.') }}</th>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
-        </div>
+            </x-report-tab-pane>
 
-        <div class="card">
-            <div class="card-header">Detail Transaksi Gaji</div>
-            <div class="table-responsive">
+            <x-report-tab-pane
+                id="penggajian-detail"
+                title="Detail Transaksi Gaji"
+                description="Daftar transaksi gaji yang cocok dengan periode dan filter laporan."
+            >
+            <div class="table-responsive report-tab-table">
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
@@ -128,14 +191,15 @@
                                 @endcan
                             </tr>
                         @empty
-                            <x-empty-row :colspan="5">Tidak ada transaksi gaji yang cocok dengan filter.</x-empty-row>
+                            <x-empty-row :colspan="auth()->user()->can('transaksi-gaji.view') ? 5 : 4">Tidak ada transaksi gaji yang cocok dengan filter.</x-empty-row>
                         @endforelse
                     </tbody>
                 </table>
             </div>
 
             <x-pagination-footer :paginator="$transaksiGaji" class="d-print-none" />
-        </div>
+            </x-report-tab-pane>
+        </x-report-tabs>
 
 </x-app-page>
 @endsection

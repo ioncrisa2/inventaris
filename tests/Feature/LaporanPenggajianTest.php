@@ -83,6 +83,10 @@ test('payroll report displays real summaries and records for the selected period
         ->assertOk()
         ->assertSee('Budi Santoso')
         ->assertSee('Sari Utami')
+        ->assertDontSee('Cetak Slip Terpilih')
+        ->assertDontSee('data-bulk-select="slip-gaji"', false)
+        ->assertDontSee(route('transaksi-gaji.cetak-massal'), false)
+        ->assertSee('Total Keseluruhan')
         ->assertViewHas('totalTransaksi', 2)
         ->assertViewHas('totalGajiPokok', 11000000)
         ->assertViewHas('totalTunjangan', 500000)
@@ -98,7 +102,10 @@ test('payroll report filters by unit kerja', function () {
     ]))
         ->assertOk()
         ->assertSee('Budi Santoso')
-        ->assertDontSee('Sari Utami')
+        ->assertViewHas('transaksiGaji', function ($transaksiGaji) {
+            return $transaksiGaji->count() === 1
+                && $transaksiGaji->first()->karyawan->is($this->budi);
+        })
         ->assertViewHas('totalTransaksi', 1)
         ->assertViewHas('totalGajiBersih', 5400000);
 });
@@ -109,7 +116,9 @@ test('payroll print report uses selected filters and print layout', function () 
         ->assertViewIs('laporan.cetak.penggajian')
         ->assertSee('Cetak Laporan Penggajian')
         ->assertSee('Budi Santoso')
-        ->assertSee('Sari Utami');
+        ->assertSee('Sari Utami')
+        ->assertSee('Total Keseluruhan')
+        ->assertSee('payroll-print-summary', false);
 });
 
 test('payroll report can be exported to excel with the selected filters', function () {
