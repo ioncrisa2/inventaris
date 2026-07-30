@@ -2,13 +2,15 @@
 
 @section('title', 'Login - Sistem Inventaris & Kepegawaian')
 
+@php($identitas = app(\App\Services\IdentitasAplikasiService::class))
+
 @section('content')
 <main class="auth-page">
     <div class="auth-card card shadow-sm">
         <div class="card-body p-4">
             <div class="text-center mb-4">
-                <img src="{{ asset('assets/img/logo-koperasi.png') }}" alt="Logo" class="auth-logo mb-3">
-                <h1 class="h4 mb-1">Login Sistem {{ config('app.name') }}</h1>
+                <img src="{{ $identitas->logoUrl() ?? asset('assets/img/logo-koperasi.png') }}" alt="Logo" class="auth-logo mb-3">
+                <h1 class="h4 mb-1">Login Sistem {{ $identitas->nama() }}</h1>
                 <p class="text-body-secondary mb-0">Sistem Informasi Inventaris & Kepegawaian</p>
             </div>
 

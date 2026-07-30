@@ -2,14 +2,19 @@
 
 use App\Models\Karyawan;
 use App\Models\KomponenGaji;
+use App\Models\TemplateSlipGaji;
 use App\Models\TransaksiGaji;
 use App\Models\TransaksiGajiDetail;
 use App\Models\UnitKerja;
+use App\Models\User;
 use App\Repositories\KaryawanRepository;
 use App\Repositories\KomponenGajiRepository;
 use App\Repositories\TransaksiGajiRepository;
 use App\Rules\Decimal15Two;
+use App\Services\HariOperasionalService;
 use App\Services\TransaksiGajiService;
+use App\Support\SlipGajiPaperLayout;
+use App\Support\SlipGajiTemplateSchema;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
@@ -59,6 +64,25 @@ function payloadGaji($karyawan, $tunjangan, $potongan, array $override = []): ar
             "master_{$potongan->id}" => ['pakai' => '1'],
         ],
     ], $override);
+}
+
+function buatPenandaTanganSlip(
+    Karyawan $karyawanAcuan,
+    string $nik,
+    string $nama,
+    string $jabatan,
+    ?string $tanggalMengundurkanDiri = null,
+): Karyawan {
+    return Karyawan::create([
+        'nik' => $nik,
+        'nama_lengkap' => $nama,
+        'tanggal_lahir' => '1990-01-01',
+        'unit_kerja_id' => $karyawanAcuan->unit_kerja_id,
+        'jabatan' => $jabatan,
+        'status_karyawan' => 'Tetap',
+        'gaji_pokok' => 5000000,
+        'tanggal_mengundurkan_diri' => $tanggalMengundurkanDiri,
+    ]);
 }
 
 test('transaksi gaji dihitung sesuai rumus: gaji_pokok + tunjangan - potongan', function () {
@@ -172,7 +196,7 @@ test('duplicate key dari database diterjemahkan menjadi validation error', funct
         $repository,
         app(KomponenGajiRepository::class),
         app(KaryawanRepository::class),
-        app(App\Services\HariOperasionalService::class),
+        app(HariOperasionalService::class),
     );
 
     try {
@@ -330,14 +354,405 @@ test('minimal satu komponen harus dipilih', function () {
 test('slip gaji bisa dicetak dengan rincian komponen', function () {
     $this->post(route('transaksi-gaji.store'), payloadGaji($this->karyawan, $this->tunjanganJabatan, $this->potonganBpjs));
     $transaksi = TransaksiGaji::first();
+    $dibuatOleh = buatPenandaTanganSlip($this->karyawan, 'EMP-SIGN-01', 'Siti Pembuat', 'Bendahara');
+    $mengetahui = buatPenandaTanganSlip($this->karyawan, 'EMP-SIGN-02', 'Rina Mengetahui', 'Kepala Keuangan');
 
-    $this->get(route('transaksi-gaji.cetak', $transaksi))
+    $response = $this->get(route('transaksi-gaji.cetak', [
+        'transaksiGaji' => $transaksi,
+        'dibuat_oleh_id' => $dibuatOleh->id,
+        'mengetahui_id' => $mengetahui->id,
+    ]))
         ->assertOk()
+        ->assertViewIs('transaksi-gaji.cetak')
+        ->assertViewHas('paperLayout', SlipGajiPaperLayout::LEFT_RIGHT)
+        ->assertSee('page-layout--f4-portrait', false)
+        ->assertSee('salary-slip-sheet--left-right', false)
+        ->assertDontSee('salary-slip-sheet--single', false)
         ->assertSee('Slip Gaji')
         ->assertSee('Budi Santoso')
         ->assertSee('Tunjangan Jabatan')
         ->assertSee('Potongan BPJS')
+        ->assertSee('Dibuat oleh')
+        ->assertSee('Siti Pembuat')
+        ->assertSee('Mengetahui')
+        ->assertSee('Rina Mengetahui')
+        ->assertSee('Diterima oleh')
+        ->assertDontSee('<table', false)
         ->assertSee('5.400.000');
+
+    expect(strpos($response->getContent(), 'Tunjangan'))
+        ->toBeLessThan(strpos($response->getContent(), 'Potongan'));
+});
+
+test('modal cetak menjelaskan dua arah pembagian kertas tanpa istilah ambigu', function () {
+    $this->post(route('transaksi-gaji.store'), payloadGaji($this->karyawan, $this->tunjanganJabatan, $this->potonganBpjs));
+    $transaksi = TransaksiGaji::firstOrFail();
+
+    $this->get(route('transaksi-gaji.show', $transaksi))
+        ->assertOk()
+        ->assertSee('name="paper_layout"', false)
+        ->assertSee('value="left_right"', false)
+        ->assertSee('value="top_bottom"', false)
+        ->assertSee('Kiri–kanan')
+        ->assertSee('Garis pembagi vertikal')
+        ->assertSee('Atas–bawah')
+        ->assertSee('Garis pembagi horizontal');
+});
+
+test('layout terbit menjadi default dan dapat dioverride hanya untuk satu cetakan', function () {
+    $configuration = SlipGajiTemplateSchema::default();
+    $configuration['page']['paper_layout'] = SlipGajiPaperLayout::TOP_BOTTOM;
+
+    $this->post(route('pengaturan.slip-gaji.publish'), [
+        'configuration' => json_encode($configuration),
+        'expected_revision' => 1,
+    ])->assertRedirect();
+
+    $this->post(route('transaksi-gaji.store'), payloadGaji($this->karyawan, $this->tunjanganJabatan, $this->potonganBpjs));
+    $transaksi = TransaksiGaji::firstOrFail();
+    $dibuatOleh = buatPenandaTanganSlip($this->karyawan, 'EMP-SIGN-12', 'Siti Pembuat', 'Bendahara');
+    $mengetahui = buatPenandaTanganSlip($this->karyawan, 'EMP-SIGN-13', 'Rina Mengetahui', 'Kepala Keuangan');
+    $parameters = [
+        'transaksiGaji' => $transaksi,
+        'dibuat_oleh_id' => $dibuatOleh->id,
+        'mengetahui_id' => $mengetahui->id,
+    ];
+
+    $this->get(route('transaksi-gaji.cetak', $parameters))
+        ->assertOk()
+        ->assertViewHas('paperLayout', SlipGajiPaperLayout::TOP_BOTTOM)
+        ->assertSee('salary-slip-sheet--top-bottom', false);
+
+    $this->get(route('transaksi-gaji.cetak', [
+        ...$parameters,
+        'paper_layout' => SlipGajiPaperLayout::LEFT_RIGHT,
+    ]))
+        ->assertOk()
+        ->assertViewHas('paperLayout', SlipGajiPaperLayout::LEFT_RIGHT)
+        ->assertSee('salary-slip-sheet--left-right', false);
+
+    expect(TemplateSlipGaji::firstOrFail()->konfigurasi_terbit['page']['paper_layout'])
+        ->toBe(SlipGajiPaperLayout::TOP_BOTTOM);
+});
+
+test('cetak slip hanya memakai template terbit dan meng-escape teks statis', function () {
+    $configuration = SlipGajiTemplateSchema::default();
+    $textBlock = $configuration['blocks'][7];
+    $textBlock['id'] = 'catatan-slip';
+    $textBlock['type'] = 'text';
+    $textBlock['content'] = '<script>alert("gaji")</script>';
+    $textBlock['variant'] = 'default';
+    $configuration['blocks'][] = $textBlock;
+
+    $this->post(route('pengaturan.slip-gaji.draft'), [
+        'configuration' => json_encode($configuration),
+        'expected_revision' => 1,
+    ])->assertRedirect();
+
+    $this->post(route('transaksi-gaji.store'), payloadGaji($this->karyawan, $this->tunjanganJabatan, $this->potonganBpjs));
+    $transaksi = TransaksiGaji::firstOrFail();
+    $dibuatOleh = buatPenandaTanganSlip($this->karyawan, 'EMP-SIGN-10', 'Siti Pembuat', 'Bendahara');
+    $mengetahui = buatPenandaTanganSlip($this->karyawan, 'EMP-SIGN-11', 'Rina Mengetahui', 'Kepala Keuangan');
+    $printUrl = route('transaksi-gaji.cetak', [
+        'transaksiGaji' => $transaksi,
+        'dibuat_oleh_id' => $dibuatOleh->id,
+        'mengetahui_id' => $mengetahui->id,
+    ]);
+
+    $this->get($printUrl)
+        ->assertOk()
+        ->assertDontSee('catatan-slip')
+        ->assertDontSee('<script>alert("gaji")</script>', false);
+
+    $this->post(route('pengaturan.slip-gaji.publish'), [
+        'configuration' => json_encode($configuration),
+        'expected_revision' => 2,
+    ])->assertRedirect();
+
+    $this->get($printUrl)
+        ->assertOk()
+        ->assertSee('&lt;script&gt;alert(&quot;gaji&quot;)&lt;/script&gt;', false)
+        ->assertDontSee('<script>alert("gaji")</script>', false);
+});
+
+test('cetak slip menolak penanda tangan kosong sama atau tidak aktif', function () {
+    $this->post(route('transaksi-gaji.store'), payloadGaji($this->karyawan, $this->tunjanganJabatan, $this->potonganBpjs));
+    $transaksi = TransaksiGaji::firstOrFail();
+    $aktif = buatPenandaTanganSlip($this->karyawan, 'EMP-SIGN-03', 'Penanda Aktif', 'Bendahara');
+    $tidakAktif = buatPenandaTanganSlip(
+        $this->karyawan,
+        'EMP-SIGN-04',
+        'Penanda Tidak Aktif',
+        'Mantan Kepala',
+        '2026-01-01',
+    );
+
+    $this->from(route('transaksi-gaji.show', $transaksi))
+        ->get(route('transaksi-gaji.cetak', ['transaksiGaji' => $transaksi]))
+        ->assertRedirect(route('transaksi-gaji.show', $transaksi))
+        ->assertSessionHasErrors(['dibuat_oleh_id', 'mengetahui_id']);
+
+    $this->from(route('transaksi-gaji.show', $transaksi))
+        ->get(route('transaksi-gaji.cetak', [
+            'transaksiGaji' => $transaksi,
+            'dibuat_oleh_id' => $aktif->id,
+            'mengetahui_id' => $aktif->id,
+        ]))
+        ->assertRedirect(route('transaksi-gaji.show', $transaksi))
+        ->assertSessionHasErrors(['dibuat_oleh_id', 'mengetahui_id']);
+
+    $this->from(route('transaksi-gaji.show', $transaksi))
+        ->get(route('transaksi-gaji.cetak', [
+            'transaksiGaji' => $transaksi,
+            'dibuat_oleh_id' => $aktif->id,
+            'mengetahui_id' => $tidakAktif->id,
+        ]))
+        ->assertRedirect(route('transaksi-gaji.show', $transaksi))
+        ->assertSessionHasErrors('mengetahui_id');
+
+    $this->from(route('transaksi-gaji.show', $transaksi))
+        ->get(route('transaksi-gaji.cetak', [
+            'transaksiGaji' => $transaksi,
+            'dibuat_oleh_id' => $aktif->id,
+            'mengetahui_id' => buatPenandaTanganSlip(
+                $this->karyawan,
+                'EMP-SIGN-14',
+                'Penanda Kedua',
+                'Kepala Keuangan',
+            )->id,
+            'paper_layout' => 'vertical',
+        ]))
+        ->assertRedirect(route('transaksi-gaji.show', $transaksi))
+        ->assertSessionHasErrors('paper_layout');
+});
+
+test('cetak massal semua karyawan hanya mengambil transaksi pada periode yang dipilih', function () {
+    $karyawanKedua = buatPenandaTanganSlip($this->karyawan, 'EMP-002', 'Ani Karyawan', 'Staf IT');
+    $karyawanKetiga = buatPenandaTanganSlip($this->karyawan, 'EMP-003', 'Citra Karyawan', 'Staf IT');
+
+    foreach ([$this->karyawan, $karyawanKedua, $karyawanKetiga] as $karyawan) {
+        $this->post(route('transaksi-gaji.store'), payloadGaji(
+            $karyawan,
+            $this->tunjanganJabatan,
+            $this->potonganBpjs,
+        ))->assertRedirect();
+    }
+
+    $this->post(route('transaksi-gaji.store'), payloadGaji(
+        $this->karyawan,
+        $this->tunjanganJabatan,
+        $this->potonganBpjs,
+        ['bulan' => 6],
+    ))->assertRedirect();
+
+    $dibuatOleh = buatPenandaTanganSlip($this->karyawan, 'EMP-SIGN-05', 'Dewi Bendahara', 'Bendahara');
+    $mengetahui = buatPenandaTanganSlip($this->karyawan, 'EMP-SIGN-06', 'Eko Kepala', 'Kepala Keuangan');
+    $parameters = [
+        'mode' => 'periode',
+        'bulan' => 7,
+        'tahun' => 2026,
+        'dibuat_oleh_id' => $dibuatOleh->id,
+        'mengetahui_id' => $mengetahui->id,
+    ];
+
+    $response = $this->get(route('transaksi-gaji.cetak-massal', $parameters))
+        ->assertOk()
+        ->assertSee('salary-slip-sheet--left-right', false)
+        ->assertSee('Slip Gaji Massal')
+        ->assertSee('3 slip')
+        ->assertSee('2 lembar F4')
+        ->assertSeeInOrder(['Ani Karyawan', 'Budi Santoso', 'Citra Karyawan'])
+        ->assertViewHas('slipPages', function ($pages) {
+            return $pages->count() === 2
+                && $pages->first()->count() === 2
+                && $pages->last()->count() === 1
+                && $pages->flatten(1)->every(
+                    fn ($slip) => $slip['transaksi']->bulan === 7
+                        && $slip['transaksi']->tahun === 2026,
+                );
+        });
+
+    expect(substr_count($response->getContent(), 'class="salary-slip '))
+        ->toBe(3);
+
+    $this->get(route('transaksi-gaji.cetak-massal', [
+        ...$parameters,
+        'paper_layout' => SlipGajiPaperLayout::TOP_BOTTOM,
+    ]))
+        ->assertOk()
+        ->assertSee('salary-slip-sheet--top-bottom', false)
+        ->assertViewHas('slipPages', fn ($pages) => $pages->map->count()->all() === [2, 1]);
+});
+
+test('cetak massal satu karyawan mengambil rentang periode inklusif lintas tahun', function () {
+    $karyawanLain = buatPenandaTanganSlip($this->karyawan, 'EMP-OTHER', 'Ani Karyawan', 'Staf IT');
+
+    foreach ([
+        [$this->karyawan, 12, 2025],
+        [$this->karyawan, 1, 2026],
+        [$this->karyawan, 3, 2026],
+        [$karyawanLain, 1, 2026],
+    ] as [$karyawan, $bulan, $tahun]) {
+        TransaksiGaji::create([
+            'karyawan_id' => $karyawan->id,
+            'bulan' => $bulan,
+            'tahun' => $tahun,
+            'gaji_pokok' => 5000000,
+            'gaji_bersih' => 5000000,
+        ]);
+    }
+
+    $dibuatOleh = buatPenandaTanganSlip($this->karyawan, 'EMP-SIGN-07', 'Dewi Bendahara', 'Bendahara');
+    $mengetahui = buatPenandaTanganSlip($this->karyawan, 'EMP-SIGN-08', 'Eko Kepala', 'Kepala Keuangan');
+
+    $this->get(route('transaksi-gaji.cetak-massal', [
+        'mode' => 'karyawan',
+        'karyawan_id' => $this->karyawan->id,
+        'periode_awal' => '2025-12',
+        'periode_akhir' => '2026-01',
+        'dibuat_oleh_id' => $dibuatOleh->id,
+        'mengetahui_id' => $mengetahui->id,
+    ]))
+        ->assertOk()
+        ->assertSee('2 slip')
+        ->assertSee('Budi Santoso')
+        ->assertDontSee('Ani Karyawan')
+        ->assertViewHas('slipPages', function ($pages) {
+            return $pages->flatten(1)
+                ->map(fn ($slip) => [
+                    $slip['transaksi']->tahun,
+                    $slip['transaksi']->bulan,
+                ])
+                ->all() === [[2025, 12], [2026, 1]];
+        });
+});
+
+test('filter cetak massal menolak field silang rentang terbalik dan hasil kosong', function () {
+    $dibuatOleh = buatPenandaTanganSlip($this->karyawan, 'EMP-SIGN-09', 'Dewi Bendahara', 'Bendahara');
+    $mengetahui = buatPenandaTanganSlip($this->karyawan, 'EMP-SIGN-15', 'Eko Kepala', 'Kepala Keuangan');
+    $signers = [
+        'dibuat_oleh_id' => $dibuatOleh->id,
+        'mengetahui_id' => $mengetahui->id,
+    ];
+
+    $this->from(route('transaksi-gaji.index'))
+        ->get(route('transaksi-gaji.cetak-massal', [
+            ...$signers,
+            'mode' => 'periode',
+            'tahun' => 2026,
+            'karyawan_id' => $this->karyawan->id,
+        ]))
+        ->assertRedirect(route('transaksi-gaji.index'))
+        ->assertSessionHasErrors(['bulan', 'karyawan_id']);
+
+    $this->from(route('transaksi-gaji.index'))
+        ->get(route('transaksi-gaji.cetak-massal', [
+            ...$signers,
+            'mode' => 'karyawan',
+            'karyawan_id' => $this->karyawan->id,
+            'periode_awal' => '2026-07',
+            'periode_akhir' => '2026-06',
+        ]))
+        ->assertRedirect(route('transaksi-gaji.index'))
+        ->assertSessionHasErrors('periode_akhir');
+
+    $this->from(route('transaksi-gaji.index'))
+        ->get(route('transaksi-gaji.cetak-massal', [
+            ...$signers,
+            'mode' => 'karyawan',
+            'karyawan_id' => $this->karyawan->id,
+            'periode_awal' => '1999-12',
+            'periode_akhir' => '2101-01',
+        ]))
+        ->assertRedirect(route('transaksi-gaji.index'))
+        ->assertSessionHasErrors(['periode_awal', 'periode_akhir']);
+
+    $this->from(route('transaksi-gaji.index'))
+        ->get(route('transaksi-gaji.cetak-massal', [
+            ...$signers,
+            'mode' => 'periode',
+            'bulan' => 1,
+            'tahun' => 2099,
+        ]))
+        ->assertRedirect(route('transaksi-gaji.index'))
+        ->assertSessionHasErrors('mode');
+});
+
+test('cetak massal meminta filter dipersempit jika hasil melebihi seratus slip', function () {
+    $now = now();
+    $karyawanRows = collect(range(1, 101))->map(fn ($index) => [
+        'nik' => "EMP-MASSAL-{$index}",
+        'nama_lengkap' => "Karyawan Massal {$index}",
+        'tanggal_lahir' => '1990-01-01',
+        'unit_kerja_id' => $this->karyawan->unit_kerja_id,
+        'jabatan' => 'Staf',
+        'status_karyawan' => 'Tetap',
+        'gaji_pokok' => 5000000,
+        'created_at' => $now,
+        'updated_at' => $now,
+    ]);
+    Karyawan::insert($karyawanRows->all());
+
+    $targetIds = Karyawan::query()
+        ->where('nik', 'like', 'EMP-MASSAL-%')
+        ->pluck('id');
+    TransaksiGaji::insert($targetIds->map(fn ($karyawanId) => [
+        'karyawan_id' => $karyawanId,
+        'bulan' => 8,
+        'tahun' => 2026,
+        'gaji_pokok' => 5000000,
+        'gaji_bersih' => 5000000,
+        'created_at' => $now,
+        'updated_at' => $now,
+    ])->all());
+
+    $dibuatOleh = buatPenandaTanganSlip($this->karyawan, 'EMP-SIGN-16', 'Dewi Bendahara', 'Bendahara');
+    $mengetahui = buatPenandaTanganSlip($this->karyawan, 'EMP-SIGN-17', 'Eko Kepala', 'Kepala Keuangan');
+
+    $this->from(route('transaksi-gaji.index'))
+        ->get(route('transaksi-gaji.cetak-massal', [
+            'mode' => 'periode',
+            'bulan' => 8,
+            'tahun' => 2026,
+            'dibuat_oleh_id' => $dibuatOleh->id,
+            'mengetahui_id' => $mengetahui->id,
+        ]))
+        ->assertRedirect(route('transaksi-gaji.index'))
+        ->assertSessionHasErrors('mode');
+});
+
+test('slip dengan rincian panjang memakai satu lembar penuh agar tanda tangan tidak tertimpa', function () {
+    $this->post(route('transaksi-gaji.store'), payloadGaji($this->karyawan, $this->tunjanganJabatan, $this->potonganBpjs));
+    $transaksi = TransaksiGaji::firstOrFail();
+
+    foreach (range(1, 12) as $index) {
+        TransaksiGajiDetail::create([
+            'transaksi_gaji_id' => $transaksi->id,
+            'komponen_gaji_id' => null,
+            'nama_komponen_snapshot' => "Tunjangan Tambahan Panjang Nomor {$index}",
+            'jenis_snapshot' => 'Tunjangan',
+            'metode_perhitungan_snapshot' => 'nominal_tetap',
+            'nilai_snapshot' => 10000,
+            'nominal_hasil' => 10000,
+        ]);
+    }
+
+    $transaksi->load('details');
+    $service = app(TransaksiGajiService::class);
+    $leftRightPages = $service->slipPrintPages(
+        collect([$transaksi]),
+        SlipGajiPaperLayout::LEFT_RIGHT,
+    );
+    $topBottomPages = $service->slipPrintPages(
+        collect([$transaksi]),
+        SlipGajiPaperLayout::TOP_BOTTOM,
+    );
+
+    foreach ([$leftRightPages, $topBottomPages] as $pages) {
+        expect($pages)->toHaveCount(1)
+            ->and($pages->first())->toHaveCount(1)
+            ->and($pages->first()->first()['is_full_page'])->toBeTrue();
+    }
 });
 
 test('tunjangan per hari dihitung dari jumlah hari operasional (bukan kalender) pada rentang tanggal yang diinput manual', function () {
@@ -760,6 +1175,15 @@ test('index displays employees clustered with a transaction count, not one row p
         ->assertOk()
         ->assertSee($this->karyawan->nama_lengkap)
         ->assertSee(route('transaksi-gaji.karyawan', $this->karyawan), false)
+        ->assertSee('Cetak Slip Massal')
+        ->assertSee('data-bs-target="#cetakSlipGajiMassalModal"', false)
+        ->assertSee(route('transaksi-gaji.cetak-massal'), false)
+        ->assertSee('name="mode"', false)
+        ->assertSee('value="periode"', false)
+        ->assertSee('value="karyawan"', false)
+        ->assertSee('name="periode_awal"', false)
+        ->assertSee('name="periode_akhir"', false)
+        ->assertDontSee('data-bulk-select=', false)
         // Satu baris per karyawan (bukan per transaksi), dengan jumlah transaksinya.
         ->assertViewHas('karyawanList', function ($karyawanList) {
             $baris = $karyawanList->firstWhere('id', $this->karyawan->id);
@@ -793,13 +1217,71 @@ test('karyawan detail page lists every transaction for that employee only', func
         'tahun' => 2026,
         'baris' => ["master_{$this->tunjanganJabatan->id}" => ['pakai' => '1']],
     ]);
+    $transaksiKaryawanLain = TransaksiGaji::query()
+        ->where('karyawan_id', $karyawanLain->id)
+        ->firstOrFail();
 
-    $this->get(route('transaksi-gaji.karyawan', $this->karyawan))
+    $response = $this->get(route('transaksi-gaji.karyawan', $this->karyawan))
         ->assertOk()
         ->assertSee('Transaksi Gaji — '.$this->karyawan->nama_lengkap)
         ->assertSee('Juni 2026')
         ->assertSee('Juli 2026')
-        ->assertDontSee('Karyawan Lain');
+        ->assertSee('data-bulk-select-all="transaksi-gaji"', false)
+        ->assertSee('data-bulk-select="transaksi-gaji"', false)
+        ->assertSee('Hapus Terpilih')
+        ->assertDontSee('Cetak Slip Terpilih')
+        ->assertDontSee('id="cetakSlipGajiMassalModal"', false)
+        ->assertDontSee(route('transaksi-gaji.cetak-massal'), false)
+        ->assertDontSee(route('transaksi-gaji.show', $transaksiKaryawanLain), false);
+
+    expect(substr_count($response->getContent(), 'data-slip-print-modal'))
+        ->toBe(1);
+});
+
+test('viewer tanpa izin hapus tetap dapat mencetak individual tanpa melihat bulk selection', function () {
+    $this->post(route('transaksi-gaji.store'), payloadGaji(
+        $this->karyawan,
+        $this->tunjanganJabatan,
+        $this->potonganBpjs,
+    ));
+    $transaksi = TransaksiGaji::firstOrFail();
+
+    $this->actingAs(staffUser());
+
+    $this->get(route('transaksi-gaji.karyawan', $this->karyawan))
+        ->assertOk()
+        ->assertSee('Cetak slip gaji periode Juli 2026')
+        ->assertSee('id="cetakSlipGajiModal"', false)
+        ->assertDontSee('data-bulk-select-all="transaksi-gaji"', false)
+        ->assertDontSee('data-bulk-select="transaksi-gaji"', false)
+        ->assertDontSee('Cetak Slip Terpilih')
+        ->assertDontSee(route('transaksi-gaji.cetak-massal'), false)
+        ->assertDontSee('Hapus Terpilih')
+        ->assertDontSee('data-bulk-delete-trigger', false)
+        ->assertDontSee('data-delete-url', false)
+        ->assertDontSee(route('transaksi-gaji.create'), false)
+        ->assertDontSee(route('transaksi-gaji.edit', $transaksi), false);
+});
+
+test('viewer transaksi tetap melihat modal cetak massal tanpa izin laporan penggajian', function () {
+    TransaksiGaji::create([
+        'karyawan_id' => $this->karyawan->id,
+        'bulan' => 7,
+        'tahun' => 2026,
+        'gaji_pokok' => 5000000,
+        'gaji_bersih' => 5000000,
+    ]);
+    $viewer = User::factory()->create();
+    $viewer->givePermissionTo('transaksi-gaji.view');
+    $this->actingAs($viewer);
+
+    $this->get(route('transaksi-gaji.index'))
+        ->assertOk()
+        ->assertSee('Cetak Slip Massal')
+        ->assertSee('id="cetakSlipGajiMassalModal"', false)
+        ->assertSee(route('transaksi-gaji.cetak-massal'), false)
+        ->assertDontSee(route('laporan.penggajian'), false)
+        ->assertDontSee(route('transaksi-gaji.create'), false);
 });
 
 test('form only shows the component management link once', function () {

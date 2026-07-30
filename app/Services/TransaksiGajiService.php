@@ -10,6 +10,7 @@ use App\Repositories\TransaksiGajiRepository;
 use App\Rules\Decimal15Two;
 use App\Support\PenggajianCalculator;
 use App\Support\PerPage;
+use App\Support\SlipGajiPaperLayout;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -19,11 +20,14 @@ use Illuminate\Validation\ValidationException;
 
 class TransaksiGajiService
 {
+    private const MAX_BULK_PRINT_SLIPS = 100;
+
     public function __construct(
         private TransaksiGajiRepository $transaksiGajiRepository,
         private KomponenGajiRepository $komponenGajiRepository,
         private KaryawanRepository $karyawanRepository,
         private HariOperasionalService $hariOperasionalService,
+        private GajiKaryawanResolver $gajiKaryawanResolver,
     ) {}
 
     public function karyawanList(?string $search, int $perPage = PerPage::DEFAULT): LengthAwarePaginator
@@ -37,6 +41,44 @@ class TransaksiGajiService
     public function listForKaryawan(int $karyawanId, array $filters, int $perPage = PerPage::DEFAULT): LengthAwarePaginator
     {
         return $this->transaksiGajiRepository->paginateForKaryawan($karyawanId, $filters, $perPage);
+    }
+
+    /**
+     * @param  array<string, int|string>  $filter
+     * @return Collection<int, TransaksiGaji>
+     */
+    public function slipsForBulkPrint(array $filter): Collection
+    {
+        $limit = self::MAX_BULK_PRINT_SLIPS + 1;
+
+        $transaksiGaji = $filter['mode'] === 'periode'
+            ? $this->transaksiGajiRepository->forSlipPrintPeriod(
+                (int) $filter['bulan'],
+                (int) $filter['tahun'],
+                $limit,
+            )
+            : $this->transaksiGajiRepository->forSlipPrintEmployeeRange(
+                (int) $filter['karyawan_id'],
+                (int) $filter['tahun_awal'],
+                (int) $filter['bulan_awal'],
+                (int) $filter['tahun_akhir'],
+                (int) $filter['bulan_akhir'],
+                $limit,
+            );
+
+        if ($transaksiGaji->isEmpty()) {
+            throw ValidationException::withMessages([
+                'mode' => 'Tidak ada transaksi gaji yang cocok dengan filter cetak.',
+            ]);
+        }
+
+        if ($transaksiGaji->count() > self::MAX_BULK_PRINT_SLIPS) {
+            throw ValidationException::withMessages([
+                'mode' => 'Hasil filter melebihi 100 slip. Persempit periode cetak.',
+            ]);
+        }
+
+        return $transaksiGaji;
     }
 
     /**
@@ -106,9 +148,10 @@ class TransaksiGajiService
             ]);
         }
 
-        $gajiPokok = Decimal15Two::normalizeNonNegative($karyawan->gaji_pokok);
-
-        if ($gajiPokok === null) {
+        try {
+            $tanggalAcuanGaji = Carbon::create($tahun, $bulan, 1)->endOfMonth();
+            $gajiPokok = $this->gajiKaryawanResolver->berlakuPada($karyawan, $tanggalAcuanGaji);
+        } catch (\DomainException) {
             throw ValidationException::withMessages([
                 'karyawan_id' => 'Gaji pokok karyawan berada di luar batas nominal yang didukung.',
             ]);
@@ -399,6 +442,104 @@ class TransaksiGajiService
             : [];
 
         return [$barisMaster, $barisYatim];
+    }
+
+    /**
+     * Siapkan halaman cetak slip. Slip dengan rincian panjang berdiri sendiri;
+     * slip normal dipasangkan maksimal dua per lembar F4 portrait.
+     *
+     * @param  Collection<int, TransaksiGaji>  $transaksiGaji
+     * @return Collection<int, Collection<int, array{
+     *     transaksi: TransaksiGaji,
+     *     tunjangan: Collection,
+     *     potongan: Collection,
+     *     total_tunjangan: string,
+     *     total_potongan: string,
+     *     is_full_page: bool
+     * }>>
+     */
+    public function slipPrintPages(
+        Collection $transaksiGaji,
+        string $paperLayout = SlipGajiPaperLayout::DEFAULT,
+    ): Collection {
+        $paperLayout = SlipGajiPaperLayout::normalize($paperLayout);
+
+        $slips = $transaksiGaji->map(function (TransaksiGaji $transaksi) use ($paperLayout): array {
+            $tunjangan = $transaksi->details
+                ->where('jenis_snapshot', 'Tunjangan')
+                ->values();
+            $potongan = $transaksi->details
+                ->where('jenis_snapshot', 'Potongan')
+                ->values();
+
+            return [
+                'transaksi' => $transaksi,
+                'tunjangan' => $tunjangan,
+                'potongan' => $potongan,
+                'total_tunjangan' => $tunjangan->reduce(
+                    fn ($total, $detail) => bcadd($total, (string) $detail->nominal_hasil, 2),
+                    '0.00',
+                ),
+                'total_potongan' => $potongan->reduce(
+                    fn ($total, $detail) => bcadd($total, (string) $detail->nominal_hasil, 2),
+                    '0.00',
+                ),
+                'is_full_page' => $this->slipRequiresFullPage($tunjangan, $potongan, $paperLayout),
+            ];
+        });
+
+        $pages = collect();
+        $currentPage = collect();
+
+        foreach ($slips as $slip) {
+            if ($slip['is_full_page']) {
+                if ($currentPage->isNotEmpty()) {
+                    $pages->push($currentPage);
+                    $currentPage = collect();
+                }
+
+                $pages->push(collect([$slip]));
+
+                continue;
+            }
+
+            $currentPage->push($slip);
+
+            if ($currentPage->count() === 2) {
+                $pages->push($currentPage);
+                $currentPage = collect();
+            }
+        }
+
+        if ($currentPage->isNotEmpty()) {
+            $pages->push($currentPage);
+        }
+
+        return $pages;
+    }
+
+    private function slipRequiresFullPage(
+        Collection $tunjangan,
+        Collection $potongan,
+        string $paperLayout,
+    ): bool {
+        $charactersPerRow = $paperLayout === SlipGajiPaperLayout::LEFT_RIGHT ? 19 : 28;
+        $estimatedRows = $tunjangan
+            ->merge($potongan)
+            ->sum(fn ($detail) => max(
+                1,
+                (int) ceil(mb_strlen($detail->nama_komponen_snapshot) / $charactersPerRow),
+            ));
+
+        if ($paperLayout === SlipGajiPaperLayout::LEFT_RIGHT) {
+            return $estimatedRows > 20
+                || $tunjangan->count() + $potongan->count() > 18
+                || max($tunjangan->count(), $potongan->count()) > 14;
+        }
+
+        return $estimatedRows > 12
+            || $tunjangan->count() + $potongan->count() > 12
+            || max($tunjangan->count(), $potongan->count()) > 8;
     }
 
     public function totalPerJenis(TransaksiGaji $transaksiGaji, string $jenis): string

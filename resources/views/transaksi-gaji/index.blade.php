@@ -6,10 +6,23 @@
 <x-app-page long-footer>
         <x-page-header title="Transaksi Gaji" subtitle="Riwayat pembayaran per karyawan.">
             <x-slot:actions>
-                <a href="{{ route('transaksi-gaji.create') }}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i>
-                    Buat Transaksi Gaji
-                </a>
+                @can('transaksi-gaji.view')
+                    <button
+                        type="button"
+                        class="btn btn-outline-primary"
+                        data-bs-toggle="modal"
+                        data-bs-target="#cetakSlipGajiMassalModal"
+                    >
+                        <i class="bi bi-printer" aria-hidden="true"></i>
+                        Cetak Slip Massal
+                    </button>
+                @endcan
+                @can('transaksi-gaji.create')
+                    <a href="{{ route('transaksi-gaji.create') }}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle" aria-hidden="true"></i>
+                        Buat Transaksi Gaji
+                    </a>
+                @endcan
             </x-slot:actions>
         </x-page-header>
 
@@ -68,4 +81,12 @@
             </table>
         </x-data-table>
 </x-app-page>
+
+@can('transaksi-gaji.view')
+    @include('transaksi-gaji._modal-cetak-slip-massal', [
+        'karyawanCetak' => $karyawanCetak,
+        'penandaTangan' => $penandaTangan,
+        'paperLayoutDefault' => $paperLayoutDefault,
+    ])
+@endcan
 @endsection

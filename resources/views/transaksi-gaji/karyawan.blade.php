@@ -18,10 +18,12 @@
                     <i class="bi bi-arrow-left"></i>
                     Kembali
                 </a>
-                <a href="{{ route('transaksi-gaji.create') }}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i>
-                    Buat Transaksi Gaji
-                </a>
+                @can('transaksi-gaji.create')
+                    <a href="{{ route('transaksi-gaji.create') }}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i>
+                        Buat Transaksi Gaji
+                    </a>
+                @endcan
             </x-slot:actions>
         </x-page-header>
 
@@ -62,7 +64,8 @@
                         id="transaksi-gaji"
                         noun="transaksi gaji"
                         :delete-action="route('transaksi-gaji.bulk-destroy')"
-                        delete-message="Transaksi gaji terpilih beserta rincian perhitungannya akan dihapus permanen." />
+                        delete-message="Transaksi gaji terpilih beserta rincian perhitungannya akan dihapus permanen."
+                    />
                 @endcan
             </x-slot:bulkActions>
 
@@ -70,9 +73,9 @@
                     <thead>
                         <tr>
                             @can('transaksi-gaji.delete')
-                            <th class="selection-column">
-                                <x-table-checkbox group="transaksi-gaji" label="Pilih semua transaksi gaji di halaman ini" select-all />
-                            </th>
+                                <th class="selection-column">
+                                    <x-table-checkbox group="transaksi-gaji" label="Pilih semua transaksi gaji di halaman ini" select-all />
+                                </th>
                             @endcan
                             <th class="table-col-width-120">Periode</th>
                             <th class="text-end table-col-width-150">Gaji Pokok</th>
@@ -84,9 +87,9 @@
                         @forelse($transaksiGaji as $data)
                         <tr>
                             @can('transaksi-gaji.delete')
-                            <td class="selection-column">
-                                <x-table-checkbox group="transaksi-gaji" :value="$data->id" :label="'Pilih transaksi gaji periode '.$namaBulan[$data->bulan].' '.$data->tahun" />
-                            </td>
+                                <td class="selection-column">
+                                    <x-table-checkbox group="transaksi-gaji" :value="$data->id" :label="'Pilih transaksi gaji periode '.$namaBulan[$data->bulan].' '.$data->tahun" />
+                                </td>
                             @endcan
                             <td><strong>{{ $namaBulan[$data->bulan] }} {{ $data->tahun }}</strong></td>
                             <td class="text-end">Rp {{ number_format($data->gaji_pokok, 0, ',', '.') }}</td>
@@ -100,27 +103,35 @@
                                         aria-label="Lihat transaksi gaji periode {{ $namaBulan[$data->bulan] }} {{ $data->tahun }}">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    <a
-                                        href="{{ route('transaksi-gaji.cetak', $data->id) }}"
+                                    <button
+                                        type="button"
                                         class="btn btn-sm btn-action btn-action-neutral"
                                         title="Cetak Slip Gaji"
                                         aria-label="Cetak slip gaji periode {{ $namaBulan[$data->bulan] }} {{ $data->tahun }}"
-                                        target="_blank">
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#cetakSlipGajiModal"
+                                        data-slip-print-url="{{ route('transaksi-gaji.cetak', $data->id) }}"
+                                        data-slip-print-label="slip {{ $karyawan->nama_lengkap }} periode {{ $namaBulan[$data->bulan] }} {{ $data->tahun }}"
+                                    >
                                         <i class="bi bi-printer"></i>
-                                    </a>
-                                    <a
-                                        href="{{ route('transaksi-gaji.edit', $data->id) }}"
-                                        class="btn btn-sm btn-action btn-action-neutral"
-                                        title="Edit"
-                                        aria-label="Edit transaksi gaji periode {{ $namaBulan[$data->bulan] }} {{ $data->tahun }}">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
+                                    </button>
+                                    @can('transaksi-gaji.update')
+                                        <a
+                                            href="{{ route('transaksi-gaji.edit', $data->id) }}"
+                                            class="btn btn-sm btn-action btn-action-neutral"
+                                            title="Edit"
+                                            aria-label="Edit transaksi gaji periode {{ $namaBulan[$data->bulan] }} {{ $data->tahun }}">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                    @endcan
 
-                                    <x-delete-button
-                                        :url="route('transaksi-gaji.destroy', $data->id)"
-                                        :message="'Yakin ingin menghapus transaksi gaji periode '.$namaBulan[$data->bulan].' '.$data->tahun.'?'"
-                                        :label="'Hapus transaksi gaji periode '.$namaBulan[$data->bulan].' '.$data->tahun"
-                                    />
+                                    @can('transaksi-gaji.delete')
+                                        <x-delete-button
+                                            :url="route('transaksi-gaji.destroy', $data->id)"
+                                            :message="'Yakin ingin menghapus transaksi gaji periode '.$namaBulan[$data->bulan].' '.$data->tahun.'?'"
+                                            :label="'Hapus transaksi gaji periode '.$namaBulan[$data->bulan].' '.$data->tahun"
+                                        />
+                                    @endcan
                                 </div>
                             </td>
                         </tr>
@@ -131,4 +142,9 @@
                 </table>
         </x-data-table>
 </x-app-page>
+
+@include('transaksi-gaji._modal-cetak-slip', [
+    'penandaTangan' => $penandaTangan,
+    'paperLayoutDefault' => $paperLayoutDefault,
+])
 @endsection

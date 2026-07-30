@@ -49,6 +49,37 @@ class KaryawanRepository
         return Karyawan::with('unitKerja:id,nama_unit')->orderBy('nama_lengkap')->get();
     }
 
+    public function activeOrderedList(): Collection
+    {
+        return Karyawan::query()
+            ->with('unitKerja:id,nama_unit')
+            ->whereNull('tanggal_mengundurkan_diri')
+            ->orderBy('nama_lengkap')
+            ->get();
+    }
+
+    public function withSalaryTransactionsOrderedList(): Collection
+    {
+        return Karyawan::query()
+            ->select(['id', 'nama_lengkap', 'jabatan', 'tanggal_mengundurkan_diri'])
+            ->whereHas('transaksiGaji')
+            ->orderBy('nama_lengkap')
+            ->get();
+    }
+
+    /**
+     * @param  array<int, int>  $ids
+     * @return Collection<int, Karyawan>
+     */
+    public function activeByIds(array $ids): Collection
+    {
+        return Karyawan::query()
+            ->whereNull('tanggal_mengundurkan_diri')
+            ->whereKey($ids)
+            ->get()
+            ->keyBy('id');
+    }
+
     public function findOrFail(int $id): Karyawan
     {
         return Karyawan::findOrFail($id);

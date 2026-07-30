@@ -3,14 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\BulkDeleteRequest;
+use App\Http\Requests\TransaksiGaji\CetakSlipGajiMassalRequest;
+use App\Http\Requests\TransaksiGaji\CetakSlipGajiRequest;
 use App\Http\Requests\TransaksiGaji\StoreTransaksiGajiRequest;
 use App\Http\Requests\TransaksiGaji\UpdateTransaksiGajiRequest;
 use App\Models\Karyawan;
 use App\Models\TransaksiGaji;
 use App\Repositories\KaryawanRepository;
+use App\Services\SlipGajiTemplateService;
 use App\Services\TransaksiGajiService;
 use App\Support\PerPage;
+use App\Support\SlipGajiPaperLayout;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class TransaksiGajiController extends Controller
@@ -18,6 +23,7 @@ class TransaksiGajiController extends Controller
     public function __construct(
         private TransaksiGajiService $transaksiGajiService,
         private KaryawanRepository $karyawanRepository,
+        private SlipGajiTemplateService $slipGajiTemplateService,
     ) {
         $this->authorizeResource(TransaksiGaji::class, 'transaksi_gaji');
     }
@@ -31,8 +37,16 @@ class TransaksiGajiController extends Controller
             $request->string('search')->trim()->value() ?: null,
             PerPage::resolve($request),
         );
+        $karyawanCetak = $this->karyawanRepository->withSalaryTransactionsOrderedList();
+        $penandaTangan = $this->karyawanRepository->activeOrderedList();
+        $paperLayoutDefault = $this->slipGajiTemplateService->publishedPaperLayout();
 
-        return view('transaksi-gaji.index', compact('karyawanList'));
+        return view('transaksi-gaji.index', compact(
+            'karyawanList',
+            'karyawanCetak',
+            'penandaTangan',
+            'paperLayoutDefault',
+        ));
     }
 
     /**
@@ -47,8 +61,15 @@ class TransaksiGajiController extends Controller
             $request->only(['bulan', 'tahun']),
             PerPage::resolve($request),
         );
+        $penandaTangan = $this->karyawanRepository->activeOrderedList();
+        $paperLayoutDefault = $this->slipGajiTemplateService->publishedPaperLayout();
 
-        return view('transaksi-gaji.karyawan', compact('karyawan', 'transaksiGaji'));
+        return view('transaksi-gaji.karyawan', compact(
+            'karyawan',
+            'transaksiGaji',
+            'penandaTangan',
+            'paperLayoutDefault',
+        ));
     }
 
     /**
@@ -82,23 +103,64 @@ class TransaksiGajiController extends Controller
 
         $totalTunjangan = $this->transaksiGajiService->totalPerJenis($transaksiGaji, 'Tunjangan');
         $totalPotongan = $this->transaksiGajiService->totalPerJenis($transaksiGaji, 'Potongan');
+        $penandaTangan = $this->karyawanRepository->activeOrderedList();
+        $paperLayoutDefault = $this->slipGajiTemplateService->publishedPaperLayout();
 
-        return view('transaksi-gaji.show', compact('transaksiGaji', 'totalTunjangan', 'totalPotongan'));
+        return view('transaksi-gaji.show', compact(
+            'transaksiGaji',
+            'totalTunjangan',
+            'totalPotongan',
+            'penandaTangan',
+            'paperLayoutDefault',
+        ));
     }
 
     /**
      * Cetak slip gaji karyawan untuk transaksi ini.
      */
-    public function cetak(TransaksiGaji $transaksiGaji)
+    public function cetak(CetakSlipGajiRequest $request, TransaksiGaji $transaksiGaji)
     {
         $this->authorize('view', $transaksiGaji);
 
         $transaksiGaji->load('karyawan.unitKerja', 'details');
 
-        $totalTunjangan = $this->transaksiGajiService->totalPerJenis($transaksiGaji, 'Tunjangan');
-        $totalPotongan = $this->transaksiGajiService->totalPerJenis($transaksiGaji, 'Potongan');
+        return $this->renderSlipGaji(collect([$transaksiGaji]), $request, route('transaksi-gaji.show', $transaksiGaji));
+    }
 
-        return view('transaksi-gaji.cetak', compact('transaksiGaji', 'totalTunjangan', 'totalPotongan'));
+    public function cetakMassal(CetakSlipGajiMassalRequest $request)
+    {
+        $this->authorize('viewAny', TransaksiGaji::class);
+
+        $transaksiGaji = $this->transaksiGajiService->slipsForBulkPrint($request->filter());
+        $transaksiGaji->each(fn (TransaksiGaji $transaksi) => $this->authorize('view', $transaksi));
+
+        return $this->renderSlipGaji($transaksiGaji, $request, route('transaksi-gaji.index'));
+    }
+
+    /**
+     * @param  Collection<int, TransaksiGaji>  $transaksiGaji
+     */
+    private function renderSlipGaji(Collection $transaksiGaji, CetakSlipGajiRequest $request, string $backUrl)
+    {
+        [$dibuatOlehId, $mengetahuiId] = $request->penandaTanganIds();
+        $penandaTangan = $this->karyawanRepository->activeByIds([$dibuatOlehId, $mengetahuiId]);
+
+        abort_unless($penandaTangan->count() === 2, 422, 'Salah satu penanda tangan sudah tidak aktif.');
+        $templateConfiguration = $this->slipGajiTemplateService->publishedConfiguration();
+        $paperLayout = SlipGajiPaperLayout::normalize(
+            $request->paperLayout() ?? $templateConfiguration['page']['paper_layout'],
+        );
+
+        return view('transaksi-gaji.cetak', [
+            'slipPages' => $this->transaksiGajiService->slipPrintPages($transaksiGaji, $paperLayout),
+            'dibuatOleh' => $penandaTangan->get($dibuatOlehId),
+            'mengetahui' => $penandaTangan->get($mengetahuiId),
+            'printedAt' => now(),
+            'backUrl' => $backUrl,
+            'isBulk' => $transaksiGaji->count() > 1,
+            'templateConfiguration' => $templateConfiguration,
+            'paperLayout' => $paperLayout,
+        ]);
     }
 
     /**

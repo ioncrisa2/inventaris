@@ -1,3 +1,5 @@
+import { Modal } from 'bootstrap';
+
 const perbaruiSuffixNilai = (select) => {
     const idAwalan = select.id.replace(/_metode$/, '');
     const prefix = document.getElementById(`${idAwalan}_prefix`);
@@ -30,5 +32,83 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-salary-calculation-method]').forEach((select) => {
         select.addEventListener('change', () => perbaruiSuffixNilai(select));
         perbaruiSuffixNilai(select);
+    });
+
+    document.querySelectorAll('[data-slip-print-modal]').forEach((modal) => {
+        const form = modal.querySelector('[data-slip-print-form]');
+        const dibuatOleh = form?.querySelector('[name="dibuat_oleh_id"]');
+        const mengetahui = form?.querySelector('[name="mengetahui_id"]');
+        const context = modal.querySelector('[data-slip-print-context]');
+
+        if (!form || !dibuatOleh || !mengetahui) return;
+
+        const validateDistinctSigners = () => {
+            const isSame = dibuatOleh.value !== '' && dibuatOleh.value === mengetahui.value;
+            mengetahui.setCustomValidity(isSame ? 'Penanda tangan Dibuat oleh dan Mengetahui harus berbeda.' : '');
+        };
+
+        modal.addEventListener('show.bs.modal', (event) => {
+            const trigger = event.relatedTarget;
+            form.action = trigger?.dataset.slipPrintUrl || modal.dataset.defaultAction || '#';
+
+            if (context) {
+                context.textContent = trigger?.dataset.slipPrintLabel || 'slip terpilih';
+            }
+        });
+
+        [dibuatOleh, mengetahui].forEach((select) => {
+            select.addEventListener('change', validateDistinctSigners);
+        });
+
+        form.addEventListener('submit', (event) => {
+            validateDistinctSigners();
+
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                form.reportValidity();
+            }
+        });
+    });
+
+    document.querySelectorAll('[data-slip-print-filter-modal]').forEach((modal) => {
+        const modeInputs = [...modal.querySelectorAll('[name="mode"]')];
+        const panels = [...modal.querySelectorAll('[data-print-filter-panel]')];
+        const periodeAwal = modal.querySelector('[name="periode_awal"]');
+        const periodeAkhir = modal.querySelector('[name="periode_akhir"]');
+
+        const refreshPanels = () => {
+            const selectedMode = modeInputs.find((input) => input.checked)?.value;
+
+            panels.forEach((panel) => {
+                const isActive = panel.dataset.printFilterPanel === selectedMode;
+                panel.hidden = !isActive;
+
+                panel.querySelectorAll('input, select').forEach((input) => {
+                    input.disabled = !isActive;
+                    input.required = isActive;
+                });
+            });
+        };
+
+        const refreshPeriodMinimum = () => {
+            if (!periodeAwal || !periodeAkhir) return;
+
+            periodeAkhir.min = periodeAwal.value || '2000-01';
+            if (periodeAkhir.value && periodeAkhir.value < periodeAkhir.min) {
+                periodeAkhir.value = periodeAkhir.min;
+            }
+        };
+
+        modeInputs.forEach((input) => {
+            input.addEventListener('change', refreshPanels);
+        });
+        periodeAwal?.addEventListener('change', refreshPeriodMinimum);
+
+        refreshPanels();
+        refreshPeriodMinimum();
+
+        if (modal.dataset.openOnLoad === 'true') {
+            Modal.getOrCreateInstance(modal).show();
+        }
     });
 });

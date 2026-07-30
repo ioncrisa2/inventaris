@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Models\Karyawan;
 use App\Models\TransaksiGaji;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 
 class TransaksiGajiRepository
 {
@@ -42,6 +43,60 @@ class TransaksiGajiRepository
             ->latest()
             ->paginate($perPage)
             ->withQueryString();
+    }
+
+    /**
+     * @return Collection<int, TransaksiGaji>
+     */
+    public function forSlipPrintPeriod(int $bulan, int $tahun, int $limit): Collection
+    {
+        return TransaksiGaji::query()
+            ->with('karyawan.unitKerja', 'details')
+            ->where('bulan', $bulan)
+            ->where('tahun', $tahun)
+            ->orderBy(
+                Karyawan::query()
+                    ->select('nama_lengkap')
+                    ->whereColumn('karyawan.id', 'transaksi_gaji.karyawan_id'),
+            )
+            ->orderBy('transaksi_gaji.id')
+            ->limit($limit)
+            ->get();
+    }
+
+    /**
+     * @return Collection<int, TransaksiGaji>
+     */
+    public function forSlipPrintEmployeeRange(
+        int $karyawanId,
+        int $tahunAwal,
+        int $bulanAwal,
+        int $tahunAkhir,
+        int $bulanAkhir,
+        int $limit,
+    ): Collection {
+        return TransaksiGaji::query()
+            ->with('karyawan.unitKerja', 'details')
+            ->where('karyawan_id', $karyawanId)
+            ->where(function ($query) use ($tahunAwal, $bulanAwal) {
+                $query->where('tahun', '>', $tahunAwal)
+                    ->orWhere(function ($query) use ($tahunAwal, $bulanAwal) {
+                        $query->where('tahun', $tahunAwal)
+                            ->where('bulan', '>=', $bulanAwal);
+                    });
+            })
+            ->where(function ($query) use ($tahunAkhir, $bulanAkhir) {
+                $query->where('tahun', '<', $tahunAkhir)
+                    ->orWhere(function ($query) use ($tahunAkhir, $bulanAkhir) {
+                        $query->where('tahun', $tahunAkhir)
+                            ->where('bulan', '<=', $bulanAkhir);
+                    });
+            })
+            ->orderBy('tahun')
+            ->orderBy('bulan')
+            ->orderBy('id')
+            ->limit($limit)
+            ->get();
     }
 
     public function create(array $data): TransaksiGaji

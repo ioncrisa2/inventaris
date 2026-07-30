@@ -2,8 +2,11 @@
 
 use App\Models\Barang;
 use App\Models\UnitKerja;
+use App\Services\IdentitasAplikasiService;
 use App\Services\KodeBarangGenerator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
@@ -141,6 +144,104 @@ test('kode barang generator increments sequence and avoids collisions', function
     $kode2 = $generator->generate('Bukan Bangunan - Kelompok 1', $unitKerja->id, '2026-07-21');
 
     expect($kode2)->not->toBe($kode1);
+});
+
+test('identitas koperasi falls back to app name when not configured', function () {
+    expect(app(IdentitasAplikasiService::class)->nama())->toBe(config('app.name'))
+        ->and(app(IdentitasAplikasiService::class)->alamat())->toBeNull()
+        ->and(app(IdentitasAplikasiService::class)->logoUrl())->toBeNull();
+});
+
+test('admin can update identitas koperasi including a logo', function () {
+    Storage::fake('public');
+    $this->actingAs(adminUser());
+    $logo = UploadedFile::fake()->image('logo.png');
+
+    $this->get(route('pengaturan.edit'))
+        ->assertOk()
+        ->assertSee('Identitas Koperasi');
+
+    $this->put(route('pengaturan.identitas.update'), [
+        'nama' => 'Koperasi Sejahtera Bersama',
+        'alamat' => 'Jl. Merdeka No. 1, Jakarta',
+        'logo' => $logo,
+    ])->assertRedirect(route('pengaturan.edit'));
+
+    $service = app(IdentitasAplikasiService::class);
+
+    expect($service->nama())->toBe('Koperasi Sejahtera Bersama')
+        ->and($service->alamat())->toBe('Jl. Merdeka No. 1, Jakarta')
+        ->and($service->logoPath())->not->toBeNull();
+    Storage::disk('public')->assertExists($service->logoPath());
+});
+
+test('identitas logo is replaced and the old file is deleted', function () {
+    Storage::fake('public');
+    $this->actingAs(adminUser());
+
+    $this->put(route('pengaturan.identitas.update'), [
+        'nama' => 'Koperasi Awal',
+        'logo' => UploadedFile::fake()->image('lama.png'),
+    ]);
+
+    $pathLama = app(IdentitasAplikasiService::class)->logoPath();
+    Storage::disk('public')->assertExists($pathLama);
+
+    $this->put(route('pengaturan.identitas.update'), [
+        'nama' => 'Koperasi Awal',
+        'logo' => UploadedFile::fake()->image('baru.png'),
+    ]);
+
+    $pathBaru = app(IdentitasAplikasiService::class)->logoPath();
+
+    expect($pathBaru)->not->toBe($pathLama);
+    Storage::disk('public')->assertMissing($pathLama);
+    Storage::disk('public')->assertExists($pathBaru);
+});
+
+test('identitas nama and alamat are preserved when update is submitted without a new logo', function () {
+    Storage::fake('public');
+    $this->actingAs(adminUser());
+
+    $this->put(route('pengaturan.identitas.update'), [
+        'nama' => 'Koperasi Awal',
+        'logo' => UploadedFile::fake()->image('logo.png'),
+    ]);
+    $pathAwal = app(IdentitasAplikasiService::class)->logoPath();
+
+    $this->put(route('pengaturan.identitas.update'), [
+        'nama' => 'Koperasi Diperbarui',
+    ])->assertRedirect(route('pengaturan.edit'));
+
+    $service = app(IdentitasAplikasiService::class);
+    expect($service->nama())->toBe('Koperasi Diperbarui')
+        ->and($service->logoPath())->toBe($pathAwal);
+    Storage::disk('public')->assertExists($pathAwal);
+});
+
+test('identitas update rejects a non-image logo and requires nama', function () {
+    $this->actingAs(adminUser());
+
+    $this->put(route('pengaturan.identitas.update'), [
+        'nama' => 'Koperasi Sejahtera',
+        'logo' => UploadedFile::fake()->create('dokumen.pdf', 100, 'application/pdf'),
+    ])->assertSessionHasErrors('logo');
+
+    $this->put(route('pengaturan.identitas.update'), [
+        'nama' => '',
+    ])->assertSessionHasErrors('nama');
+});
+
+test('staff without pengaturan.view cannot see or update identitas koperasi', function () {
+    $this->actingAs(staffUser());
+
+    $this->get(route('pengaturan.edit'))
+        ->assertOk()
+        ->assertDontSee('Identitas Koperasi');
+
+    $this->put(route('pengaturan.identitas.update'), [
+        'nama' => 'Koperasi Percobaan',
+    ])->assertForbidden();
 });
 
 test('kode barang generator respects the configured sequence digit count', function () {

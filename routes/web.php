@@ -15,6 +15,7 @@ use App\Http\Controllers\PengaturanController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RiwayatKondisiBarangController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\SlipGajiTemplateController;
 use App\Http\Controllers\TransaksiGajiController;
 use App\Http\Controllers\UnitKerjaController;
 use App\Http\Controllers\UserController;
@@ -74,6 +75,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('komponen-gaji/bulk', [KomponenGajiController::class, 'bulkDestroy'])->name('komponen-gaji.bulk-destroy');
     Route::resource('komponen-gaji', KomponenGajiController::class)->except(['show', 'create', 'edit']);
 
+    Route::get('transaksi-gaji/cetak-massal', [TransaksiGajiController::class, 'cetakMassal'])
+        ->name('transaksi-gaji.cetak-massal');
     Route::delete('transaksi-gaji/bulk', [TransaksiGajiController::class, 'bulkDestroy'])->name('transaksi-gaji.bulk-destroy');
     Route::get('transaksi-gaji/karyawan/{karyawan}', [TransaksiGajiController::class, 'karyawan'])->name('transaksi-gaji.karyawan');
     Route::resource('transaksi-gaji', TransaksiGajiController::class);
@@ -124,8 +127,12 @@ Route::middleware('auth')->group(function () {
     Route::resource('role', RoleController::class)->except(['show']);
 
     Route::get('pengaturan', [PengaturanController::class, 'edit'])->name('pengaturan.edit');
+    Route::get('pengaturan/slip-gaji', [SlipGajiTemplateController::class, 'edit'])->name('pengaturan.slip-gaji.edit');
+    Route::post('pengaturan/slip-gaji/draf', [SlipGajiTemplateController::class, 'saveDraft'])->name('pengaturan.slip-gaji.draft');
+    Route::post('pengaturan/slip-gaji/terbitkan', [SlipGajiTemplateController::class, 'publish'])->name('pengaturan.slip-gaji.publish');
     Route::put('pengaturan', [PengaturanController::class, 'update'])->name('pengaturan.update');
     Route::put('pengaturan/hari-operasional', [PengaturanController::class, 'updateHariOperasional'])->name('pengaturan.hari-operasional.update');
+    Route::put('pengaturan/identitas', [PengaturanController::class, 'updateIdentitas'])->name('pengaturan.identitas.update');
 
     Route::get('/profile', [ProfileController::class, 'show'])
         ->name('profile.show');

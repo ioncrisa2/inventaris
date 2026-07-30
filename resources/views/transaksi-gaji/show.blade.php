@@ -15,10 +15,17 @@
         <x-page-header title="Detail Transaksi Gaji" subtitle="{{ $transaksiGaji->karyawan->nama_lengkap }} — {{ $namaBulan[$transaksiGaji->bulan] }} {{ $transaksiGaji->tahun }}">
             <x-slot:actions>
                 <div class="d-flex gap-2">
-                    <a class="btn btn-success" href="{{ route('transaksi-gaji.cetak', $transaksiGaji) }}" target="_blank">
+                    <button
+                        class="btn btn-success"
+                        type="button"
+                        data-bs-toggle="modal"
+                        data-bs-target="#cetakSlipGajiModal"
+                        data-slip-print-url="{{ route('transaksi-gaji.cetak', $transaksiGaji) }}"
+                        data-slip-print-label="slip {{ $transaksiGaji->karyawan->nama_lengkap }}"
+                    >
                         <i class="bi bi-printer"></i>
                         Cetak Slip Gaji
-                    </a>
+                    </button>
                     <a class="btn btn-primary" href="{{ route('transaksi-gaji.edit', $transaksiGaji) }}">
                         <i class="bi bi-pencil"></i>
                         Edit
@@ -122,4 +129,9 @@
         </div>
 
 </x-app-page>
+
+@include('transaksi-gaji._modal-cetak-slip', [
+    'penandaTangan' => $penandaTangan,
+    'paperLayoutDefault' => $paperLayoutDefault,
+])
 @endsection

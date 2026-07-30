@@ -24,6 +24,20 @@
                         </span>
                     </a>
                     @can('pengaturan.view')
+                    <a href="#identitas" class="settings-nav__link">
+                        <i class="bi bi-building" aria-hidden="true"></i>
+                        <span>
+                            <strong>Identitas Koperasi</strong>
+                            <small>Nama, alamat, dan logo</small>
+                        </span>
+                    </a>
+                    <a href="#format-slip-gaji" class="settings-nav__link">
+                        <i class="bi bi-receipt" aria-hidden="true"></i>
+                        <span>
+                            <strong>Format Slip Gaji</strong>
+                            <small>Susunan blok dan cetak F4</small>
+                        </span>
+                    </a>
                     <a href="#penomoran-inventaris" class="settings-nav__link">
                         <i class="bi bi-upc-scan" aria-hidden="true"></i>
                         <span>
@@ -98,6 +112,120 @@
                 </fieldset>
 
             </x-section-card>
+
+            @can('pengaturan.view')
+            <x-section-card
+                id="identitas"
+                title="Identitas Koperasi"
+                subtitle="Nama, alamat, dan logo ini tampil di sidebar, halaman login, dan kop slip gaji."
+                class="settings-section"
+            >
+                @can('pengaturan.update')
+                <form method="POST" action="{{ route('pengaturan.identitas.update') }}" enctype="multipart/form-data" id="identitasForm">
+                    @csrf
+                    @method('PUT')
+
+                    <div class="row g-4">
+                        <div class="col-md-8">
+                            <div class="mb-4">
+                                <label class="form-label" for="nama">Nama Koperasi <span class="text-danger">*</span></label>
+                                <input
+                                    type="text"
+                                    class="form-control @error('nama') is-invalid @enderror"
+                                    id="nama"
+                                    name="nama"
+                                    value="{{ old('nama', $identitasNama) }}"
+                                    maxlength="255"
+                                    required
+                                >
+                                @error('nama')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label" for="alamat">Alamat</label>
+                                <textarea
+                                    class="form-control @error('alamat') is-invalid @enderror"
+                                    id="alamat"
+                                    name="alamat"
+                                    rows="3"
+                                    maxlength="500"
+                                >{{ old('alamat', $identitasAlamat) }}</textarea>
+                                @error('alamat')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <div class="form-text">Tampil di kop slip gaji bila diisi.</div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <span class="form-label d-block">Logo</span>
+                            <x-image-preview :src="$identitasLogoUrl" alt="Logo koperasi" icon="bi-building" size="medium" class="mb-2" />
+                            <x-form.file name="logo" accept="image/*" help="JPG/PNG/WEBP, maks. 2MB. Kosongkan untuk tetap pakai logo saat ini." />
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-wrap justify-content-end gap-2 mt-4 pt-4 border-top">
+                        <a href="{{ route('dashboard') }}" class="btn btn-light">Batal</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save" aria-hidden="true"></i>
+                            Simpan Identitas
+                        </button>
+                    </div>
+                </form>
+                @else
+                <div class="settings-callout">
+                    <i class="bi bi-lock" aria-hidden="true"></i>
+                    <div>
+                        <strong>Akses hanya-baca</strong>
+                        <p>Anda dapat melihat identitas koperasi, tetapi tidak memiliki izin untuk mengubahnya.</p>
+                    </div>
+                </div>
+                <div class="row g-4 align-items-start mt-1">
+                    <div class="col-md-4">
+                        <x-image-preview :src="$identitasLogoUrl" alt="Logo koperasi" icon="bi-building" size="medium" />
+                    </div>
+                    <div class="col-md-8">
+                        <x-detail-list class="detail-list--single">
+                            <x-detail-item label="Nama" :value="$identitasNama" emphasis />
+                            <x-detail-item label="Alamat" :value="$identitasAlamat ?: '-'" />
+                        </x-detail-list>
+                    </div>
+                </div>
+                @endcan
+            </x-section-card>
+            @endcan
+
+            @can('pengaturan.view')
+            <x-section-card
+                id="format-slip-gaji"
+                title="Format Slip Gaji"
+                subtitle="Atur susunan blok, tipografi, dan tampilan slip. Ukuran cetak dikunci ke F4 portrait dengan dua slip per lembar."
+                class="settings-section"
+            >
+                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                    <div>
+                        @if($slipGajiTemplateState['published_revision'])
+                            <span class="badge text-bg-success mb-2">Template aktif revisi {{ $slipGajiTemplateState['published_revision'] }}</span>
+                            <p class="mb-0 text-body-secondary small">
+                                Terakhir diterbitkan {{ $slipGajiTemplateState['published_at']->translatedFormat('d F Y H:i') }}
+                                @if($slipGajiTemplateState['publisher'])
+                                    oleh {{ $slipGajiTemplateState['publisher'] }}
+                                @endif
+                            </p>
+                        @else
+                            <span class="badge text-bg-secondary mb-2">Menggunakan format bawaan</span>
+                            <p class="mb-0 text-body-secondary small">Belum ada template khusus yang diterbitkan.</p>
+                        @endif
+                    </div>
+                    <a href="{{ route('pengaturan.slip-gaji.edit') }}" class="btn btn-primary">
+                        <i class="bi bi-layout-text-window-reverse" aria-hidden="true"></i>
+                        Buka Editor Slip
+                    </a>
+                </div>
+            </x-section-card>
+            @endcan
 
             @can('pengaturan.view')
             <x-section-card
