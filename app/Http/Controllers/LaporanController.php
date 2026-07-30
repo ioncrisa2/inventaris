@@ -18,7 +18,9 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class LaporanController extends Controller
 {
-    public function __construct(private LaporanService $laporanService) {}
+    public function __construct(
+        private LaporanService $laporanService,
+    ) {}
 
     public function inventaris(InventarisLaporanRequest $request)
     {

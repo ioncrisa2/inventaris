@@ -4,25 +4,10 @@
     'paginator' => null,
 ])
 
-<section {{ $attributes->class(['data-table-section']) }}>
-    @if ($title || isset($toolbar))
-        <div class="data-table-section__header">
-            @if ($title)
-                <div class="data-table-section__heading">
-                    <h2>{{ $title }}</h2>
-                    @if ($subtitle)
-                        <p>{{ $subtitle }}</p>
-                    @endif
-                </div>
-            @endif
-
-            @isset($toolbar)
-                <div class="data-table-section__toolbar">
-                    {{ $toolbar }}
-                </div>
-            @endisset
-        </div>
-    @endif
+<x-section-card :title="$title" :subtitle="$subtitle" flush {{ $attributes->class(['data-table-section']) }}>
+    @isset($toolbar)
+        <x-slot:actions>{{ $toolbar }}</x-slot:actions>
+    @endisset
 
     @isset($bulkActions)
         <div class="data-table-section__bulk">
@@ -37,4 +22,4 @@
     @if ($paginator)
         <x-pagination-footer :paginator="$paginator" />
     @endif
-</section>
+</x-section-card>
