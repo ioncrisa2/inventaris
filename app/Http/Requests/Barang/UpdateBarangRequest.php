@@ -14,9 +14,12 @@ class UpdateBarangRequest extends FormRequest
 
     public function rules(): array
     {
+        $jenisBarang = config('kategori_penyusutan.item_per_golongan')[$this->input('kategori')] ?? [];
+
         return [
             'nama_barang' => ['required', 'string', 'max:255'],
             'kategori' => ['required', Rule::in(config('inventaris.kategori'))],
+            'jenis_barang' => ['required', 'string', 'max:255', Rule::in($jenisBarang)],
             'unit_kerja_id' => ['required', Rule::exists('unit_kerja', 'id')],
             'tanggal_perolehan' => ['required', 'date', 'before_or_equal:today'],
             'harga_perolehan' => ['required', 'numeric', 'min:0'],
@@ -24,6 +27,13 @@ class UpdateBarangRequest extends FormRequest
             'dokumen' => ['nullable', 'array'],
             'dokumen.*.jenis_dokumen' => ['nullable', 'required_with:dokumen.*.dokumen', Rule::in(config('inventaris.jenis_dokumen'))],
             'dokumen.*.dokumen' => ['nullable', 'required_with:dokumen.*.jenis_dokumen', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'jenis_barang.in' => 'Jenis barang tidak sesuai dengan golongan penyusutan yang dipilih.',
         ];
     }
 }

@@ -46,7 +46,7 @@
             <td>{{ $barang->kode_barang }}</td>
             <td>{{ $barang->nama_barang }}</td>
             <td>{{ config('inventaris.kategori_label_singkat')[$barang->kategori] ?? $barang->kategori }}</td>
-            <td>{{ $r['metode'] === 'garis_lurus' ? 'Garis Lurus' : $r['metode'] }}</td>
+            <td>{{ \App\Support\PenyusutanCalculator::namaMetode($r['metode']) }}</td>
             <td>{{ $barang->tanggal_perolehan->format('d/m/Y') }}</td>
             <td class="text-end">Rp {{ number_format($barang->harga_perolehan, 0, ',', '.') }}</td>
             <td class="text-end">Rp {{ number_format($r['akumulasi_awal_tahun'], 0, ',', '.') }}</td>

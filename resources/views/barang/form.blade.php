@@ -3,6 +3,11 @@
 @section('title', $barang->exists ? 'Edit Barang' : 'Tambah Barang')
 
 @section('content')
+@php
+    $jenisBarangOptions = collect($jenisBarangByKategori)
+        ->flatten()
+        ->mapWithKeys(fn ($jenisBarang) => [$jenisBarang => $jenisBarang]);
+@endphp
 <x-form-page
     :title="$barang->exists ? 'Edit Barang' : 'Tambah Barang'"
     :action="$barang->exists ? route('barang.update', $barang) : route('barang.store')"
@@ -38,6 +43,21 @@
                 :value="$barang->kategori"
                 required
                 placeholder="Pilih golongan"
+                data-kategori-barang-select
+            />
+        </div>
+
+        <div class="col-md-6">
+            <x-form.select
+                name="jenis_barang"
+                label="Jenis Barang"
+                :options="$jenisBarangOptions"
+                :value="$barang->jenis_barang"
+                required
+                placeholder="Pilih jenis barang"
+                help="Daftar jenis barang menyesuaikan golongan penyusutan yang dipilih."
+                data-jenis-barang-select
+                data-placeholder="Pilih jenis barang"
             />
         </div>
 
@@ -103,4 +123,6 @@
 
     <x-form.dokumen-repeater name="dokumen" :jenis-options="config('inventaris.jenis_dokumen')" />
 </x-form-page>
+
+<script type="application/json" data-jenis-barang-catalog>@json($jenisBarangByKategori)</script>
 @endsection

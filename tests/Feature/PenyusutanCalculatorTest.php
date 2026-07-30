@@ -16,6 +16,19 @@ test('metode default adalah garis lurus', function () {
     expect(PenyusutanCalculator::metode())->toBe('garis_lurus');
 });
 
+test('tarif penyusutan mengikuti tabel PMK 72 tahun 2023', function () {
+    expect(PenyusutanCalculator::tarifTahunan('Bukan Bangunan - Kelompok 1', 'garis_lurus'))->toBe('0.25');
+    expect(PenyusutanCalculator::tarifTahunan('Bukan Bangunan - Kelompok 2', 'garis_lurus'))->toBe('0.125');
+    expect(PenyusutanCalculator::tarifTahunan('Bukan Bangunan - Kelompok 3', 'garis_lurus'))->toBe('0.0625');
+    expect(PenyusutanCalculator::tarifTahunan('Bukan Bangunan - Kelompok 4', 'garis_lurus'))->toBe('0.05');
+    expect(PenyusutanCalculator::tarifTahunan('Bukan Bangunan - Kelompok 1', 'saldo_menurun'))->toBe('0.50');
+    expect(PenyusutanCalculator::tarifTahunan('Bukan Bangunan - Kelompok 2', 'saldo_menurun'))->toBe('0.25');
+    expect(PenyusutanCalculator::tarifTahunan('Bukan Bangunan - Kelompok 3', 'saldo_menurun'))->toBe('0.125');
+    expect(PenyusutanCalculator::tarifTahunan('Bukan Bangunan - Kelompok 4', 'saldo_menurun'))->toBe('0.10');
+    expect(PenyusutanCalculator::tarifTahunan('Bangunan - Permanen', 'garis_lurus'))->toBe('0.05');
+    expect(PenyusutanCalculator::tarifTahunan('Bangunan - Bukan Permanen', 'garis_lurus'))->toBe('0.10');
+});
+
 test('penyusutan tahun perolehan (mulai januari) dihitung setahun penuh', function () {
     // Kelompok 1 = 4 tahun (48 bulan). Rp4.800.000 / 48 = Rp100.000/bulan pas.
     $hasil = PenyusutanCalculator::hitungTahunan(
@@ -117,8 +130,59 @@ test('golongan tanpa masa manfaat yang dikenal menolak dihitung', function () {
         ->toThrow(InvalidArgumentException::class);
 });
 
-test('metode selain garis lurus belum didukung', function () {
+test('saldo menurun dihitung dari nilai buku dan sisa nilai dibebankan di akhir masa manfaat', function () {
     config(['inventaris.metode_penyusutan_default' => 'saldo_menurun']);
+
+    $tahunPertama = PenyusutanCalculator::hitungTahunan(
+        'Bukan Bangunan - Kelompok 1',
+        '4800000',
+        Carbon::parse('2020-01-01'),
+        2020,
+    );
+    $tahunTerakhir = PenyusutanCalculator::hitungTahunan(
+        'Bukan Bangunan - Kelompok 1',
+        '4800000',
+        Carbon::parse('2020-01-01'),
+        2023,
+    );
+
+    expect($tahunPertama['metode'])->toBe('saldo_menurun')
+        ->and($tahunPertama['penyusutan_tahun_ini'])->toBe('2400000.00')
+        ->and($tahunPertama['nilai_buku_akhir_tahun'])->toBe('2400000.00')
+        ->and($tahunTerakhir['penyusutan_tahun_ini'])->toBe('600000.00')
+        ->and($tahunTerakhir['nilai_buku_akhir_tahun'])->toBe('0.00');
+});
+
+test('saldo menurun diprorata pada tahun perolehan pertengahan tahun', function () {
+    config(['inventaris.metode_penyusutan_default' => 'saldo_menurun']);
+
+    $hasil = PenyusutanCalculator::hitungTahunan(
+        'Bukan Bangunan - Kelompok 1',
+        '4800000',
+        Carbon::parse('2020-07-01'),
+        2020,
+    );
+
+    expect($hasil['penyusutan_tahun_ini'])->toBe('1200000.00')
+        ->and($hasil['nilai_buku_akhir_tahun'])->toBe('3600000.00');
+});
+
+test('bangunan tetap memakai garis lurus ketika kebijakan bukan bangunan memakai saldo menurun', function () {
+    config(['inventaris.metode_penyusutan_default' => 'saldo_menurun']);
+
+    $hasil = PenyusutanCalculator::hitungTahunan(
+        'Bangunan - Permanen',
+        '240000000',
+        Carbon::parse('2020-01-01'),
+        2020,
+    );
+
+    expect($hasil['metode'])->toBe('garis_lurus')
+        ->and($hasil['penyusutan_tahun_ini'])->toBe('12000000.00');
+});
+
+test('metode yang tidak dikenal ditolak', function () {
+    config(['inventaris.metode_penyusutan_default' => 'metode_tidak_dikenal']);
 
     expect(fn () => PenyusutanCalculator::hitungTahunan('Bukan Bangunan - Kelompok 1', '4800000', Carbon::parse('2020-01-01'), 2020))
         ->toThrow(InvalidArgumentException::class);

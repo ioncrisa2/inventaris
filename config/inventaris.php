@@ -70,7 +70,7 @@ return [
     ],
     /**
      * Masa manfaat fiskal (tahun) per golongan, sesuai UU PPh Pasal 11 &
-     * PMK 96/PMK.03/2009 — bukan nilai bebas yang bisa diubah admin, karena
+     * PMK 72 Tahun 2023 — bukan nilai bebas yang bisa diubah admin, karena
      * ini dipakai sebagai dasar perhitungan penyusutan untuk pelaporan SPT.
      */
     'masa_manfaat_penyusutan' => [

@@ -30,7 +30,7 @@
                             name="search"
                             type="search"
                             value="{{ request('search') }}"
-                            placeholder="Cari kode, nama, kategori…">
+                            placeholder="Cari kode, nama, jenis, kategori…">
                     </div>
                     <div class="col-12 col-sm-6 col-lg-auto">
                         <label class="visually-hidden" for="unit_kerja_id">Unit kerja</label>
@@ -125,7 +125,12 @@
                                 <x-table-checkbox group="barang" :value="$barang->id" :label="'Pilih '.$barang->nama_barang" />
                             </td>
                             <td><strong>{{ $barang->kode_barang }}</strong></td>
-                            <td>{{ $barang->nama_barang }}</td>
+                            <td>
+                                {{ $barang->nama_barang }}
+                                @if($barang->jenis_barang)
+                                <div class="small text-body-secondary">{{ $barang->jenis_barang }}</div>
+                                @endif
+                            </td>
                             <td title="{{ $barang->kategori }}">{{ config('inventaris.kategori_label_singkat')[$barang->kategori] ?? $barang->kategori }}</td>
                             <td>{{ $barang->unitKerja?->nama_unit ?? 'Belum ditentukan' }}</td>
                             <td>{{ $barang->tanggal_perolehan->format('d/m/Y') }}</td>

@@ -23,6 +23,7 @@ test('barang is created with a default initial condition', function () {
     $this->post(route('barang.store'), [
         'nama_barang' => 'Laptop Operasional',
         'kategori' => 'Bukan Bangunan - Kelompok 1',
+        'jenis_barang' => 'Laptop / notebook',
         'unit_kerja_id' => $this->unitKerja->id,
         'tanggal_perolehan' => now()->subDay()->toDateString(),
         'harga_perolehan' => 12000000,
@@ -37,6 +38,7 @@ test('barang is created with a default initial condition', function () {
     $this->assertDatabaseHas('barang', [
         'id' => $barang->id,
         'nama_barang' => 'Laptop Operasional',
+        'jenis_barang' => 'Laptop / notebook',
         'unit_kerja_id' => $this->unitKerja->id,
     ]);
     $this->assertDatabaseHas('riwayat_kondisi_barang', [
@@ -46,20 +48,71 @@ test('barang is created with a default initial condition', function () {
     ]);
 });
 
+test('form barang exposes the controlled item catalog for a dependent select', function () {
+    $this->get(route('barang.create'))
+        ->assertOk()
+        ->assertSee('Jenis Barang')
+        ->assertSee('Laptop / notebook')
+        ->assertSee('data-kategori-barang-select', false)
+        ->assertSee('data-jenis-barang-select', false)
+        ->assertSee('data-jenis-barang-catalog', false);
+});
+
+test('item catalog contains all 151 source items plus the fiscal group 3 fallback', function () {
+    $catalog = config('kategori_penyusutan.item_per_golongan');
+    $items = collect($catalog)->flatten();
+
+    expect(array_keys($catalog))->toBe(config('inventaris.kategori'))
+        ->and($items)->toHaveCount(152)
+        ->and($items->reject(fn ($item) => $item === 'Jenis lain yang tidak tercantum dalam katalog'))->toHaveCount(151)
+        ->and($catalog['Bukan Bangunan - Kelompok 3'])->toContain('Jenis lain yang tidak tercantum dalam katalog');
+});
+
+test('jenis barang must belong to the selected depreciation group', function () {
+    $payload = [
+        'nama_barang' => 'Laptop Salah Golongan',
+        'kategori' => 'Bukan Bangunan - Kelompok 2',
+        'jenis_barang' => 'Laptop / notebook',
+        'unit_kerja_id' => $this->unitKerja->id,
+        'tanggal_perolehan' => now()->subDay()->toDateString(),
+        'harga_perolehan' => 12000000,
+    ];
+
+    $this->post(route('barang.store'), $payload)
+        ->assertSessionHasErrors('jenis_barang');
+
+    $this->assertDatabaseMissing('barang', ['nama_barang' => 'Laptop Salah Golongan']);
+});
+
+test('jenis barang is required when creating or updating an inventory item', function () {
+    $payload = [
+        'nama_barang' => 'Laptop Tanpa Jenis',
+        'kategori' => 'Bukan Bangunan - Kelompok 1',
+        'unit_kerja_id' => $this->unitKerja->id,
+        'tanggal_perolehan' => now()->subDay()->toDateString(),
+        'harga_perolehan' => 12000000,
+    ];
+
+    $this->post(route('barang.store'), $payload)
+        ->assertSessionHasErrors('jenis_barang');
+});
+
 test('barang accepts any kategori and kondisi option offered by the config list', function () {
     $this->post(route('barang.store'), [
-        'nama_barang' => 'Kursi Roda',
+        'nama_barang' => 'Gedung Kantor Utama',
         'kategori' => 'Bangunan - Permanen',
+        'jenis_barang' => 'Gedung kantor permanen',
         'unit_kerja_id' => $this->unitKerja->id,
         'tanggal_perolehan' => now()->subDay()->toDateString(),
         'harga_perolehan' => 1500000,
     ])->assertRedirect(route('barang.index'));
 
-    $barang = Barang::where('nama_barang', 'Kursi Roda')->firstOrFail();
+    $barang = Barang::where('nama_barang', 'Gedung Kantor Utama')->firstOrFail();
 
     $this->assertDatabaseHas('barang', [
         'id' => $barang->id,
         'kategori' => 'Bangunan - Permanen',
+        'jenis_barang' => 'Gedung kantor permanen',
     ]);
 
     $this->post(route('barang.kondisi.store', $barang), [
@@ -104,6 +157,7 @@ test('master data update does not change condition history', function () {
         'kode_barang' => 'INV-001',
         'nama_barang' => 'Laptop Operasional Updated',
         'kategori' => 'Bukan Bangunan - Kelompok 1',
+        'jenis_barang' => 'Laptop / notebook',
         'unit_kerja_id' => $this->unitKerja->id,
         'tanggal_perolehan' => now()->subMonth()->toDateString(),
         'harga_perolehan' => 12500000,

@@ -58,6 +58,7 @@
         <tr>
             <th>Kode</th>
             <th>Nama Barang</th>
+            <th>Jenis Barang</th>
             <th>Golongan</th>
             <th>Unit Kerja</th>
             <th>Tanggal Perolehan</th>
@@ -70,6 +71,7 @@
             <tr>
                 <td>{{ $barang->kode_barang }}</td>
                 <td>{{ $barang->nama_barang }}</td>
+                <td>{{ $barang->jenis_barang ?? '-' }}</td>
                 <td>{{ $barang->kategori }}</td>
                 <td>{{ $barang->unitKerja?->nama_unit ?? '-' }}</td>
                 <td>{{ $barang->tanggal_perolehan->format('d/m/Y') }}</td>
@@ -77,7 +79,7 @@
                 <td class="text-end">Rp {{ number_format($barang->harga_perolehan, 0, ',', '.') }}</td>
             </tr>
         @empty
-            <tr><td colspan="7" class="text-center muted">Tidak ada inventaris yang cocok dengan filter.</td></tr>
+            <tr><td colspan="8" class="text-center muted">Tidak ada inventaris yang cocok dengan filter.</td></tr>
         @endforelse
     </tbody>
 </table>

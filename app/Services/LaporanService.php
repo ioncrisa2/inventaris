@@ -9,6 +9,7 @@ use App\Repositories\UnitKerjaRepository;
 use App\Support\PenyusutanCalculator;
 use App\Support\PerPage;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 class LaporanService
@@ -199,7 +200,7 @@ class LaporanService
     }
 
     /**
-     * @return Collection<int, array{barang: Barang, metode: string, masa_manfaat_tahun: int, bulan_mulai: \Illuminate\Support\Carbon, bulan_selesai: \Illuminate\Support\Carbon, akumulasi_awal_tahun: string, penyusutan_tahun_ini: string, akumulasi_akhir_tahun: string, nilai_buku_akhir_tahun: string}>
+     * @return Collection<int, array{barang: Barang, metode: string, masa_manfaat_tahun: int, bulan_mulai: Carbon, bulan_selesai: Carbon, akumulasi_awal_tahun: string, penyusutan_tahun_ini: string, akumulasi_akhir_tahun: string, nilai_buku_akhir_tahun: string}>
      */
     public function penyusutanExportRows(array $filters, int $tahun): Collection
     {

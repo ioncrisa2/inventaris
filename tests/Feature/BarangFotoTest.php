@@ -27,6 +27,7 @@ test('foto sampul is stored when creating barang', function () {
     $this->post(route('barang.store'), [
         'nama_barang' => 'Laptop Operasional',
         'kategori' => 'Bukan Bangunan - Kelompok 1',
+        'jenis_barang' => 'Laptop / notebook',
         'unit_kerja_id' => $this->unitKerja->id,
         'tanggal_perolehan' => now()->subDay()->toDateString(),
         'harga_perolehan' => 12000000,
@@ -44,6 +45,7 @@ test('foto sampul is replaced on update and the old file is deleted', function (
         'kode_barang' => 'IT-ELK-2026-0001',
         'nama_barang' => 'Laptop Operasional',
         'kategori' => 'Bukan Bangunan - Kelompok 1',
+        'jenis_barang' => 'Laptop / notebook',
         'unit_kerja_id' => $this->unitKerja->id,
         'tanggal_perolehan' => now()->subMonth(),
         'harga_perolehan' => 12000000,
@@ -56,6 +58,7 @@ test('foto sampul is replaced on update and the old file is deleted', function (
     $this->put(route('barang.update', $barang), [
         'nama_barang' => 'Laptop Operasional',
         'kategori' => 'Bukan Bangunan - Kelompok 1',
+        'jenis_barang' => 'Laptop / notebook',
         'unit_kerja_id' => $this->unitKerja->id,
         'tanggal_perolehan' => now()->subMonth()->toDateString(),
         'harga_perolehan' => 12000000,
@@ -106,6 +109,7 @@ test('foto sampul is preserved when update is submitted without a new file', fun
     $this->put(route('barang.update', $barang), [
         'nama_barang' => 'Laptop Operasional Updated',
         'kategori' => 'Bukan Bangunan - Kelompok 1',
+        'jenis_barang' => 'Laptop / notebook',
         'unit_kerja_id' => $this->unitKerja->id,
         'tanggal_perolehan' => now()->subMonth()->toDateString(),
         'harga_perolehan' => 12000000,
@@ -124,6 +128,7 @@ test('multiple foto pendukung can be uploaded together when creating barang', fu
     $this->post(route('barang.store'), [
         'nama_barang' => 'Printer Kantor',
         'kategori' => 'Bukan Bangunan - Kelompok 1',
+        'jenis_barang' => 'Printer laser',
         'unit_kerja_id' => $this->unitKerja->id,
         'tanggal_perolehan' => now()->subDay()->toDateString(),
         'harga_perolehan' => 3000000,
@@ -166,6 +171,7 @@ test('non-image files in foto pendukung array are rejected when creating barang'
     $this->post(route('barang.store'), [
         'nama_barang' => 'Printer Kantor',
         'kategori' => 'Bukan Bangunan - Kelompok 1',
+        'jenis_barang' => 'Printer laser',
         'unit_kerja_id' => $this->unitKerja->id,
         'tanggal_perolehan' => now()->subDay()->toDateString(),
         'harga_perolehan' => 3000000,
@@ -180,6 +186,7 @@ test('foto pendukung can be uploaded and deleted', function () {
         'kode_barang' => 'IT-ELK-2026-0001',
         'nama_barang' => 'Laptop Operasional',
         'kategori' => 'Bukan Bangunan - Kelompok 1',
+        'jenis_barang' => 'Laptop / notebook',
         'unit_kerja_id' => $this->unitKerja->id,
         'tanggal_perolehan' => now()->subMonth(),
         'harga_perolehan' => 12000000,
@@ -208,6 +215,7 @@ test('barang with supporting photos cannot be deleted and its files remain', fun
         'kode_barang' => 'IT-ELK-2026-0001',
         'nama_barang' => 'Laptop Operasional',
         'kategori' => 'Bukan Bangunan - Kelompok 1',
+        'jenis_barang' => 'Laptop / notebook',
         'unit_kerja_id' => $this->unitKerja->id,
         'tanggal_perolehan' => now()->subMonth(),
         'harga_perolehan' => 12000000,
@@ -267,6 +275,7 @@ test('barcode and qr code use separate print pages', function () {
         'kode_barang' => 'IT-ELK-2026-0001',
         'nama_barang' => 'Laptop Operasional',
         'kategori' => 'Bukan Bangunan - Kelompok 1',
+        'jenis_barang' => 'Laptop / notebook',
         'unit_kerja_id' => $this->unitKerja->id,
         'tanggal_perolehan' => now()->subMonth(),
         'harga_perolehan' => 12000000,
@@ -345,6 +354,7 @@ test('barang index provides row selection for bulk barcode export', function () 
         'kode_barang' => 'IT-ELK-2026-0001',
         'nama_barang' => 'Laptop Operasional',
         'kategori' => 'Bukan Bangunan - Kelompok 1',
+        'jenis_barang' => 'Laptop / notebook',
         'unit_kerja_id' => $this->unitKerja->id,
         'tanggal_perolehan' => now()->subMonth(),
         'harga_perolehan' => 12000000,
@@ -366,6 +376,7 @@ test('dokumen repeater rows are uploaded when creating barang', function () {
     $this->post(route('barang.store'), [
         'nama_barang' => 'Laptop Operasional',
         'kategori' => 'Bukan Bangunan - Kelompok 1',
+        'jenis_barang' => 'Laptop / notebook',
         'unit_kerja_id' => $this->unitKerja->id,
         'tanggal_perolehan' => now()->subDay()->toDateString(),
         'harga_perolehan' => 12000000,
@@ -408,6 +419,7 @@ test('dokumen repeater rows are uploaded when updating barang, in addition to do
     $this->put(route('barang.update', $barang), [
         'nama_barang' => 'Laptop Operasional',
         'kategori' => 'Bukan Bangunan - Kelompok 1',
+        'jenis_barang' => 'Laptop / notebook',
         'unit_kerja_id' => $this->unitKerja->id,
         'tanggal_perolehan' => now()->subMonth()->toDateString(),
         'harga_perolehan' => 12000000,
@@ -428,6 +440,7 @@ test('empty dokumen repeater rows left over from add/remove are silently ignored
     $this->post(route('barang.store'), [
         'nama_barang' => 'Laptop Operasional',
         'kategori' => 'Bukan Bangunan - Kelompok 1',
+        'jenis_barang' => 'Laptop / notebook',
         'unit_kerja_id' => $this->unitKerja->id,
         'tanggal_perolehan' => now()->subDay()->toDateString(),
         'harga_perolehan' => 12000000,
@@ -446,6 +459,7 @@ test('dokumen repeater row with file but no jenis_dokumen is rejected', function
     $this->post(route('barang.store'), [
         'nama_barang' => 'Laptop Operasional',
         'kategori' => 'Bukan Bangunan - Kelompok 1',
+        'jenis_barang' => 'Laptop / notebook',
         'unit_kerja_id' => $this->unitKerja->id,
         'tanggal_perolehan' => now()->subDay()->toDateString(),
         'harga_perolehan' => 12000000,
@@ -472,6 +486,7 @@ test('non-image files are rejected for foto sampul and foto pendukung', function
     $this->post(route('barang.store'), [
         'nama_barang' => 'Barang Lain',
         'kategori' => 'Bukan Bangunan - Kelompok 1',
+        'jenis_barang' => 'Laptop / notebook',
         'unit_kerja_id' => $this->unitKerja->id,
         'tanggal_perolehan' => now()->subDay()->toDateString(),
         'harga_perolehan' => 1000000,

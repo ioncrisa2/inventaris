@@ -27,6 +27,7 @@ class BarangRepository
                 $query->where(function ($query) use ($search) {
                     $query->where('kode_barang', 'like', "%{$search}%")
                         ->orWhere('nama_barang', 'like', "%{$search}%")
+                        ->orWhere('jenis_barang', 'like', "%{$search}%")
                         ->orWhere('kategori', 'like', "%{$search}%");
                 });
             })

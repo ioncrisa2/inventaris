@@ -45,8 +45,9 @@ class BarangController extends Controller
     {
         $barang = new Barang;
         $unitKerjas = $this->unitKerjaRepository->orderedList();
+        $jenisBarangByKategori = config('kategori_penyusutan.item_per_golongan');
 
-        return view('barang.form', compact('barang', 'unitKerjas'));
+        return view('barang.form', compact('barang', 'unitKerjas', 'jenisBarangByKategori'));
     }
 
     /**
@@ -83,8 +84,9 @@ class BarangController extends Controller
     {
         $barang->loadCount('dokumen');
         $unitKerjas = $this->unitKerjaRepository->orderedList();
+        $jenisBarangByKategori = config('kategori_penyusutan.item_per_golongan');
 
-        return view('barang.form', compact('barang', 'unitKerjas'));
+        return view('barang.form', compact('barang', 'unitKerjas', 'jenisBarangByKategori'));
     }
 
     /**

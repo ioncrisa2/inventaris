@@ -28,7 +28,7 @@ class InventarisExport implements FromQuery, ShouldAutoSize, WithHeadings, WithM
 
     public function headings(): array
     {
-        return ['Kode Barang', 'Nama Barang', 'Golongan', 'Unit Kerja', 'Tanggal Perolehan', 'Harga Perolehan', 'Kondisi Terakhir'];
+        return ['Kode Barang', 'Nama Barang', 'Jenis Barang', 'Golongan', 'Unit Kerja', 'Tanggal Perolehan', 'Harga Perolehan', 'Kondisi Terakhir'];
     }
 
     public function map($barang): array
@@ -36,6 +36,7 @@ class InventarisExport implements FromQuery, ShouldAutoSize, WithHeadings, WithM
         return [
             $barang->kode_barang,
             $barang->nama_barang,
+            $barang->jenis_barang ?? '-',
             $barang->kategori,
             $barang->unitKerja?->nama_unit ?? '-',
             $barang->tanggal_perolehan->format('Y-m-d'),

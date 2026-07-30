@@ -49,6 +49,7 @@ $kondisi = $barang->kondisiTerakhir?->kondisi ?? 'Belum diperiksa';
                     <x-detail-list class="detail-list--single">
                         <x-detail-item label="Kode Barang" :value="$barang->kode_barang" emphasis />
                         <x-detail-item label="Nama Barang" :value="$barang->nama_barang" />
+                        <x-detail-item label="Jenis Barang" :value="$barang->jenis_barang ?? 'Belum diklasifikasikan'" />
                         <x-detail-item label="Golongan" :value="$barang->kategori" />
                         <x-detail-item label="Unit Kerja" :value="$barang->unitKerja?->nama_unit ?? 'Belum ditentukan'" />
                         <x-detail-item label="Tanggal Perolehan" :value="$barang->tanggal_perolehan->translatedFormat('d F Y')" />
@@ -97,7 +98,7 @@ $kondisi = $barang->kondisiTerakhir?->kondisi ?? 'Belum diperiksa';
             <div class="col-12">
                 <x-data-table
                     title="Rincian Penyusutan"
-                    subtitle="Metode Garis Lurus, masa manfaat {{ \App\Support\PenyusutanCalculator::masaManfaatTahun($barang->kategori) }} tahun ({{ $barang->kategori }}) — dasar pelaporan SPT."
+                    subtitle="Metode {{ \App\Support\PenyusutanCalculator::namaMetode(\App\Support\PenyusutanCalculator::metodeUntukKategori($barang->kategori)) }}, masa manfaat {{ \App\Support\PenyusutanCalculator::masaManfaatTahun($barang->kategori) }} tahun ({{ $barang->kategori }}) — dasar pelaporan SPT."
                 >
                     <table class="table table-hover align-middle mb-0">
                         <thead>
