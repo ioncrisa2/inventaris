@@ -2,19 +2,20 @@
 
 namespace App\Http\Requests\HariLibur;
 
+use App\Models\HariLibur;
 use Illuminate\Foundation\Http\FormRequest;
 
-class BandingkanHariLiburRequest extends FormRequest
+class ImportHariLiburRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user()->can('create', HariLibur::class);
     }
 
     public function rules(): array
     {
         return [
-            'tahun' => ['nullable', 'integer', 'min:2000', 'max:2100'],
+            'file' => ['required', 'file', 'mimes:xlsx,xls,csv', 'max:5120'],
         ];
     }
 }

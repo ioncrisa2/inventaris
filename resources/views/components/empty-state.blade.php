@@ -10,5 +10,8 @@
         @if ($slot->isNotEmpty())
             <p>{{ $slot }}</p>
         @endif
+        @isset($action)
+            <div class="empty-state__action">{{ $action }}</div>
+        @endisset
     </div>
 </div>

@@ -28,6 +28,21 @@
     </div>
 </x-modal-form>
 
+<x-modal-form id="importHariLiburModal" title="Import Hari Libur dari Excel" :action="route('hari-libur.import')" submit-label="Import">
+    <div class="settings-callout mb-3">
+        <i class="bi bi-info-circle" aria-hidden="true"></i>
+        <div>
+            <strong>Format file: kolom Tanggal &amp; Keterangan.</strong>
+            <p class="mb-0">
+                Tanggal yang sudah ada di database tidak akan diubah — cuma tanggal baru yang ditambahkan.
+                <a href="{{ route('hari-libur.template') }}">Unduh contoh template</a>.
+            </p>
+        </div>
+    </div>
+
+    <x-form.file name="file" label="File Excel/CSV" accept=".xlsx,.xls,.csv" required help="Format .xlsx, .xls, atau .csv, maks. 5MB." />
+</x-modal-form>
+
 <x-modal-form id="editHariLiburModal" title="Edit Hari Libur" form-id="editHariLiburForm" method="PUT"
     :data-auto-show-modal="$errors->any() && old('_modal') === 'editHariLiburModal'"
     submit-label="Simpan Perubahan" :action="old('_modal') === 'editHariLiburModal' && old('_hari_libur_id') ? route('hari-libur.update', old('_hari_libur_id')) : '#'">

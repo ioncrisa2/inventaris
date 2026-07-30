@@ -2,12 +2,21 @@
 
 use App\Models\HariLibur;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->actingAs(adminUser());
 });
+
+function hariLiburImportFile(string $csv, string $filename = 'import.csv'): UploadedFile
+{
+    $path = tempnam(sys_get_temp_dir(), 'hlibur').'.csv';
+    file_put_contents($path, $csv);
+
+    return new UploadedFile($path, $filename, 'text/csv', null, true);
+}
 
 test('index shows hari libur clustered per tahun', function () {
     HariLibur::create(['tanggal' => '2026-01-01', 'keterangan' => 'Tahun Baru Masehi']);
@@ -101,6 +110,71 @@ test('hari libur can be deleted and redirects to its tahun detail page', functio
         ->assertRedirect(route('hari-libur.tahun', ['tahun' => 2026]));
 
     $this->assertDatabaseMissing('hari_libur', ['id' => $hariLibur->id]);
+});
+
+test('hari libur can be imported in bulk from a csv file', function () {
+    $file = hariLiburImportFile(
+        "Tanggal,Keterangan\n2026-01-01,Tahun Baru Masehi\n2026-08-17,HUT RI\n"
+    );
+
+    $this->post(route('hari-libur.import'), ['file' => $file])
+        ->assertRedirect(route('hari-libur.index'))
+        ->assertSessionHas('success', '2 hari libur berhasil ditambahkan dari file.');
+
+    $this->assertDatabaseHas('hari_libur', ['tanggal' => '2026-01-01', 'keterangan' => 'Tahun Baru Masehi']);
+    $this->assertDatabaseHas('hari_libur', ['tanggal' => '2026-08-17', 'keterangan' => 'HUT RI']);
+});
+
+test('hari libur import skips dates that already exist without changing them', function () {
+    HariLibur::create(['tanggal' => '2026-08-17', 'keterangan' => 'Keterangan Lama']);
+
+    $file = hariLiburImportFile(
+        "Tanggal,Keterangan\n2026-01-01,Tahun Baru Masehi\n2026-08-17,Keterangan Dari File\n"
+    );
+
+    $this->post(route('hari-libur.import'), ['file' => $file])
+        ->assertRedirect(route('hari-libur.index'))
+        ->assertSessionHas('success', '1 hari libur berhasil ditambahkan dari file. 1 baris dilewati karena tanggalnya sudah ada.');
+
+    $this->assertDatabaseHas('hari_libur', ['tanggal' => '2026-08-17', 'keterangan' => 'Keterangan Lama']);
+    $this->assertDatabaseCount('hari_libur', 2);
+});
+
+test('hari libur import skips invalid rows and reports how many were skipped', function () {
+    $file = hariLiburImportFile(
+        "Tanggal,Keterangan\n2026-01-01,Tahun Baru Masehi\n,Tanpa Tanggal\n"
+    );
+
+    $this->post(route('hari-libur.import'), ['file' => $file])
+        ->assertRedirect(route('hari-libur.index'))
+        ->assertSessionHas('success', '1 hari libur berhasil ditambahkan dari file. 1 baris dilewati karena tidak valid.');
+
+    $this->assertDatabaseCount('hari_libur', 1);
+});
+
+test('hari libur import requires a valid file', function () {
+    $this->post(route('hari-libur.import'), [])
+        ->assertSessionHasErrors('file');
+
+    $this->post(route('hari-libur.import'), [
+        'file' => UploadedFile::fake()->create('dokumen.pdf', 100, 'application/pdf'),
+    ])->assertSessionHasErrors('file');
+});
+
+test('hari libur template can be downloaded', function () {
+    $this->get(route('hari-libur.template'))
+        ->assertOk()
+        ->assertHeader('content-disposition', 'attachment; filename=template-hari-libur.xlsx');
+});
+
+test('staff without hari-libur permission cannot import or download the template', function () {
+    $this->actingAs(staffUser());
+
+    $this->post(route('hari-libur.import'), [
+        'file' => hariLiburImportFile("Tanggal,Keterangan\n2026-01-01,Tahun Baru Masehi\n"),
+    ])->assertForbidden();
+
+    $this->get(route('hari-libur.template'))->assertForbidden();
 });
 
 test('staff without hari-libur permission cannot manage hari libur', function () {

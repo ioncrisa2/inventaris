@@ -7,10 +7,10 @@
         <x-page-header title="Hari Libur" subtitle="Tanggal libur nasional — dasar hitung Uang Makan &amp; kalender Absensi.">
             <x-slot:actions>
                 @can('hari-libur.create')
-                    <a href="{{ route('hari-libur.sinkronisasi.create') }}" class="btn btn-light">
-                        <i class="bi bi-cloud-download"></i>
-                        Sinkronkan Tanggal Libur
-                    </a>
+                    <button type="button" class="btn btn-light" data-bs-toggle="modal" data-bs-target="#importHariLiburModal">
+                        <i class="bi bi-file-earmark-excel"></i>
+                        Import Excel
+                    </button>
                 @endcan
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createHariLiburModal">
                     <i class="bi bi-plus-circle"></i>
@@ -47,7 +47,15 @@
                             </td>
                         </tr>
                     @empty
-                        <x-empty-row :colspan="3">Belum ada data hari libur. Klik "Sinkronkan Tanggal Libur" atau "Tambah Hari Libur" untuk mulai mengisi.</x-empty-row>
+                        <x-empty-row :colspan="3">
+                            Belum ada data hari libur. Tambah manual atau import dari file Excel.
+                            <x-slot:action>
+                                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createHariLiburModal">
+                                    <i class="bi bi-plus-circle"></i>
+                                    Tambah Hari Libur
+                                </button>
+                            </x-slot:action>
+                        </x-empty-row>
                     @endforelse
                 </tbody>
             </table>

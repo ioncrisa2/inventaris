@@ -8,7 +8,6 @@ use App\Http\Controllers\DokumenBarangController;
 use App\Http\Controllers\DokumenKaryawanController;
 use App\Http\Controllers\FotoBarangController;
 use App\Http\Controllers\HariLiburController;
-use App\Http\Controllers\HariLiburSinkronisasiController;
 use App\Http\Controllers\KaryawanController;
 use App\Http\Controllers\KomponenGajiController;
 use App\Http\Controllers\LaporanController;
@@ -50,8 +49,8 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::delete('hari-libur/bulk', [HariLiburController::class, 'bulkDestroy'])->name('hari-libur.bulk-destroy');
-    Route::get('hari-libur/sinkronisasi', [HariLiburSinkronisasiController::class, 'create'])->name('hari-libur.sinkronisasi.create');
-    Route::post('hari-libur/sinkronisasi', [HariLiburSinkronisasiController::class, 'store'])->name('hari-libur.sinkronisasi.store');
+    Route::get('hari-libur/template', [HariLiburController::class, 'template'])->name('hari-libur.template');
+    Route::post('hari-libur/import', [HariLiburController::class, 'import'])->name('hari-libur.import');
     Route::get('hari-libur/{tahun}', [HariLiburController::class, 'tahun'])->whereNumber('tahun')->name('hari-libur.tahun');
     Route::resource('hari-libur', HariLiburController::class)->except(['show', 'create', 'edit']);
 

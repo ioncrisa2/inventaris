@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\HariLiburTemplateExport;
 use App\Http\Requests\BulkDeleteRequest;
+use App\Http\Requests\HariLibur\ImportHariLiburRequest;
 use App\Http\Requests\HariLibur\StoreHariLiburRequest;
 use App\Http\Requests\HariLibur\UpdateHariLiburRequest;
 use App\Models\HariLibur;
 use App\Services\HariLiburService;
 use App\Support\PerPage;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class HariLiburController extends Controller
 {
@@ -80,6 +83,41 @@ class HariLiburController extends Controller
 
         return redirect()->route('hari-libur.tahun', ['tahun' => $tahun])
             ->with('success', 'Hari libur berhasil dihapus.');
+    }
+
+    /**
+     * Unduh template Excel kosong (kolom Tanggal & Keterangan) untuk diisi
+     * lalu diunggah lewat import().
+     */
+    public function template()
+    {
+        $this->authorize('create', HariLibur::class);
+
+        return Excel::download(new HariLiburTemplateExport, 'template-hari-libur.xlsx');
+    }
+
+    /**
+     * Import hari libur secara massal dari file Excel/CSV. Tanggal yang
+     * sudah ada di database tidak pernah diubah — cuma menambah yang
+     * benar-benar belum ada, sama seperti input manual satu per satu.
+     */
+    public function import(ImportHariLiburRequest $request)
+    {
+        $hasil = $this->hariLiburService->import($request->file('file'));
+
+        $pesan = $hasil['ditambahkan'] > 0
+            ? "{$hasil['ditambahkan']} hari libur berhasil ditambahkan dari file."
+            : 'Tidak ada hari libur baru yang ditambahkan.';
+
+        if ($hasil['sudah_ada'] > 0) {
+            $pesan .= " {$hasil['sudah_ada']} baris dilewati karena tanggalnya sudah ada.";
+        }
+
+        if ($hasil['gagal'] > 0) {
+            $pesan .= " {$hasil['gagal']} baris dilewati karena tidak valid.";
+        }
+
+        return redirect()->route('hari-libur.index')->with('success', $pesan);
     }
 
     public function bulkDestroy(BulkDeleteRequest $request)

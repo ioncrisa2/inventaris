@@ -84,7 +84,15 @@
                             </td>
                         </tr>
                     @empty
-                        <x-empty-row :colspan="auth()->user()->can('hari-libur.delete') ? 4 : 3">Belum ada hari libur untuk tahun {{ $tahun }}.</x-empty-row>
+                        <x-empty-row :colspan="auth()->user()->can('hari-libur.delete') ? 4 : 3">
+                            Belum ada hari libur untuk tahun {{ $tahun }}.
+                            <x-slot:action>
+                                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createHariLiburModal">
+                                    <i class="bi bi-plus-circle"></i>
+                                    Tambah Hari Libur
+                                </button>
+                            </x-slot:action>
+                        </x-empty-row>
                     @endforelse
                 </tbody>
             </table>
