@@ -9,18 +9,18 @@ visual yang bersih di atas dekorasi.
 
 ## 1. Aturan UI/UX
 
-**Jangan bungkus semua konten dengan card.** Card (border/shadow) cuma untuk
-stat widget (angka metrik utama, mis. `<x-stat-card>`). Area filter dan tabel
-data **tidak** dibungkus card — biarkan menyatu dengan background halaman
+**Card untuk stat widget & tabel data.** Card (border/shadow) dipakai untuk
+stat widget (angka metrik utama, mis. `<x-stat-card>`) dan tabel data
+(`<x-data-table>` — sudah membungkus dengan card secara otomatis, jangan
+bungkus manual dengan `<div class="card">` tambahan di luar komponen). Area
+filter **tidak** dibungkus card — biarkan menyatu dengan background halaman
 supaya tidak terasa sempit/terkotak-kotak.
 - `<x-filter-card>` (card pembungkus filter) **jangan dipakai lagi** di
   halaman baru — ganti dengan panel filter collapsible (lihat poin 4).
-- `<x-data-table-card>` yang membungkus tabel dengan card pun sebaiknya
-  dihindari untuk halaman baru; render tabel langsung di atas background,
-  pakai divider tipis antar baris (`border-bottom` tipis), bukan card.
 
-**Tabel bersih.** Tabel menyatu dengan background utama, pembatas horizontal
-tipis antar baris (bukan card border tebal). Header tabel:
+**Tabel bersih di dalam card.** Di dalam `<x-data-table>`, tetap pakai
+pembatas horizontal tipis antar baris (bukan garis tebal/berulang, bukan
+card per-baris). Header tabel:
 - **Sticky** saat halaman di-scroll (`position: sticky; top: <tinggi topbar>`
   pada `<thead>` atau `<th>`).
 - Background abu-abu sangat muda (mis. `bg-body-tertiary` / variabel custom
