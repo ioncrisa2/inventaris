@@ -1,9 +1,9 @@
 @extends('layouts.app')
 
-@section('title', $karyawan->exists ? 'Edit Karyawan' : 'Tambah Karyawan')
+@section('title', 'Tambah Karyawan')
 
 @php
-    $fieldIdentitas = ['nik', 'nama_lengkap', 'tempat_lahir', 'tanggal_lahir', 'jenis_kelamin', 'agama', 'status_perkawinan', 'nomor_ktp', 'npwp', 'pendidikan_terakhir', 'jurusan', 'nama_sekolah', 'tahun_lulus', 'nama_pasangan', 'jumlah_anak', 'tanggal_mengundurkan_diri', 'foto_karyawan'];
+    $fieldIdentitas = ['nik', 'nama_lengkap', 'tempat_lahir', 'tanggal_lahir', 'jenis_kelamin', 'agama', 'status_perkawinan', 'nomor_ktp', 'npwp', 'pendidikan_terakhir', 'jurusan', 'nama_sekolah', 'tahun_lulus', 'nama_pasangan', 'jumlah_anak', 'alamat_ktp', 'alamat_domisili', 'foto_karyawan'];
     $fieldKepegawaian = ['unit_kerja_id', 'tanggal_masuk_kerja', 'status_karyawan', 'jabatan', 'nomor_sk_pengangkatan', 'tanggal_sk_pengangkatan', 'atasan_langsung_id', 'gaji_pokok'];
     $adaErrorDokumen = $errors->has('dokumen.*.jenis_dokumen') || $errors->has('dokumen.*.dokumen');
 
@@ -20,11 +20,11 @@
 
 @section('content')
 <x-form-page
-    :title="$karyawan->exists ? 'Edit Karyawan' : 'Tambah Karyawan'"
-    :action="$karyawan->exists ? route('karyawan.update', $karyawan) : route('karyawan.store')"
-    :method="$karyawan->exists ? 'PUT' : 'POST'"
+    title="Tambah Karyawan"
+    :action="route('karyawan.store')"
+    method="POST"
     :cancel-route="route('karyawan.index')"
-    :submit-label="$karyawan->exists ? 'Simpan Perubahan' : 'Simpan Karyawan'"
+    submit-label="Simpan Karyawan"
     class="is-wide"
 >
     <ul class="nav nav-tabs mb-3" id="karyawanTab" role="tablist">
@@ -149,13 +149,39 @@
                 </div>
 
                 <div class="col-md-6">
+                    <label class="form-label" for="alamat_ktp">Alamat sesuai KTP <span class="text-danger">*</span></label>
+                    <textarea
+                        class="form-control @error('alamat_ktp') is-invalid @enderror"
+                        id="alamat_ktp"
+                        name="alamat_ktp"
+                        rows="3"
+                        maxlength="2000"
+                        required
+                    >{{ old('alamat_ktp', $karyawan->alamat_ktp) }}</textarea>
+                    @error('alamat_ktp')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label" for="alamat_domisili">Alamat Domisili <span class="text-danger">*</span></label>
+                    <textarea
+                        class="form-control @error('alamat_domisili') is-invalid @enderror"
+                        id="alamat_domisili"
+                        name="alamat_domisili"
+                        rows="3"
+                        maxlength="2000"
+                        required
+                    >{{ old('alamat_domisili', $karyawan->alamat_domisili) }}</textarea>
+                    @error('alamat_domisili')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+
+                <div class="col-md-6">
                     @if($karyawan->exists && $karyawan->foto_karyawan)
                     <div class="current-image mb-2">
                         <x-image-preview :src="\Illuminate\Support\Facades\Storage::url($karyawan->foto_karyawan)" alt="Foto karyawan saat ini" size="avatar" />
                         <div class="form-text">Foto saat ini — unggah file baru untuk mengganti.</div>
                     </div>
                     @endif
-                    <x-form.file name="foto_karyawan" label="Foto Karyawan" :required="!($karyawan->exists && $karyawan->foto_karyawan)" accept="image/*" help="JPG/PNG/WEBP, maks. 2MB." />
+                    <x-form.file name="foto_karyawan" label="Foto Karyawan" required accept="image/*" help="JPG/PNG/WEBP, maks. 2MB." />
                 </div>
             </div>
         </div>
@@ -189,7 +215,7 @@
                         name="status_karyawan"
                         label="Status Karyawan"
                         :options="collect(\App\Models\Karyawan::STATUSES)->mapWithKeys(fn ($status) => [$status => $status])"
-                        :value="$karyawan->status_karyawan ?? 'Tetap'"
+                        :value="$karyawan->status_karyawan ?? 'PKWTT'"
                         required
                     />
                 </div>
@@ -225,7 +251,15 @@
                 </div>
 
                 <div class="col-md-6">
-                    <x-form.money-input name="gaji_pokok" label="Gaji Pokok" :value="$karyawan->gaji_pokok" required />
+                    @can('karyawan.gaji.update')
+                        <x-form.money-input name="gaji_pokok" label="Gaji Pokok" :value="$karyawan->gaji_pokok" required />
+                    @else
+                        <input type="hidden" name="gaji_pokok" value="0">
+                        <div class="alert alert-secondary mb-0">
+                            Gaji pokok diinisialisasi Rp 0. Pengguna dengan hak <strong>Ubah Gaji</strong>
+                            dapat mencatat penyesuaian setelah karyawan dibuat.
+                        </div>
+                    @endcan
                 </div>
             </div>
         </div>

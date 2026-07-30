@@ -2,14 +2,24 @@
 
 @section('title', 'Karyawan - Sistem Inventaris & Kepegawaian')
 
+@php
+    $dapatMelihatGaji = auth()->user()->can('karyawan.gaji.view')
+        || auth()->user()->can('karyawan.gaji.update');
+    $jumlahKolom = 6
+        + (auth()->user()->can('karyawan.delete') ? 1 : 0)
+        + ($dapatMelihatGaji ? 1 : 0);
+@endphp
+
 @section('content')
 <x-app-page>
         <x-page-header title="Karyawan">
             <x-slot:actions>
-                <a class="btn btn-primary" href="{{ route('karyawan.create') }}">
-                    <i class="bi bi-person-plus"></i>
-                    Tambah Karyawan
-                </a>
+                @can('karyawan.create')
+                    <a class="btn btn-primary" href="{{ route('karyawan.create') }}">
+                        <i class="bi bi-person-plus"></i>
+                        Tambah Karyawan
+                    </a>
+                @endcan
             </x-slot:actions>
         </x-page-header>
 
@@ -69,7 +79,7 @@
                         id="karyawan"
                         noun="karyawan"
                         :delete-action="route('karyawan.bulk-destroy')"
-                        delete-message="Karyawan hanya akan dihapus jika tidak memiliki absensi, transaksi gaji, atau bawahan langsung." />
+                        delete-message="Karyawan hanya dapat dihapus jika belum memiliki absensi, transaksi gaji, histori perubahan, atau bawahan langsung." />
                 @endcan
             </x-slot:bulkActions>
 
@@ -86,7 +96,9 @@
                             <th>Unit Kerja</th>
                             <th>Jabatan</th>
                             <th class="table-col-width-120">Status</th>
-                            <th class="text-end table-col-width-150">Gaji Pokok</th>
+                            @if($dapatMelihatGaji)
+                                <th class="text-end table-col-width-150">Gaji Pokok</th>
+                            @endif
                             <th class="text-nowrap table-col-width-160">Aksi</th>
                         </tr>
                     </thead>
@@ -103,7 +115,9 @@
                                 <td>{{ $data->unitKerja?->nama_unit ?? 'Belum ditentukan' }}</td>
                                 <td>{{ $data->jabatan }}</td>
                                 <td><x-badge :color="\App\Models\Karyawan::STATUS_COLORS[$data->status_karyawan] ?? 'bg-secondary'">{{ $data->status_karyawan }}</x-badge></td>
-                                <td class="text-end">Rp {{ number_format($data->gaji_pokok, 0, ',', '.') }}</td>
+                                @if($dapatMelihatGaji)
+                                    <td class="text-end">Rp {{ number_format($data->gaji_pokok, 0, ',', '.') }}</td>
+                                @endif
                                 <td class="text-nowrap">
                                     <div class="table-actions">
                                         <a
@@ -114,24 +128,18 @@
                                         >
                                             <i class="bi bi-eye"></i>
                                         </a>
-                                        <a
-                                            class="btn btn-sm btn-action btn-action-neutral"
-                                            href="{{ route('karyawan.edit', $data) }}"
-                                            aria-label="Edit {{ $data->nama_lengkap }}"
-                                            title="Edit"
-                                        >
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
-                                        <x-delete-button
-                                            :url="route('karyawan.destroy', $data)"
-                                            :message="'Hapus karyawan &quot;'.$data->nama_lengkap.'&quot;? Penghapusan akan ditolak jika masih memiliki absensi, transaksi gaji, atau bawahan langsung.'"
-                                            :label="'Hapus '.$data->nama_lengkap"
-                                        />
+                                        @can('delete', $data)
+                                            <x-delete-button
+                                                :url="route('karyawan.destroy', $data)"
+                                                :message="'Hapus karyawan &quot;'.$data->nama_lengkap.'&quot;? Penghapusan akan ditolak jika masih memiliki absensi, transaksi gaji, histori perubahan, atau bawahan langsung.'"
+                                                :label="'Hapus '.$data->nama_lengkap"
+                                            />
+                                        @endcan
                                     </div>
                                 </td>
                             </tr>
                         @empty
-                            <x-empty-row :colspan="auth()->user()->can('karyawan.delete') ? 8 : 7">
+                            <x-empty-row :colspan="$jumlahKolom">
                                 @if(request()->hasAny(['search', 'unit_kerja_id', 'status_karyawan', 'kelengkapan']))
                                     Tidak ada karyawan yang cocok dengan filter.
                                     <a href="{{ route('karyawan.index') }}">Hapus filter</a>.

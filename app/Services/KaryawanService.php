@@ -45,44 +45,6 @@ class KaryawanService
         });
     }
 
-    public function update(Karyawan $karyawan, array $data): Karyawan
-    {
-        return DB::transaction(function () use ($karyawan, $data) {
-            $dokumenBaris = $this->dokumenTerisi($data);
-            unset($data['dokumen']);
-            $fotoLama = null;
-
-            if (isset($data['foto_karyawan']) && $data['foto_karyawan'] instanceof UploadedFile) {
-                $fotoLama = $karyawan->foto_karyawan;
-                $data = $this->simpanFotoKaryawan($data);
-            } else {
-                // Tidak ada file baru diupload: jangan timpa foto_karyawan yang sudah tersimpan.
-                unset($data['foto_karyawan']);
-            }
-
-            $karyawan = $this->karyawanRepository->update($karyawan, $data);
-
-            $this->simpanDokumen($karyawan, $dokumenBaris);
-            $this->fileStorage->deleteAfterCommit('public', $fotoLama);
-            $this->dashboardCache->invalidateAfterCommit();
-
-            return $karyawan;
-        });
-    }
-
-    public function updateEmploymentStatus(Karyawan $karyawan, ?string $tanggalKeluar): Karyawan
-    {
-        return DB::transaction(function () use ($karyawan, $tanggalKeluar) {
-            $karyawan = $this->karyawanRepository->update($karyawan, [
-                'tanggal_mengundurkan_diri' => $tanggalKeluar,
-            ]);
-
-            $this->dashboardCache->invalidateAfterCommit();
-
-            return $karyawan;
-        });
-    }
-
     private function simpanFotoKaryawan(array $data): array
     {
         if (isset($data['foto_karyawan']) && $data['foto_karyawan'] instanceof UploadedFile) {
@@ -155,11 +117,17 @@ class KaryawanService
     {
         $atribut = $karyawan->getAttributes();
         $memilikiRelasi = array_key_exists('absensis_exists', $atribut)
-            ? (bool) ($karyawan->absensis_exists || $karyawan->transaksi_gaji_exists || $karyawan->bawahan_langsung_exists)
-            : ($karyawan->absensis()->exists() || $karyawan->transaksiGaji()->exists() || $karyawan->bawahanLangsung()->exists());
+            ? (bool) ($karyawan->absensis_exists
+                || $karyawan->transaksi_gaji_exists
+                || $karyawan->bawahan_langsung_exists
+                || $karyawan->riwayat_perubahan_exists)
+            : ($karyawan->absensis()->exists()
+                || $karyawan->transaksiGaji()->exists()
+                || $karyawan->bawahanLangsung()->exists()
+                || $karyawan->riwayatPerubahan()->exists());
 
         if ($memilikiRelasi) {
-            throw new \DomainException('Karyawan tidak dapat dihapus karena masih terhubung dengan absensi, transaksi gaji, atau tercatat sebagai atasan. Hapus atau pindahkan relasi tersebut terlebih dahulu.');
+            throw new \DomainException('Karyawan tidak dapat dihapus karena masih terhubung dengan absensi, transaksi gaji, histori perubahan, atau tercatat sebagai atasan. Hapus atau pindahkan relasi tersebut terlebih dahulu.');
         }
     }
 

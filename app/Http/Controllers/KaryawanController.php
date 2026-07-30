@@ -4,12 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\BulkDeleteRequest;
 use App\Http\Requests\Karyawan\StoreKaryawanRequest;
-use App\Http\Requests\Karyawan\UpdateEmploymentStatusRequest;
-use App\Http\Requests\Karyawan\UpdateKaryawanRequest;
 use App\Models\Karyawan;
 use App\Repositories\KaryawanRepository;
 use App\Repositories\UnitKerjaRepository;
 use App\Services\KaryawanService;
+use App\Support\KaryawanPerubahanSchema;
 use App\Support\PerPage;
 use Illuminate\Http\Request;
 
@@ -62,48 +61,38 @@ class KaryawanController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Karyawan $karyawan)
+    public function show(Request $request, Karyawan $karyawan)
     {
         $karyawan->load('unitKerja', 'dokumen', 'atasanLangsung');
+        if ($request->user()->can('karyawan.riwayat.view')) {
+            $karyawan->load([
+                'riwayatPerubahan' => fn ($query) => $query
+                    ->with(['pelaku:id,name', 'perubahan', 'dokumen'])
+                    ->orderByDesc('tanggal_berlaku')
+                    ->orderByDesc('created_at'),
+            ]);
+        }
+
         $usia = $karyawan->tanggal_lahir->age;
         $kategoriUsia = $this->karyawanService->kategoriUsia($karyawan);
         $masaKerja = $this->karyawanService->masaKerja($karyawan);
+        $jenisPerubahanTersedia = KaryawanPerubahanSchema::allowedTypesFor($request->user());
+        $unitKerjas = $jenisPerubahanTersedia === []
+            ? collect()
+            : $this->unitKerjaRepository->orderedList();
+        $atasanOptions = $jenisPerubahanTersedia === []
+            ? collect()
+            : $this->karyawanRepository->orderedList()->reject(fn ($item) => $item->id === $karyawan->id);
 
-        return view('karyawan.show', compact('karyawan', 'usia', 'kategoriUsia', 'masaKerja'));
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Karyawan $karyawan)
-    {
-        $karyawan->loadCount('dokumen');
-        $unitKerjas = $this->unitKerjaRepository->orderedList();
-        $atasanOptions = $this->karyawanRepository->orderedList()->reject(fn ($k) => $k->id === $karyawan->id);
-
-        return view('karyawan.form', compact('karyawan', 'unitKerjas', 'atasanOptions'));
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateKaryawanRequest $request, Karyawan $karyawan)
-    {
-        $this->karyawanService->update($karyawan, $request->validated());
-
-        return redirect()->route('karyawan.index')->with('success', 'Karyawan berhasil diperbarui.');
-    }
-
-    public function updateEmploymentStatus(UpdateEmploymentStatusRequest $request, Karyawan $karyawan)
-    {
-        $tanggalKeluar = $request->validated('tanggal_mengundurkan_diri');
-        $this->karyawanService->updateEmploymentStatus($karyawan, $tanggalKeluar);
-
-        $message = $tanggalKeluar
-            ? 'Karyawan berhasil dinonaktifkan.'
-            : 'Karyawan berhasil diaktifkan kembali.';
-
-        return redirect()->route('karyawan.show', $karyawan)->with('success', $message);
+        return view('karyawan.show', compact(
+            'karyawan',
+            'usia',
+            'kategoriUsia',
+            'masaKerja',
+            'jenisPerubahanTersedia',
+            'unitKerjas',
+            'atasanOptions',
+        ));
     }
 
     /**

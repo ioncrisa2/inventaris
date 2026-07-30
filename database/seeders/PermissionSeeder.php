@@ -45,6 +45,7 @@ class PermissionSeeder extends Seeder
                 'karyawan.view',
                 'karyawan.create',
                 'karyawan.update',
+                'karyawan.riwayat.view',
                 'absensi.view',
                 'absensi.create',
                 'hari-libur.view',

@@ -33,6 +33,8 @@ class StoreKaryawanRequest extends FormRequest
             'tahun_lulus' => ['required', 'integer', 'min:1950', 'max:'.now()->year],
             'nama_pasangan' => ['nullable', 'string', 'max:255'],
             'jumlah_anak' => ['nullable', 'integer', 'min:0'],
+            'alamat_ktp' => ['required', 'string', 'max:2000'],
+            'alamat_domisili' => ['required', 'string', 'max:2000'],
             'foto_karyawan' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
 
             // Data Kepegawaian
@@ -49,5 +51,12 @@ class StoreKaryawanRequest extends FormRequest
             'dokumen.*.jenis_dokumen' => ['nullable', 'required_with:dokumen.*.dokumen', Rule::in(config('kepegawaian.jenis_dokumen'))],
             'dokumen.*.dokumen' => ['nullable', 'required_with:dokumen.*.jenis_dokumen', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        if (! ($this->user()?->can('karyawan.gaji.update') ?? false)) {
+            $this->merge(['gaji_pokok' => '0']);
+        }
     }
 }

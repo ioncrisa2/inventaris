@@ -14,16 +14,12 @@
                         <i class="bi bi-calendar-check"></i>
                         Lihat Absensi
                     </a>
-                    <a class="btn btn-primary" href="{{ route('karyawan.edit', $karyawan) }}">
-                        <i class="bi bi-pencil"></i>
-                        Edit
-                    </a>
-                    @can('update', $karyawan)
-                        <button class="btn btn-outline-warning" type="button" data-bs-toggle="modal" data-bs-target="#employmentStatusModal">
-                            <i class="bi bi-person-dash" aria-hidden="true"></i>
-                            {{ $karyawan->tanggal_mengundurkan_diri ? 'Atur Status' : 'Nonaktifkan Karyawan' }}
+                    @if($jenisPerubahanTersedia !== [])
+                        <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#employeeChangeModal">
+                            <i class="bi bi-pencil-square" aria-hidden="true"></i>
+                            Edit Data Karyawan
                         </button>
-                    @endcan
+                    @endif
                     <a class="btn btn-light" href="{{ route('karyawan.index') }}">Kembali</a>
                 </div>
             </x-slot:actions>
@@ -31,7 +27,7 @@
 
         <x-flash-alert />
 
-        <div class="card content-narrow">
+        <div class="card employee-detail-card">
             <div class="card-header d-flex justify-content-between align-items-center gap-3">
                 <span>{{ $karyawan->nama_lengkap }}</span>
                 <div class="d-flex align-items-center gap-2">
@@ -42,37 +38,85 @@
                 </div>
             </div>
             <div class="card-body">
-                <x-image-preview
-                    :src="$karyawan->foto_karyawan ? \Illuminate\Support\Facades\Storage::url($karyawan->foto_karyawan) : null"
-                    alt="Foto {{ $karyawan->nama_lengkap }}"
-                    icon="bi-person"
-                    size="avatar"
-                    class="mb-3"
-                />
+                <div class="row g-4 employee-detail-layout">
+                    <aside class="col-lg-4 col-xl-3">
+                        <div class="employee-detail-sidebar">
+                            <div class="employee-detail-profile">
+                                <x-image-preview
+                                    :src="$karyawan->foto_karyawan ? \Illuminate\Support\Facades\Storage::url($karyawan->foto_karyawan) : null"
+                                    alt="Foto {{ $karyawan->nama_lengkap }}"
+                                    icon="bi-person"
+                                    size="avatar"
+                                />
+                                <div>
+                                    <strong>{{ $karyawan->nama_lengkap }}</strong>
+                                    <small>{{ $karyawan->nik }} · {{ $karyawan->jabatan }}</small>
+                                </div>
+                            </div>
 
-                <ul class="nav nav-tabs mb-3" id="karyawanShowTab" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="show-tab-identitas-btn" data-bs-toggle="tab" data-bs-target="#show-tab-identitas" type="button" role="tab" aria-controls="show-tab-identitas" aria-selected="true">
-                            Data Identitas
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="show-tab-kepegawaian-btn" data-bs-toggle="tab" data-bs-target="#show-tab-kepegawaian" type="button" role="tab" aria-controls="show-tab-kepegawaian" aria-selected="false">
-                            Data Kepegawaian
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="show-tab-dokumen-btn" data-bs-toggle="tab" data-bs-target="#show-tab-dokumen" type="button" role="tab" aria-controls="show-tab-dokumen" aria-selected="false">
-                            Dokumen Karyawan
-                            @if($karyawan->dokumen->isNotEmpty())
-                            <span class="badge bg-secondary rounded-pill">{{ $karyawan->dokumen->count() }}</span>
-                            @endif
-                        </button>
-                    </li>
-                </ul>
+                            <nav
+                                class="nav nav-pills flex-column employee-detail-nav"
+                                id="karyawanShowTab"
+                                role="tablist"
+                                aria-label="Bagian detail karyawan"
+                                aria-orientation="vertical"
+                            >
+                                <div class="settings-nav__label">Informasi Karyawan</div>
 
-                <div class="tab-content" id="karyawanShowTabContent">
+                                <button class="settings-nav__link employee-detail-nav__link active" id="show-tab-identitas-btn" data-bs-toggle="pill" data-bs-target="#show-tab-identitas" type="button" role="tab" aria-controls="show-tab-identitas" aria-selected="true">
+                                    <i class="bi bi-person-vcard" aria-hidden="true"></i>
+                                    <span>
+                                        <strong>Data Identitas</strong>
+                                        <small>Pribadi, keluarga, dan alamat</small>
+                                    </span>
+                                </button>
+
+                                <button class="settings-nav__link employee-detail-nav__link" id="show-tab-kepegawaian-btn" data-bs-toggle="pill" data-bs-target="#show-tab-kepegawaian" type="button" role="tab" aria-controls="show-tab-kepegawaian" aria-selected="false">
+                                    <i class="bi bi-briefcase" aria-hidden="true"></i>
+                                    <span>
+                                        <strong>Data Kepegawaian</strong>
+                                        <small>Unit, jabatan, SK, dan gaji</small>
+                                    </span>
+                                </button>
+
+                                <button class="settings-nav__link employee-detail-nav__link" id="show-tab-dokumen-btn" data-bs-toggle="pill" data-bs-target="#show-tab-dokumen" type="button" role="tab" aria-controls="show-tab-dokumen" aria-selected="false">
+                                    <i class="bi bi-folder2-open" aria-hidden="true"></i>
+                                    <span>
+                                        <strong>
+                                            Dokumen Karyawan
+                                            @if($karyawan->dokumen->isNotEmpty())
+                                                <span class="badge bg-secondary rounded-pill">{{ $karyawan->dokumen->count() }}</span>
+                                            @endif
+                                        </strong>
+                                        <small>Dokumen awal karyawan</small>
+                                    </span>
+                                </button>
+
+                                @can('viewHistory', $karyawan)
+                                    <button class="settings-nav__link employee-detail-nav__link" id="show-tab-riwayat-btn" data-bs-toggle="pill" data-bs-target="#show-tab-riwayat" type="button" role="tab" aria-controls="show-tab-riwayat" aria-selected="false">
+                                        <i class="bi bi-clock-history" aria-hidden="true"></i>
+                                        <span>
+                                            <strong>
+                                                Histori Perubahan
+                                                @if($karyawan->riwayatPerubahan->isNotEmpty())
+                                                    <span class="badge bg-secondary rounded-pill">{{ $karyawan->riwayatPerubahan->count() }}</span>
+                                                @endif
+                                            </strong>
+                                            <small>Nilai lama, baru, dan dokumen</small>
+                                        </span>
+                                    </button>
+                                @endcan
+                            </nav>
+                        </div>
+                    </aside>
+
+                    <div class="col-lg-8 col-xl-9">
+                        <div class="tab-content employee-detail-content" id="karyawanShowTabContent">
                     <div class="tab-pane fade show active" id="show-tab-identitas" role="tabpanel" aria-labelledby="show-tab-identitas-btn">
+                        <header class="employee-detail-content__header">
+                            <h2>Data Identitas</h2>
+                            <p>Informasi pribadi, keluarga, pendidikan, dan alamat karyawan.</p>
+                        </header>
                         <dl class="row mb-0 g-3">
                             <dt class="col-sm-4 text-muted">NIK (Internal)</dt>
                             <dd class="col-sm-8 fw-bold">{{ $karyawan->nik }}</dd>
@@ -118,10 +162,20 @@
 
                             <dt class="col-sm-4 text-muted">Jumlah Anak</dt>
                             <dd class="col-sm-8">{{ $karyawan->jumlah_anak ?? '-' }}</dd>
+
+                            <dt class="col-sm-4 text-muted">Alamat sesuai KTP</dt>
+                            <dd class="col-sm-8">{{ $karyawan->alamat_ktp ?: '-' }}</dd>
+
+                            <dt class="col-sm-4 text-muted">Alamat Domisili</dt>
+                            <dd class="col-sm-8">{{ $karyawan->alamat_domisili ?: '-' }}</dd>
                         </dl>
                     </div>
 
                     <div class="tab-pane fade" id="show-tab-kepegawaian" role="tabpanel" aria-labelledby="show-tab-kepegawaian-btn">
+                        <header class="employee-detail-content__header">
+                            <h2>Data Kepegawaian</h2>
+                            <p>Penempatan, hubungan kerja, dasar pengangkatan, dan informasi gaji.</p>
+                        </header>
                         <dl class="row mb-0 g-3">
                             <dt class="col-sm-4 text-muted">Unit Kerja/Bagian</dt>
                             <dd class="col-sm-8">{{ $karyawan->unitKerja?->nama_unit ?? 'Belum ditentukan' }}</dd>
@@ -144,15 +198,22 @@
                             <dt class="col-sm-4 text-muted">Atasan Langsung</dt>
                             <dd class="col-sm-8">{{ $karyawan->atasanLangsung?->nama_lengkap ?? '-' }}</dd>
 
-                            <dt class="col-sm-4 text-muted">Gaji Pokok</dt>
-                            <dd class="col-sm-8 fw-bold">Rp {{ number_format($karyawan->gaji_pokok, 0, ',', '.') }}</dd>
+                            @can('viewSalary', $karyawan)
+                                <dt class="col-sm-4 text-muted">Gaji Pokok</dt>
+                                <dd class="col-sm-8 fw-bold">Rp {{ number_format($karyawan->gaji_pokok, 0, ',', '.') }}</dd>
+                            @endcan
                         </dl>
                     </div>
 
                     <div class="tab-pane fade" id="show-tab-dokumen" role="tabpanel" aria-labelledby="show-tab-dokumen-btn">
+                        <header class="employee-detail-content__header">
+                            <h2>Dokumen Karyawan</h2>
+                            <p>Dokumen awal yang tersimpan saat data karyawan dibuat.</p>
+                        </header>
                         <p class="text-body-secondary small">
                             <i class="bi bi-info-circle"></i>
-                            Untuk menambah dokumen baru, gunakan tab Dokumen Pendukung di <a href="{{ route('karyawan.edit', $karyawan) }}">halaman edit</a>.
+                            Dokumen yang menjadi dasar perubahan baru diunggah melalui
+                            <strong>Edit Data Karyawan</strong> dan tersimpan bersama histori perubahannya.
                         </p>
                         <div class="table-responsive">
                             <table class="table table-hover align-middle mb-0">
@@ -180,11 +241,6 @@
                                                     title="Lihat/Unduh">
                                                     <i class="bi bi-eye"></i>
                                                 </a>
-                                                <x-delete-button
-                                                    :url="route('karyawan.dokumen.destroy', [$karyawan, $dokumen])"
-                                                    :message="'Yakin ingin menghapus dokumen &quot;'.$dokumen->nama_asli.'&quot;?'"
-                                                    :label="'Hapus '.$dokumen->nama_asli"
-                                                />
                                             </div>
                                         </td>
                                     </tr>
@@ -195,35 +251,24 @@
                             </table>
                         </div>
                     </div>
+                    @can('viewHistory', $karyawan)
+                        <div class="tab-pane fade" id="show-tab-riwayat" role="tabpanel" aria-labelledby="show-tab-riwayat-btn">
+                            <header class="employee-detail-content__header">
+                                <h2>Histori Perubahan</h2>
+                                <p>Jejak nilai lama dan baru, tanggal berlaku, pelaku, serta dokumen pendukung.</p>
+                            </header>
+                            @include('karyawan._riwayat')
+                        </div>
+                    @endcan
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
 </x-app-page>
 
-@can('update', $karyawan)
-    <x-modal-form
-        id="employmentStatusModal"
-        title="{{ $karyawan->tanggal_mengundurkan_diri ? 'Atur Status Keaktifan' : 'Nonaktifkan Karyawan' }}"
-        :action="route('karyawan.status-keaktifan.update', $karyawan)"
-        method="PATCH"
-        submit-label="Simpan Status"
-        submit-variant="warning"
-        :data-auto-show-modal="$errors->has('tanggal_mengundurkan_diri') && old('_modal') === 'employmentStatusModal'"
-    >
-        <input type="hidden" name="_modal" value="employmentStatusModal">
-        <x-form.input
-            name="tanggal_mengundurkan_diri"
-            label="Tanggal Keluar"
-            type="date"
-            :value="old('tanggal_mengundurkan_diri', $karyawan->tanggal_mengundurkan_diri?->format('Y-m-d'))"
-            :required="is_null($karyawan->tanggal_mengundurkan_diri)"
-            :min="$karyawan->tanggal_masuk_kerja?->format('Y-m-d')"
-            :max="now()->toDateString()"
-            :help="$karyawan->tanggal_mengundurkan_diri
-                ? 'Ubah tanggal jika perlu, atau kosongkan untuk mengaktifkan kembali karyawan.'
-                : 'Status nonaktif mulai berlaku pada tanggal yang dipilih.'"
-        />
-    </x-modal-form>
-@endcan
+@if($jenisPerubahanTersedia !== [])
+    @include('karyawan._modal-perubahan')
+@endif
 @endsection

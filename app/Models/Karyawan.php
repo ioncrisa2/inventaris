@@ -11,7 +11,7 @@ class Karyawan extends Model
      * karyawan yang sudah keluar ditandai lewat `tanggal_mengundurkan_diri`,
      * bukan lewat status ini (lihat STATUS_COLORS & kolom terkait).
      */
-    public const STATUSES = ['Tetap', 'Kontrak', 'Honorer'];
+    public const STATUSES = ['PKWTT', 'PKWT', 'Honorer'];
 
     /**
      * Warna badge Bootstrap per status karyawan, dipakai bareng oleh
@@ -19,8 +19,8 @@ class Karyawan extends Model
      * pemetaan status->warna hanya didefinisikan sekali.
      */
     public const STATUS_COLORS = [
-        'Tetap' => 'bg-success',
-        'Kontrak' => 'bg-warning text-dark',
+        'PKWTT' => 'bg-success',
+        'PKWT' => 'bg-warning text-dark',
         'Honorer' => 'bg-info text-dark',
     ];
 
@@ -42,6 +42,8 @@ class Karyawan extends Model
         'tahun_lulus',
         'nama_pasangan',
         'jumlah_anak',
+        'alamat_ktp',
+        'alamat_domisili',
         'tanggal_mengundurkan_diri',
         'foto_karyawan',
         'unit_kerja_id',
@@ -85,6 +87,11 @@ class Karyawan extends Model
     public function transaksiGaji()
     {
         return $this->hasMany(TransaksiGaji::class);
+    }
+
+    public function riwayatPerubahan()
+    {
+        return $this->hasMany(RiwayatKaryawan::class);
     }
 
     public function bawahanLangsung()

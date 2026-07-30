@@ -94,7 +94,7 @@ class KaryawanRepository
     {
         return Karyawan::query()
             ->with('dokumen:id,karyawan_id,path')
-            ->withExists(['absensis', 'transaksiGaji', 'bawahanLangsung'])
+            ->withExists(['absensis', 'transaksiGaji', 'bawahanLangsung', 'riwayatPerubahan'])
             ->whereKey($ids)
             ->orderBy('id')
             ->lockForUpdate()

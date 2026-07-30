@@ -13,6 +13,7 @@ use App\Http\Controllers\KomponenGajiController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\PengaturanController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RiwayatKaryawanController;
 use App\Http\Controllers\RiwayatKondisiBarangController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SlipGajiTemplateController;
@@ -35,13 +36,16 @@ Route::middleware('auth')->group(function () {
     Route::resource('unit-kerja', UnitKerjaController::class)->except(['show', 'create', 'edit']);
 
     Route::delete('karyawan/bulk', [KaryawanController::class, 'bulkDestroy'])->name('karyawan.bulk-destroy');
-    Route::patch('karyawan/{karyawan}/status-keaktifan', [KaryawanController::class, 'updateEmploymentStatus'])
-        ->name('karyawan.status-keaktifan.update');
-    Route::resource('karyawan', KaryawanController::class);
+    Route::resource('karyawan', KaryawanController::class)->except(['edit', 'update']);
 
-    Route::post('karyawan/{karyawan}/dokumen', [DokumenKaryawanController::class, 'store'])->name('karyawan.dokumen.store');
+    Route::post('karyawan/{karyawan}/riwayat', [RiwayatKaryawanController::class, 'store'])
+        ->name('karyawan.riwayat.store');
+    Route::get(
+        'karyawan/{karyawan}/riwayat/{riwayatKaryawan}/dokumen/{dokumenRiwayatKaryawan}',
+        [RiwayatKaryawanController::class, 'download'],
+    )->name('karyawan.riwayat.dokumen.download');
+
     Route::get('karyawan/{karyawan}/dokumen/{dokumenKaryawan}/download', [DokumenKaryawanController::class, 'download'])->name('karyawan.dokumen.download');
-    Route::delete('karyawan/{karyawan}/dokumen/{dokumenKaryawan}', [DokumenKaryawanController::class, 'destroy'])->name('karyawan.dokumen.destroy');
 
     Route::prefix('absensi')->name('absensi.')->group(function () {
         Route::get('/', [AbsensiController::class, 'index'])->name('index');

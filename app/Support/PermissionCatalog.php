@@ -39,7 +39,11 @@ class PermissionCatalog
                 'permissions' => [
                     'karyawan.view' => 'Lihat',
                     'karyawan.create' => 'Tambah',
-                    'karyawan.update' => 'Ubah',
+                    'karyawan.update' => 'Ubah Data Pribadi',
+                    'karyawan.kepegawaian.update' => 'Ubah Data Kepegawaian',
+                    'karyawan.gaji.view' => 'Lihat Gaji',
+                    'karyawan.gaji.update' => 'Ubah Gaji',
+                    'karyawan.riwayat.view' => 'Lihat Riwayat Perubahan',
                     'karyawan.delete' => 'Hapus',
                 ],
             ],
