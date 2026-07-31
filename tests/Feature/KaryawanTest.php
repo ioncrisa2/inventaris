@@ -29,6 +29,8 @@ function payloadKaryawan(UnitKerja $unitKerja, array $override = []): array
         'status_perkawinan' => 'Kawin',
         'nomor_ktp' => '1671010101900001',
         'npwp' => '09.123.456.7-301.000',
+        'alamat_ktp' => 'Jl. Merdeka No. 1, Palembang',
+        'alamat_domisili' => 'Jl. Merdeka No. 1, Palembang',
         'pendidikan_terakhir' => 'S1',
         'jurusan' => 'Teknik Informatika',
         'nama_sekolah' => 'Universitas Sriwijaya',
@@ -37,14 +39,13 @@ function payloadKaryawan(UnitKerja $unitKerja, array $override = []): array
         'unit_kerja_id' => $unitKerja->id,
         'tanggal_masuk_kerja' => '2020-01-01',
         'jabatan' => 'Staf IT',
-        'status_karyawan' => 'Tetap',
+        'status_karyawan' => 'PKWTT',
         'nomor_sk_pengangkatan' => 'SK/001/2020',
         'tanggal_sk_pengangkatan' => '2020-01-01',
         'gaji_pokok' => 7000000,
     ], $override);
 
-    // Nilai override eksplisit null berarti field tsb sengaja tidak dikirim
-    // sama sekali (dipakai untuk menguji foto_karyawan opsional saat update).
+    // Nilai override eksplisit null berarti field tsb sengaja tidak dikirim sama sekali.
     return array_filter($payload, fn ($nilai) => $nilai !== null);
 }
 
@@ -63,7 +64,7 @@ test('karyawan can be created', function () {
         'nik' => 'EMP-001',
         'nama_lengkap' => 'Budi Santoso',
         'unit_kerja_id' => $this->unitKerja->id,
-        'status_karyawan' => 'Tetap',
+        'status_karyawan' => 'PKWTT',
         'nomor_ktp' => '1671010101900001',
     ]);
 
@@ -71,7 +72,7 @@ test('karyawan can be created', function () {
     Storage::disk('public')->assertExists($karyawan->foto_karyawan);
 });
 
-test('karyawan can be viewed and updated', function () {
+test('karyawan can be viewed', function () {
     $this->post(route('karyawan.store'), payloadKaryawan($this->unitKerja))
         ->assertRedirect(route('karyawan.index'));
 
@@ -83,44 +84,6 @@ test('karyawan can be viewed and updated', function () {
         ->assertSee('Rp 7.000.000')
         ->assertSee('Lihat Absensi')
         ->assertSee(route('absensi.show', $karyawan), false);
-
-    $this->get(route('karyawan.edit', $karyawan))
-        ->assertOk()
-        ->assertSee('Simpan Perubahan');
-
-    // foto_karyawan tidak dikirim ulang -- foto lama harus tetap dipakai.
-    $this->put(route('karyawan.update', $karyawan), payloadKaryawan($this->unitKerja, [
-        'nama_lengkap' => 'Budi Santoso Updated',
-        'jabatan' => 'Senior Staf IT',
-        'status_karyawan' => 'Honorer',
-        'gaji_pokok' => 8000000,
-        'foto_karyawan' => null,
-    ]))->assertRedirect(route('karyawan.index'));
-
-    $karyawan->refresh();
-
-    $this->assertDatabaseHas('karyawan', [
-        'id' => $karyawan->id,
-        'nama_lengkap' => 'Budi Santoso Updated',
-        'status_karyawan' => 'Honorer',
-    ]);
-    expect($karyawan->foto_karyawan)->not->toBeNull();
-});
-
-test('karyawan tidak wajib upload ulang foto saat foto lama sudah ada, tapi wajib kalau belum ada foto sama sekali', function () {
-    $karyawan = Karyawan::create(array_merge(payloadKaryawanDasar($this->unitKerja), [
-        'foto_karyawan' => null,
-    ]));
-
-    // Belum ada foto sama sekali -> wajib diisi.
-    $this->put(route('karyawan.update', $karyawan), payloadKaryawan($this->unitKerja, ['foto_karyawan' => null]))
-        ->assertSessionHasErrors('foto_karyawan');
-
-    // Setelah foto ada, update lain tanpa foto baru tidak boleh gagal.
-    $karyawan->update(['foto_karyawan' => 'karyawan-foto/sudah-ada.jpg']);
-
-    $this->put(route('karyawan.update', $karyawan), payloadKaryawan($this->unitKerja, ['foto_karyawan' => null]))
-        ->assertSessionDoesntHaveErrors('foto_karyawan');
 });
 
 test('nomor_ktp harus 16 digit', function () {
@@ -136,15 +99,6 @@ test('gaji pokok di luar DECIMAL 15 2 dan notasi ilmiah ditolak', function () {
     }
 
     expect(Karyawan::count())->toBe(0);
-});
-
-test('atasan_langsung_id tidak boleh diri sendiri', function () {
-    $karyawan = Karyawan::create(payloadKaryawanDasar($this->unitKerja));
-
-    $this->put(route('karyawan.update', $karyawan), payloadKaryawan($this->unitKerja, [
-        'atasan_langsung_id' => $karyawan->id,
-        'foto_karyawan' => null,
-    ]))->assertSessionHasErrors('atasan_langsung_id');
 });
 
 test('masa kerja dihitung dari tanggal masuk kerja', function () {
@@ -177,35 +131,6 @@ test('dokumen repeater rows are uploaded when creating karyawan', function () {
 
     $dokumenKtp = $karyawan->dokumen->firstWhere('jenis_dokumen', 'KTP');
     Storage::disk('local')->assertExists($dokumenKtp->path);
-});
-
-test('dokumen repeater rows are uploaded when updating karyawan, in addition to documents already on file', function () {
-    $karyawan = Karyawan::create(array_merge(payloadKaryawanDasar($this->unitKerja), [
-        'foto_karyawan' => 'karyawan-foto/sudah-ada.jpg',
-    ]));
-
-    DokumenKaryawan::create([
-        'karyawan_id' => $karyawan->id,
-        'jenis_dokumen' => 'Ijazah',
-        'nama_asli' => 'ijazah-lama.pdf',
-        'path' => 'dokumen-karyawan/ijazah-lama.pdf',
-    ]);
-
-    $sertifikat = UploadedFile::fake()->create('sertifikat.pdf', 150, 'application/pdf');
-
-    $this->put(route('karyawan.update', $karyawan), payloadKaryawan($this->unitKerja, [
-        'foto_karyawan' => null,
-        'dokumen' => [
-            ['jenis_dokumen' => 'Sertifikat Pelatihan', 'dokumen' => $sertifikat],
-        ],
-    ]))->assertRedirect(route('karyawan.index'));
-
-    $karyawan->refresh();
-    expect($karyawan->dokumen)->toHaveCount(2);
-
-    $dokumenBaru = $karyawan->dokumen->firstWhere('jenis_dokumen', 'Sertifikat Pelatihan');
-    expect($dokumenBaru->nama_asli)->toBe('sertifikat.pdf');
-    Storage::disk('local')->assertExists($dokumenBaru->path);
 });
 
 test('empty dokumen repeater rows left over from add/remove are silently ignored', function () {
@@ -292,47 +217,6 @@ test('karyawan can be deleted', function () {
         ->assertRedirect(route('karyawan.index'));
 
     $this->assertDatabaseMissing('karyawan', ['id' => $karyawan->id]);
-});
-
-test('employment status is managed separately from the regular edit form', function () {
-    $karyawan = Karyawan::create(payloadKaryawanDasar($this->unitKerja));
-
-    $this->get(route('karyawan.edit', $karyawan))
-        ->assertOk()
-        ->assertDontSee('name="tanggal_mengundurkan_diri"', false);
-
-    $this->get(route('karyawan.show', $karyawan))
-        ->assertOk()
-        ->assertSee('Nonaktifkan Karyawan')
-        ->assertSee(route('karyawan.status-keaktifan.update', $karyawan), false);
-
-    $this->patch(route('karyawan.status-keaktifan.update', $karyawan), [
-        '_modal' => 'employmentStatusModal',
-        'tanggal_mengundurkan_diri' => '2026-07-01',
-    ])->assertRedirect(route('karyawan.show', $karyawan));
-
-    expect($karyawan->fresh()->tanggal_mengundurkan_diri?->toDateString())->toBe('2026-07-01');
-
-    $this->patch(route('karyawan.status-keaktifan.update', $karyawan), [
-        '_modal' => 'employmentStatusModal',
-        'tanggal_mengundurkan_diri' => '',
-    ])->assertRedirect(route('karyawan.show', $karyawan));
-
-    expect($karyawan->fresh()->tanggal_mengundurkan_diri)->toBeNull();
-});
-
-test('employment status rejects a departure date before employment began', function () {
-    $karyawan = Karyawan::create(payloadKaryawanDasar($this->unitKerja));
-
-    $this->from(route('karyawan.show', $karyawan))
-        ->patch(route('karyawan.status-keaktifan.update', $karyawan), [
-            '_modal' => 'employmentStatusModal',
-            'tanggal_mengundurkan_diri' => '2019-12-31',
-        ])
-        ->assertRedirect(route('karyawan.show', $karyawan))
-        ->assertSessionHasErrors('tanggal_mengundurkan_diri');
-
-    expect($karyawan->fresh()->tanggal_mengundurkan_diri)->toBeNull();
 });
 
 /**

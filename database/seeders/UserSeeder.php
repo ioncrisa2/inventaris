@@ -11,6 +11,12 @@ class UserSeeder extends Seeder
 {
     /**
      * Run the database seeds.
+     *
+     * Akun super_admin dibuat langsung di DatabaseSeeder (bukan di sini) —
+     * dia tidak terikat koperasi manapun, sedangkan seeder ini berjalan
+     * SETELAH DatabaseSeeder men-set Auth::setUser() ke akun admin_primer
+     * koperasi demo, supaya semua user di bawah ini otomatis ikut ter-tag
+     * koperasi_id koperasi demo lewat trait BelongsToKoperasi.
      */
     public function run(): void
     {
@@ -22,7 +28,6 @@ class UserSeeder extends Seeder
 
         $units = UnitKerja::pluck('id', 'nama_unit');
         $users = [
-            ['name' => 'Administrator', 'email' => 'admin@example.com', 'unit' => 'IT', 'role' => 'Admin'],
             ['name' => 'Staff Teknologi Informasi', 'email' => 'it@example.com', 'unit' => 'IT', 'role' => 'Staff'],
             ['name' => 'Staff Keuangan', 'email' => 'staff@example.com', 'unit' => 'Keuangan', 'role' => 'Staff'],
             ['name' => 'Staff Sumber Daya Manusia', 'email' => 'sdm@example.com', 'unit' => 'SDM', 'role' => 'Staff'],

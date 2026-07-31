@@ -9,7 +9,11 @@ class InventarisLaporanRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('laporan.inventaris.view');
+        return match ($this->route()->getName()) {
+            'laporan.inventaris.cetak' => $this->user()->can('laporan.inventaris.cetak'),
+            'laporan.inventaris.export' => $this->user()->can('laporan.inventaris.export'),
+            default => $this->user()->can('laporan.inventaris.view'),
+        };
     }
 
     public function rules(): array

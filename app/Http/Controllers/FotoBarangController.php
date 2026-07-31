@@ -20,7 +20,7 @@ class FotoBarangController extends Controller
 
     public function destroy(Barang $barang, FotoBarang $fotoBarang)
     {
-        $this->authorize('update', $barang);
+        $this->authorize('kelolaFoto', $barang);
         abort_unless($fotoBarang->barang_id === $barang->id, 404);
 
         $this->fotoBarangService->destroy($barang, $fotoBarang);

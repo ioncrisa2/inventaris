@@ -8,7 +8,7 @@ class UpdateIdentitasAplikasiRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('pengaturan.update');
+        return $this->user()->can('pengaturan.identitas.update');
     }
 
     public function rules(): array

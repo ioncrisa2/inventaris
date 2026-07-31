@@ -22,7 +22,7 @@ return new class extends Migration
         $permissions = collect(self::PERMISSIONS)
             ->map(fn (string $name) => Permission::findOrCreate($name, 'web'));
 
-        Role::findOrCreate('Admin', 'web')->givePermissionTo($permissions);
+        Role::findOrCreate('super_admin', 'web')->givePermissionTo($permissions);
         Role::findOrCreate('Staff', 'web')->givePermissionTo('karyawan.riwayat.view');
 
         $registrar->forgetCachedPermissions();

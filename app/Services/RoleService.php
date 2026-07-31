@@ -2,11 +2,12 @@
 
 namespace App\Services;
 
+use App\Models\Role;
+use App\Models\User;
 use App\Repositories\RoleRepository;
 use App\Support\PerPage;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
-use Spatie\Permission\Models\Role;
 
 class RoleService
 {
@@ -17,10 +18,15 @@ class RoleService
         return $this->roleRepository->paginate($perPage);
     }
 
-    public function store(array $data): Role
+    /**
+     * @throws \DomainException Jika aktor bukan super_admin.
+     */
+    public function store(User $actor, array $data): Role
     {
+        $this->ensureActorIsSuperAdmin($actor);
+
         return DB::transaction(function () use ($data) {
-            $role = $this->roleRepository->create($data['name']);
+            $role = $this->roleRepository->create($data['name'], $data['koperasi_id']);
             $role->syncPermissions($data['permissions']);
 
             return $role;
@@ -38,15 +44,22 @@ class RoleService
     }
 
     /**
-     * @throws \DomainException Jika role masih dipakai oleh pengguna.
+     * @throws \DomainException Jika role masih dipakai oleh pengguna, atau
+     *                          aktor bukan super_admin.
      */
-    public function destroy(Role $role): void
+    public function destroy(User $actor, Role $role): void
     {
-        $this->destroyMany([$role->id]);
+        $this->destroyMany($actor, [$role->id]);
     }
 
-    public function destroyMany(array $ids): int
+    /**
+     * @throws \DomainException Jika role masih dipakai oleh pengguna, atau
+     *                          aktor bukan super_admin.
+     */
+    public function destroyMany(User $actor, array $ids): int
     {
+        $this->ensureActorIsSuperAdmin($actor);
+
         return DB::transaction(function () use ($ids) {
             $ids = array_values(array_unique(array_map('intval', $ids)));
             $roles = $this->roleRepository->findManyForDelete($ids);
@@ -66,5 +79,19 @@ class RoleService
 
             return $roles->count();
         }, 3);
+    }
+
+    /**
+     * Bikin/hapus role dikunci ke super_admin — bukan sekadar permission
+     * biasa, supaya admin_primer tidak bisa membuka celah ini lewat toggle
+     * permission pada role yang dia kelola sendiri.
+     *
+     * @throws \DomainException
+     */
+    private function ensureActorIsSuperAdmin(User $actor): void
+    {
+        if (! $actor->isSuperAdmin()) {
+            throw new \DomainException('Hanya super admin yang dapat membuat atau menghapus role.');
+        }
     }
 }

@@ -13,4 +13,19 @@ class UpdateRoleRequest extends StoreRoleRequest
     {
         return $this->route('role')?->id;
     }
+
+    /**
+     * Update tidak boleh memindah role ke koperasi lain — dikunci ke
+     * koperasi_id role yang sudah ada, bukan dari input form (yang memang
+     * tidak dikirim sama sekali saat edit, lihat role/form.blade.php).
+     */
+    protected function koperasiIdForUniqueCheck(): ?int
+    {
+        return $this->route('role')?->koperasi_id;
+    }
+
+    public function rules(): array
+    {
+        return collect(parent::rules())->except('koperasi_id')->all();
+    }
 }

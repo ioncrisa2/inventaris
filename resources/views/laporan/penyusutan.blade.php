@@ -21,14 +21,18 @@
                         target="penyusutanReportFilter"
                         :active-count="$penyusutanActiveFilterCount"
                     />
+                    @can('laporan.penyusutan.cetak')
                     <a class="btn btn-outline-primary" href="{{ route('laporan.penyusutan.cetak', request()->query()) }}" target="_blank" rel="noopener">
                         <i class="bi bi-printer"></i>
                         Cetak
                     </a>
+                    @endcan
+                    @can('laporan.penyusutan.export')
                     <a class="btn btn-outline-success" href="{{ route('laporan.penyusutan.export', request()->query()) }}">
                         <i class="bi bi-file-earmark-excel"></i>
                         Export Excel
                     </a>
+                    @endcan
                 </div>
             </x-slot:actions>
         </x-page-header>

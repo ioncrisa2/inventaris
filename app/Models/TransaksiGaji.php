@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToKoperasi;
 use Illuminate\Database\Eloquent\Model;
 
 class TransaksiGaji extends Model
 {
+    use BelongsToKoperasi;
+
     protected $table = 'transaksi_gaji';
 
     protected $fillable = [

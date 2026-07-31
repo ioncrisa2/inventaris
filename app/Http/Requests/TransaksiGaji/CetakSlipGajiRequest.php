@@ -10,7 +10,11 @@ class CetakSlipGajiRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('transaksi-gaji.view');
+        $transaksiGaji = $this->route('transaksiGaji');
+
+        return $transaksiGaji
+            ? $this->user()->can('cetak', $transaksiGaji)
+            : $this->user()->can('transaksi-gaji.cetak');
     }
 
     public function rules(): array

@@ -2,24 +2,35 @@
 
 namespace App\Repositories;
 
+use App\Models\Role;
+use App\Support\CurrentTenant;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
-use Spatie\Permission\Models\Role;
 
 class RoleRepository
 {
     public function paginate(int $perPage = 10): LengthAwarePaginator
     {
-        return Role::query()
+        return CurrentTenant::scopeQuery(Role::query())
+            ->with('koperasi:id,nama')
             ->withCount(['users', 'permissions'])
             ->orderBy('name')
             ->paginate($perPage)
             ->withQueryString();
     }
 
-    public function create(string $name): Role
+    /**
+     * koperasi_id diisi lewat set properti langsung (bukan mass-assignment)
+     * karena Role sengaja tidak pakai trait BelongsToKoperasi (lihat
+     * App\Models\Role) — tidak ada auto-assign yang bisa diandalkan.
+     */
+    public function create(string $name, ?int $koperasiId): Role
     {
-        return Role::create(['name' => $name, 'guard_name' => 'web']);
+        $role = new Role(['name' => $name, 'guard_name' => 'web']);
+        $role->koperasi_id = $koperasiId;
+        $role->save();
+
+        return $role;
     }
 
     public function findManyForDelete(array $ids): Collection

@@ -31,14 +31,18 @@
                         target="inventarisReportFilter"
                         :active-count="$inventarisActiveFilterCount"
                     />
+                    @can('laporan.inventaris.cetak')
                     <a class="btn btn-outline-primary" href="{{ route('laporan.inventaris.cetak', request()->query()) }}" target="_blank" rel="noopener">
                         <i class="bi bi-printer"></i>
                         Cetak
                     </a>
+                    @endcan
+                    @can('laporan.inventaris.export')
                     <a class="btn btn-outline-success" href="{{ route('laporan.inventaris.export', request()->query()) }}">
                         <i class="bi bi-file-earmark-excel"></i>
                         Export Excel
                     </a>
+                    @endcan
                 </div>
             </x-slot:actions>
         </x-page-header>
@@ -86,11 +90,13 @@
             </div>
 
             <div class="col-md-6">
-                <x-form.input name="tanggal_awal" label="Dari Tanggal" type="date" :value="old('tanggal_awal', request('tanggal_awal'))" />
-            </div>
-
-            <div class="col-md-6">
-                <x-form.input name="tanggal_akhir" label="Sampai Tanggal" type="date" :value="old('tanggal_akhir', request('tanggal_akhir'))" />
+                <x-form.date-range
+                    name-awal="tanggal_awal"
+                    name-akhir="tanggal_akhir"
+                    label="Periode Perolehan"
+                    :value-awal="request('tanggal_awal')"
+                    :value-akhir="request('tanggal_akhir')"
+                />
             </div>
         </x-report-filter-modal>
 

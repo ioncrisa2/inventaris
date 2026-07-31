@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Pengaturan;
 use App\Repositories\HariLiburRepository;
+use App\Support\CurrentTenant;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
@@ -47,9 +48,20 @@ class HariOperasionalService
 
     /**
      * @param  array<int|string>  $hari
+     *
+     * @throws \DomainException Jika aktor super_admin — hari operasional
+     *                          khusus per koperasi (lihat baca-nya di
+     *                          hariOperasional(), sengaja TIDAK dibatasi
+     *                          serupa karena dipakai perhitungan bisnis
+     *                          lintas-koperasi, mis. super_admin melihat
+     *                          slip gaji koperasi tertentu).
      */
     public function simpan(array $hari): void
     {
+        if (CurrentTenant::isSuperAdmin()) {
+            throw new \DomainException('Hari operasional khusus per koperasi, dikelola oleh admin_primer masing-masing koperasi.');
+        }
+
         Pengaturan::set(self::SETTING_KEY, json_encode($this->sanitasi($hari)));
     }
 

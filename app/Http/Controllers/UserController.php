@@ -5,13 +5,14 @@ namespace App\Http\Controllers;
 use App\Http\Requests\BulkDeleteRequest;
 use App\Http\Requests\User\StoreUserRequest;
 use App\Http\Requests\User\UpdateUserRequest;
+use App\Models\Role;
 use App\Models\User;
 use App\Repositories\UnitKerjaRepository;
 use App\Services\UserService;
+use App\Support\CurrentTenant;
 use App\Support\PerPage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
@@ -31,7 +32,7 @@ class UserController extends Controller
             $request->only(['search', 'role']),
             PerPage::resolve($request),
         );
-        $roles = Role::orderBy('name')->get();
+        $roles = $this->selectableRoles($request->user());
 
         return view('pengguna.index', compact('users', 'roles'));
     }
@@ -39,11 +40,11 @@ class UserController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(Request $request)
     {
         $user = new User;
         $unitKerjas = $this->unitKerjaRepository->orderedList();
-        $roles = Role::orderBy('name')->get();
+        $roles = $this->selectableRoles($request->user());
 
         return view('pengguna.form', compact('user', 'unitKerjas', 'roles'));
     }
@@ -53,7 +54,11 @@ class UserController extends Controller
      */
     public function store(StoreUserRequest $request)
     {
-        $this->userService->store($request->validated());
+        try {
+            $this->userService->store($request->user(), $request->validated());
+        } catch (\DomainException $e) {
+            return back()->with('error', $e->getMessage())->withInput();
+        }
 
         return redirect()->route('pengguna.index')->with('success', 'Pengguna berhasil ditambahkan.');
     }
@@ -65,11 +70,11 @@ class UserController extends Controller
      * parameter route resource "pengguna/{pengguna}" — implicit route model
      * binding Laravel mencocokkan berdasarkan nama, bukan tipe.
      */
-    public function edit(User $pengguna)
+    public function edit(Request $request, User $pengguna)
     {
         $user = $pengguna;
         $unitKerjas = $this->unitKerjaRepository->orderedList();
-        $roles = Role::orderBy('name')->get();
+        $roles = $this->selectableRoles($request->user());
 
         return view('pengguna.form', compact('user', 'unitKerjas', 'roles'));
     }
@@ -79,7 +84,11 @@ class UserController extends Controller
      */
     public function update(UpdateUserRequest $request, User $pengguna)
     {
-        $this->userService->update($pengguna, $request->validated());
+        try {
+            $this->userService->update($request->user(), $pengguna, $request->validated());
+        } catch (\DomainException $e) {
+            return back()->with('error', $e->getMessage())->withInput();
+        }
 
         return redirect()->route('pengguna.index')->with('success', 'Pengguna berhasil diperbarui.');
     }
@@ -115,5 +124,22 @@ class UserController extends Controller
 
         return redirect()->route('pengguna.index')
             ->with('success', $users->count().' pengguna berhasil dihapus.');
+    }
+
+    /**
+     * Daftar role yang boleh dipilih di form pengguna. Role super_admin &
+     * admin_primer disembunyikan dari aktor selain super_admin sendiri —
+     * UserService juga menolaknya di layer service, ini cuma supaya
+     * pilihan yang pasti ditolak tidak muncul di dropdown.
+     */
+    private function selectableRoles(User $actor)
+    {
+        return CurrentTenant::scopeQuery(Role::query())
+            ->when(
+                ! $actor->isSuperAdmin(),
+                fn ($query) => $query->whereNotIn('name', ['super_admin', 'admin_primer']),
+            )
+            ->orderBy('name')
+            ->get();
     }
 }

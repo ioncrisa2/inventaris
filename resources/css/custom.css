@@ -196,11 +196,19 @@ a:hover {
     pointer-events: none;
 }
 
+input[data-date-range] {
+    min-width: 230px;
+}
+
 .salary-date-range {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    min-width: 170px;
+    min-width: 320px;
+}
+
+.salary-date-range [data-date-range-group] .form-control {
+    min-width: 260px;
 }
 
 .salary-date-range .form-label {
@@ -3369,4 +3377,57 @@ a.data-quality-item:focus-visible {
 .employee-history__item .table {
     --bs-table-bg: transparent;
     font-size: .875rem;
+}
+
+.flatpickr-calendar {
+    border-radius: .5rem;
+    box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15);
+}
+
+.flatpickr-day.selected,
+.flatpickr-day.startRange,
+.flatpickr-day.endRange {
+    background: var(--bs-primary);
+    border-color: var(--bs-primary);
+}
+
+.flatpickr-day.inRange {
+    background: var(--bs-primary-bg-subtle);
+    border-color: var(--bs-primary-bg-subtle);
+    box-shadow: -5px 0 0 var(--bs-primary-bg-subtle), 5px 0 0 var(--bs-primary-bg-subtle);
+}
+
+.flatpickr-day.today {
+    border-color: var(--bs-primary);
+}
+
+[data-bs-theme=dark] .flatpickr-calendar {
+    background: var(--bs-body-bg);
+    box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .4);
+}
+
+[data-bs-theme=dark] .flatpickr-months,
+[data-bs-theme=dark] .flatpickr-weekdays {
+    background: var(--bs-body-bg);
+}
+
+[data-bs-theme=dark] .flatpickr-day {
+    color: var(--bs-body-color);
+}
+
+[data-bs-theme=dark] .flatpickr-day.flatpickr-disabled,
+[data-bs-theme=dark] .flatpickr-day.prevMonthDay,
+[data-bs-theme=dark] .flatpickr-day.nextMonthDay {
+    color: var(--bs-secondary-color);
+}
+
+[data-bs-theme=dark] .flatpickr-day:hover {
+    background: var(--bs-tertiary-bg);
+}
+
+[data-bs-theme=dark] .flatpickr-months .flatpickr-month,
+[data-bs-theme=dark] .flatpickr-current-month .flatpickr-monthDropdown-months,
+[data-bs-theme=dark] .flatpickr-weekday {
+    color: var(--bs-body-color);
+    fill: var(--bs-body-color);
 }

@@ -1,5 +1,6 @@
 import './components/app-shell';
 import './components/bulk-actions';
+import './components/date-range-picker';
 import './components/dokumen-repeater';
 import './components/filter-form';
 import './components/localized-inputs';

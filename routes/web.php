@@ -10,6 +10,8 @@ use App\Http\Controllers\FotoBarangController;
 use App\Http\Controllers\HariLiburController;
 use App\Http\Controllers\KaryawanController;
 use App\Http\Controllers\KomponenGajiController;
+use App\Http\Controllers\KoperasiController;
+use App\Http\Controllers\KoperasiExpiredController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\PengaturanController;
 use App\Http\Controllers\ProfileController;
@@ -28,6 +30,10 @@ Route::redirect('/', '/login');
 Auth::routes(['register' => false, 'reset' => false, 'confirm' => false, 'verify' => false]);
 
 Route::middleware('auth')->group(function () {
+    Route::get('koperasi/masa-aktif-berakhir', KoperasiExpiredController::class)->name('koperasi.expired');
+});
+
+Route::middleware(['auth', 'koperasi.active'])->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::patch('/dashboard/banner', DashboardBannerController::class)->name('dashboard.banner.dismiss');
     Route::view('/panduan-singkat', 'panduan-singkat')->name('panduan-singkat');
@@ -129,6 +135,10 @@ Route::middleware('auth')->group(function () {
 
     Route::delete('role/bulk', [RoleController::class, 'bulkDestroy'])->name('role.bulk-destroy');
     Route::resource('role', RoleController::class)->except(['show']);
+
+    Route::middleware('super_admin')->group(function () {
+        Route::resource('koperasi', KoperasiController::class)->only(['index', 'create', 'store', 'edit', 'update']);
+    });
 
     Route::get('pengaturan', [PengaturanController::class, 'edit'])->name('pengaturan.edit');
     Route::get('pengaturan/slip-gaji', [SlipGajiTemplateController::class, 'edit'])->name('pengaturan.slip-gaji.edit');

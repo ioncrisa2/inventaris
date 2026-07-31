@@ -1,6 +1,10 @@
 <?php
 
+use App\Models\Koperasi;
+use App\Models\Role;
 use App\Models\User;
+use App\Support\PermissionCatalog;
+use Database\Seeders\DemoStaffRoleSeeder;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -52,24 +56,54 @@ function something()
 }
 
 /**
- * Buat user dengan role Admin (semua permission) untuk test yang butuh akses
- * penuh. Menjalankan PermissionSeeder supaya role & permission-nya tersedia
- * di database in-memory milik test yang bersangkutan.
+ * Buat user dengan role super_admin (semua permission, lintas koperasi)
+ * untuk test yang butuh akses penuh. Menjalankan PermissionSeeder supaya
+ * role & permission-nya tersedia di database in-memory milik test yang
+ * bersangkutan.
  */
 function adminUser(array $attributes = []): User
 {
     test()->seed(PermissionSeeder::class);
 
-    return tap(User::factory()->create($attributes))->assignRole('Admin');
+    return tap(User::factory()->create($attributes))->assignRole('super_admin');
 }
 
 /**
- * Buat user dengan role Staff (akses terbatas, lihat PermissionSeeder untuk
- * daftar permission-nya) untuk test yang memverifikasi pembatasan akses.
+ * Buat user dengan role Staff (akses terbatas, lihat DemoStaffRoleSeeder
+ * untuk daftar permission-nya) untuk test yang memverifikasi pembatasan
+ * akses. Staff BUKAN role sistem — di dunia nyata role seperti ini dibuat
+ * manual oleh super_admin per koperasi, di sini cukup di-seed langsung.
  */
 function staffUser(array $attributes = []): User
 {
     test()->seed(PermissionSeeder::class);
+    test()->seed(DemoStaffRoleSeeder::class);
 
     return tap(User::factory()->create($attributes))->assignRole('Staff');
+}
+
+/**
+ * Buat user dengan role admin_primer, terikat ke satu koperasi (baru
+ * dibuat kecuali diberikan lewat $koperasi). Dipakai test yang perlu
+ * memverifikasi perilaku ter-scope per-tenant sungguhan (lihat
+ * KoperasiScope/BelongsToKoperasi) — beda dari adminUser()/staffUser()
+ * yang koperasi_id-nya tetap null.
+ */
+function adminPrimerUser(?Koperasi $koperasi = null, array $attributes = []): User
+{
+    test()->seed(PermissionSeeder::class);
+
+    $koperasi ??= Koperasi::create(['nama' => 'Koperasi Test '.uniqid()]);
+
+    $role = new Role(['name' => 'admin_primer', 'guard_name' => 'web']);
+    $role->koperasi_id = $koperasi->id;
+    $role->save();
+    $role->syncPermissions(PermissionCatalog::adminPrimerTemplate());
+
+    $user = User::factory()->create($attributes);
+    $user->koperasi_id = $koperasi->id;
+    $user->save();
+    $user->assignRole($role);
+
+    return $user;
 }

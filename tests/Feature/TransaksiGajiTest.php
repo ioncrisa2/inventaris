@@ -11,6 +11,7 @@ use App\Repositories\KaryawanRepository;
 use App\Repositories\KomponenGajiRepository;
 use App\Repositories\TransaksiGajiRepository;
 use App\Rules\Decimal15Two;
+use App\Services\GajiKaryawanResolver;
 use App\Services\HariOperasionalService;
 use App\Services\TransaksiGajiService;
 use App\Support\SlipGajiPaperLayout;
@@ -197,6 +198,7 @@ test('duplicate key dari database diterjemahkan menjadi validation error', funct
         app(KomponenGajiRepository::class),
         app(KaryawanRepository::class),
         app(HariOperasionalService::class),
+        app(GajiKaryawanResolver::class),
     );
 
     try {
@@ -913,6 +915,188 @@ test('tunjangan per hari yang dicentang tanpa rentang tanggal valid ditolak vali
     expect(TransaksiGaji::count())->toBe(0);
 });
 
+test('tunjangan harian sehari dihitung sekali untuk satu tanggal, bukan dikali jumlah hari', function () {
+    $uangLembur = KomponenGaji::create([
+        'nama_komponen' => 'Uang Lembur',
+        'jenis' => 'Tunjangan',
+        'metode_perhitungan' => 'harian_sehari',
+        'nilai_default' => 75000,
+        'dasar_persentase' => null,
+    ]);
+
+    $response = $this->post(route('transaksi-gaji.store'), [
+        'karyawan_id' => $this->karyawan->id,
+        'bulan' => 7,
+        'tahun' => 2026,
+        'baris' => [
+            "master_{$uangLembur->id}" => [
+                'pakai' => '1',
+                'tanggal' => '2026-07-15',
+            ],
+        ],
+    ]);
+
+    $transaksi = TransaksiGaji::first();
+    $response->assertRedirect(route('transaksi-gaji.show', $transaksi));
+
+    expect((string) $transaksi->gaji_bersih)->toBe('5075000.00');
+
+    $this->assertDatabaseHas('transaksi_gaji_detail', [
+        'transaksi_gaji_id' => $transaksi->id,
+        'komponen_gaji_id' => $uangLembur->id,
+        'metode_perhitungan_snapshot' => 'harian_sehari',
+        'nilai_snapshot' => 75000,
+        'jumlah_hari_snapshot' => 1,
+        'nominal_hasil' => 75000,
+    ]);
+
+    $detail = $transaksi->details()->where('komponen_gaji_id', $uangLembur->id)->first();
+    expect($detail->tanggal_awal_snapshot->toDateString())->toBe('2026-07-15');
+    expect($detail->tanggal_akhir_snapshot->toDateString())->toBe('2026-07-15');
+});
+
+test('tunjangan harian sehari yang dicentang tanpa tanggal ditolak validasi', function () {
+    $uangLembur = KomponenGaji::create([
+        'nama_komponen' => 'Uang Lembur',
+        'jenis' => 'Tunjangan',
+        'metode_perhitungan' => 'harian_sehari',
+        'nilai_default' => 75000,
+        'dasar_persentase' => null,
+    ]);
+
+    $this->from(route('transaksi-gaji.create'))
+        ->post(route('transaksi-gaji.store'), [
+            'karyawan_id' => $this->karyawan->id,
+            'bulan' => 7,
+            'tahun' => 2026,
+            'baris' => [
+                "master_{$uangLembur->id}" => ['pakai' => '1'],
+            ],
+        ])
+        ->assertRedirect(route('transaksi-gaji.create'))
+        ->assertSessionHasErrors("baris.master_{$uangLembur->id}.tanggal");
+
+    expect(TransaksiGaji::count())->toBe(0);
+});
+
+test('tunjangan harian manual dihitung dari nilai per hari dikali jumlah hari yang diketik manual', function () {
+    $uangDinas = KomponenGaji::create([
+        'nama_komponen' => 'Uang Dinas Luar',
+        'jenis' => 'Tunjangan',
+        'metode_perhitungan' => 'harian_manual',
+        'nilai_default' => 100000,
+        'dasar_persentase' => null,
+    ]);
+
+    $response = $this->post(route('transaksi-gaji.store'), [
+        'karyawan_id' => $this->karyawan->id,
+        'bulan' => 7,
+        'tahun' => 2026,
+        'baris' => [
+            "master_{$uangDinas->id}" => [
+                'pakai' => '1',
+                'jumlah_hari' => 5,
+            ],
+        ],
+    ]);
+
+    $transaksi = TransaksiGaji::first();
+    $response->assertRedirect(route('transaksi-gaji.show', $transaksi));
+
+    expect((string) $transaksi->gaji_bersih)->toBe('5500000.00');
+
+    $this->assertDatabaseHas('transaksi_gaji_detail', [
+        'transaksi_gaji_id' => $transaksi->id,
+        'komponen_gaji_id' => $uangDinas->id,
+        'metode_perhitungan_snapshot' => 'harian_manual',
+        'nilai_snapshot' => 100000,
+        'jumlah_hari_snapshot' => 5,
+        'nominal_hasil' => 500000,
+    ]);
+
+    $detail = $transaksi->details()->where('komponen_gaji_id', $uangDinas->id)->first();
+    expect($detail->tanggal_awal_snapshot)->toBeNull();
+    expect($detail->tanggal_akhir_snapshot)->toBeNull();
+});
+
+test('tunjangan harian manual yang dicentang tanpa jumlah hari valid ditolak validasi', function () {
+    $uangDinas = KomponenGaji::create([
+        'nama_komponen' => 'Uang Dinas Luar',
+        'jenis' => 'Tunjangan',
+        'metode_perhitungan' => 'harian_manual',
+        'nilai_default' => 100000,
+        'dasar_persentase' => null,
+    ]);
+
+    $this->from(route('transaksi-gaji.create'))
+        ->post(route('transaksi-gaji.store'), [
+            'karyawan_id' => $this->karyawan->id,
+            'bulan' => 7,
+            'tahun' => 2026,
+            'baris' => [
+                "master_{$uangDinas->id}" => ['pakai' => '1'],
+            ],
+        ])
+        ->assertRedirect(route('transaksi-gaji.create'))
+        ->assertSessionHasErrors("baris.master_{$uangDinas->id}.jumlah_hari");
+
+    expect(TransaksiGaji::count())->toBe(0);
+
+    $this->from(route('transaksi-gaji.create'))
+        ->post(route('transaksi-gaji.store'), [
+            'karyawan_id' => $this->karyawan->id,
+            'bulan' => 7,
+            'tahun' => 2026,
+            'baris' => [
+                "master_{$uangDinas->id}" => [
+                    'pakai' => '1',
+                    'jumlah_hari' => 0,
+                ],
+            ],
+        ])
+        ->assertRedirect(route('transaksi-gaji.create'))
+        ->assertSessionHasErrors("baris.master_{$uangDinas->id}.jumlah_hari");
+
+    expect(TransaksiGaji::count())->toBe(0);
+});
+
+test('baris master per_hari yang tidak dicentang tidak menghalangi submit walau field tanggalnya tetap ikut terkirim kosong', function () {
+    // _baris.blade.php selalu merender field tanggal_awal/tanggal_akhir
+    // (kosong) untuk baris per_hari terlepas dari status checkbox-nya, jadi
+    // form asli selalu mengirim "baris.master_X.tanggal_awal" = "" walau
+    // baris itu tidak dicentang. Rule 'accepted' pada baris.*.pakai bersifat
+    // implicit (tetap dievaluasi walau field 'pakai'-nya benar-benar tidak
+    // ada di input), jadi harus dipastikan baris yang TIDAK dicentang ini
+    // tidak ikut gagal validasi hanya karena field tanggal kosongnya hadir.
+    $uangMakan = KomponenGaji::create([
+        'nama_komponen' => 'Tunjangan Uang Makan',
+        'jenis' => 'Tunjangan',
+        'metode_perhitungan' => 'per_hari',
+        'nilai_default' => 30000,
+        'dasar_persentase' => null,
+    ]);
+
+    $response = $this->post(route('transaksi-gaji.store'), [
+        'karyawan_id' => $this->karyawan->id,
+        'bulan' => 7,
+        'tahun' => 2026,
+        'baris' => [
+            "master_{$uangMakan->id}" => [
+                'tanggal_awal' => '',
+                'tanggal_akhir' => '',
+            ],
+            "master_{$this->tunjanganJabatan->id}" => [
+                'pakai' => '1',
+            ],
+        ],
+    ]);
+
+    $transaksi = TransaksiGaji::first();
+    $response->assertRedirect(route('transaksi-gaji.show', $transaksi));
+    expect($transaksi->details()->where('komponen_gaji_id', $uangMakan->id)->exists())->toBeFalse();
+    expect($transaksi->details()->where('komponen_gaji_id', $this->tunjanganJabatan->id)->exists())->toBeTrue();
+});
+
 test('transaksi gaji bisa diedit, komponen dan periode diperbarui', function () {
     $this->post(route('transaksi-gaji.store'), payloadGaji($this->karyawan, $this->tunjanganJabatan, $this->potonganBpjs));
     $transaksi = TransaksiGaji::first();
@@ -1272,7 +1456,7 @@ test('viewer transaksi tetap melihat modal cetak massal tanpa izin laporan pengg
         'gaji_bersih' => 5000000,
     ]);
     $viewer = User::factory()->create();
-    $viewer->givePermissionTo('transaksi-gaji.view');
+    $viewer->givePermissionTo(['transaksi-gaji.view', 'transaksi-gaji.cetak']);
     $this->actingAs($viewer);
 
     $this->get(route('transaksi-gaji.index'))

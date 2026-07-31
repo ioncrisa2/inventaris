@@ -6,25 +6,45 @@ const perbaruiSuffixNilai = (select) => {
     const suffix = document.getElementById(`${idAwalan}_suffix`);
     const input = document.getElementById(`${idAwalan}_nilai`);
     const rentang = document.getElementById(`${idAwalan}_rentang`);
+    const tanggalTunggal = document.getElementById(`${idAwalan}_tanggal_tunggal`);
+    const jumlahHari = document.getElementById(`${idAwalan}_jumlah_hari`);
     if (!prefix || !suffix || !input) return;
+
+    const toggle = (perHari, harianSehari, harianManual) => {
+        rentang?.classList.toggle('d-none', !perHari);
+        tanggalTunggal?.classList.toggle('d-none', !harianSehari);
+        jumlahHari?.classList.toggle('d-none', !harianManual);
+    };
 
     if (select.value === 'persentase') {
         prefix.classList.add('d-none');
         suffix.textContent = '%';
         suffix.classList.remove('d-none');
         input.max = '100';
-        rentang?.classList.add('d-none');
+        toggle(false, false, false);
     } else if (select.value === 'per_hari') {
         prefix.classList.remove('d-none');
         suffix.textContent = '/hari';
         suffix.classList.remove('d-none');
         input.removeAttribute('max');
-        rentang?.classList.remove('d-none');
+        toggle(true, false, false);
+    } else if (select.value === 'harian_sehari') {
+        prefix.classList.remove('d-none');
+        suffix.textContent = '/hari';
+        suffix.classList.remove('d-none');
+        input.removeAttribute('max');
+        toggle(false, true, false);
+    } else if (select.value === 'harian_manual') {
+        prefix.classList.remove('d-none');
+        suffix.textContent = '/hari';
+        suffix.classList.remove('d-none');
+        input.removeAttribute('max');
+        toggle(false, false, true);
     } else {
         prefix.classList.remove('d-none');
         suffix.classList.add('d-none');
         input.removeAttribute('max');
-        rentang?.classList.add('d-none');
+        toggle(false, false, false);
     }
 };
 

@@ -30,4 +30,9 @@ class TransaksiGajiPolicy
     {
         return $user->can('transaksi-gaji.delete');
     }
+
+    public function cetak(User $user): bool
+    {
+        return $user->can('transaksi-gaji.cetak');
+    }
 }

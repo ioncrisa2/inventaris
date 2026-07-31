@@ -244,12 +244,15 @@ class TransaksiGajiService
             $komponenGajiId = $komponen->id;
             // Baris master tidak boleh dikunci nilainya dari client: metode &
             // nilai selalu diambil dari Komponen Gaji saat ini, bukan dari
-            // $row. Pengecualian: rentang tanggal untuk metode per_hari
-            // memang input per-transaksi dan hanya tersedia dari $row.
+            // $row. Pengecualian: tanggal/jumlah hari untuk metode per_hari,
+            // harian_sehari, dan harian_manual memang input per-transaksi dan
+            // hanya tersedia dari $row.
             $metode = $komponen->metode_perhitungan;
             $nilai = (string) $komponen->nilai_default;
             $tanggalAwal = $row['tanggal_awal'] ?? null;
             $tanggalAkhir = $row['tanggal_akhir'] ?? null;
+            $tanggalTunggal = $row['tanggal'] ?? null;
+            $jumlahHariManual = $row['jumlah_hari'] ?? null;
         } elseif (preg_match('/\Acustom_([1-9]\d*)\z/', $kunci, $matches) && $transaksiGaji) {
             $detailYatim = $detailCustomById->get((int) $matches[1]);
 
@@ -266,6 +269,8 @@ class TransaksiGajiService
             $nilai = Decimal15Two::normalizeNonNegative($row['nilai'] ?? null);
             $tanggalAwal = $row['tanggal_awal'] ?? null;
             $tanggalAkhir = $row['tanggal_akhir'] ?? null;
+            $tanggalTunggal = $row['tanggal'] ?? null;
+            $jumlahHariManual = $row['jumlah_hari'] ?? null;
 
             if (! in_array($metode, array_keys(KomponenGaji::METODE_PERHITUNGAN), true)
                 || $nilai === null
@@ -312,6 +317,28 @@ class TransaksiGajiService
             $tanggalAwalSnapshot = $awalCarbon->toDateString();
             $tanggalAkhirSnapshot = $akhirCarbon->toDateString();
             $jumlahHariSnapshot = $this->hariOperasionalService->jumlahHariOperasional($awalCarbon, $akhirCarbon);
+        } elseif ($metode === 'harian_sehari') {
+            try {
+                $tanggalCarbon = Carbon::parse($tanggalTunggal)->startOfDay();
+            } catch (\Exception) {
+                throw ValidationException::withMessages([
+                    "baris.{$kunci}.tanggal" => 'Tanggal tidak valid.',
+                ]);
+            }
+
+            $tanggalAwalSnapshot = $tanggalCarbon->toDateString();
+            $tanggalAkhirSnapshot = $tanggalCarbon->toDateString();
+            $jumlahHariSnapshot = 1;
+        } elseif ($metode === 'harian_manual') {
+            $jumlahHariManual = filter_var($jumlahHariManual, FILTER_VALIDATE_INT);
+
+            if ($jumlahHariManual === false || $jumlahHariManual < 1) {
+                throw ValidationException::withMessages([
+                    "baris.{$kunci}.jumlah_hari" => 'Jumlah hari wajib diisi, minimal 1.',
+                ]);
+            }
+
+            $jumlahHariSnapshot = $jumlahHariManual;
         }
 
         $nominalHasil = PenggajianCalculator::hitungNominal($metode, $nilai, $gajiPokok, $jumlahHariSnapshot);
@@ -416,6 +443,14 @@ class TransaksiGajiService
                 'tanggal_akhir' => $oldBaris !== null
                     ? data_get($oldBaris, "{$kunci}.tanggal_akhir")
                     : $detail?->tanggal_akhir_snapshot?->format('Y-m-d'),
+                // harian_sehari memakai kolom snapshot yang sama dengan
+                // per_hari (tanggal_awal = tanggal_akhir = tanggal tunggal).
+                'tanggal' => $oldBaris !== null
+                    ? data_get($oldBaris, "{$kunci}.tanggal")
+                    : $detail?->tanggal_awal_snapshot?->format('Y-m-d'),
+                'jumlah_hari' => $oldBaris !== null
+                    ? data_get($oldBaris, "{$kunci}.jumlah_hari")
+                    : $detail?->jumlah_hari_snapshot,
             ];
         })->all();
 
@@ -435,6 +470,8 @@ class TransaksiGajiService
                         'nilai' => data_get($oldBaris, "{$kunci}.nilai") ?? $detail->nilai_snapshot,
                         'tanggal_awal' => data_get($oldBaris, "{$kunci}.tanggal_awal") ?? $detail->tanggal_awal_snapshot?->format('Y-m-d'),
                         'tanggal_akhir' => data_get($oldBaris, "{$kunci}.tanggal_akhir") ?? $detail->tanggal_akhir_snapshot?->format('Y-m-d'),
+                        'tanggal' => data_get($oldBaris, "{$kunci}.tanggal") ?? $detail->tanggal_awal_snapshot?->format('Y-m-d'),
+                        'jumlah_hari' => data_get($oldBaris, "{$kunci}.jumlah_hari") ?? $detail->jumlah_hari_snapshot,
                     ];
                 })
                 ->values()

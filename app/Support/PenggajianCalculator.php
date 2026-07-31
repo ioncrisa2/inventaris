@@ -14,6 +14,12 @@ class PenggajianCalculator
      *   $jumlahHari (jumlah hari operasional pada rentang tanggal yang
      *   diinput manual saat transaksi dibuat — hari libur sesuai setting
      *   Hari Operasional tidak dihitung, lihat HariOperasionalService).
+     * - harian_sehari: nilai adalah nominal Rupiah per hari, dipakai apa
+     *   adanya (selalu 1 hari) — tanggalnya cuma snapshot untuk cetak/riwayat,
+     *   tidak memengaruhi hitungan.
+     * - harian_manual: nilai adalah nominal Rupiah per hari, dikalikan
+     *   $jumlahHari yang diketik manual oleh pengguna (bukan dari rentang
+     *   tanggal/kalender seperti per_hari).
      *
      * Seluruh operasi pakai bcmath (bukan float) supaya perhitungan uang
      * tidak kena masalah presisi floating-point.
@@ -27,7 +33,7 @@ class PenggajianCalculator
             return self::round2($hasil);
         }
 
-        if ($metodePerhitungan === 'per_hari') {
+        if (in_array($metodePerhitungan, ['per_hari', 'harian_manual'], true)) {
             $hasil = bcmul($nilai, (string) ($jumlahHari ?? 0), 10);
 
             return self::round2($hasil);

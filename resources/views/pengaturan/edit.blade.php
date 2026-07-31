@@ -120,7 +120,7 @@
                 subtitle="Nama, alamat, dan logo ini tampil di sidebar, halaman login, dan kop slip gaji."
                 class="settings-section"
             >
-                @can('pengaturan.update')
+                @if(auth()->user()->can('pengaturan.identitas.update') && ! auth()->user()->isSuperAdmin())
                 <form method="POST" action="{{ route('pengaturan.identitas.update') }}" enctype="multipart/form-data" id="identitasForm">
                     @csrf
                     @method('PUT')
@@ -179,7 +179,11 @@
                     <i class="bi bi-lock" aria-hidden="true"></i>
                     <div>
                         <strong>Akses hanya-baca</strong>
-                        <p>Anda dapat melihat identitas koperasi, tetapi tidak memiliki izin untuk mengubahnya.</p>
+                        @if(auth()->user()->isSuperAdmin())
+                            <p>Identitas koperasi khusus per koperasi dan dikelola oleh admin_primer masing-masing koperasi.</p>
+                        @else
+                            <p>Anda dapat melihat identitas koperasi, tetapi tidak memiliki izin untuk mengubahnya.</p>
+                        @endif
                     </div>
                 </div>
                 <div class="row g-4 align-items-start mt-1">
@@ -193,7 +197,7 @@
                         </x-detail-list>
                     </div>
                 </div>
-                @endcan
+                @endif
             </x-section-card>
             @endcan
 
@@ -234,7 +238,7 @@
                 subtitle="Tentukan struktur kode yang dibuat otomatis ketika inventaris baru ditambahkan."
                 class="settings-section"
             >
-                @can('pengaturan.update')
+                @if(auth()->user()->can('pengaturan.kode-barang.update') && ! auth()->user()->isSuperAdmin())
                 <form method="POST" action="{{ route('pengaturan.update') }}" id="inventoryNumberingForm">
                     @csrf
                     @method('PUT')
@@ -333,7 +337,11 @@
                     <i class="bi bi-lock" aria-hidden="true"></i>
                     <div>
                         <strong>Akses hanya-baca</strong>
-                        <p>Anda dapat melihat format, tetapi tidak memiliki izin untuk mengubahnya.</p>
+                        @if(auth()->user()->isSuperAdmin())
+                            <p>Penomoran inventaris khusus per koperasi dan dikelola oleh admin_primer masing-masing koperasi.</p>
+                        @else
+                            <p>Anda dapat melihat format, tetapi tidak memiliki izin untuk mengubahnya.</p>
+                        @endif
                     </div>
                 </div>
                 <x-detail-list class="detail-list--single mt-3">
@@ -341,7 +349,7 @@
                     <x-detail-item label="Jumlah digit urut" :value="$digitNomorUrut.' digit'" />
                     <x-detail-item label="Contoh kode" :value="$contohKodeBarang" emphasis />
                 </x-detail-list>
-                @endcan
+                @endif
             </x-section-card>
             @endcan
 
@@ -352,7 +360,7 @@
                 subtitle="Tentukan hari kerja yang jadi dasar hitung jumlah hari untuk komponen gaji bermetode &quot;Per Hari (Range Tanggal)&quot;, seperti Tunjangan Uang Makan."
                 class="settings-section"
             >
-                @can('pengaturan.update')
+                @if(auth()->user()->can('pengaturan.hari-operasional.update') && ! auth()->user()->isSuperAdmin())
                 <form method="POST" action="{{ route('pengaturan.hari-operasional.update') }}" id="hariOperasionalForm">
                     @csrf
                     @method('PUT')
@@ -409,7 +417,11 @@
                     <i class="bi bi-lock" aria-hidden="true"></i>
                     <div>
                         <strong>Akses hanya-baca</strong>
-                        <p>Anda dapat melihat hari operasional, tetapi tidak memiliki izin untuk mengubahnya.</p>
+                        @if(auth()->user()->isSuperAdmin())
+                            <p>Hari operasional khusus per koperasi dan dikelola oleh admin_primer masing-masing koperasi.</p>
+                        @else
+                            <p>Anda dapat melihat hari operasional, tetapi tidak memiliki izin untuk mengubahnya.</p>
+                        @endif
                     </div>
                 </div>
                 <x-detail-list class="detail-list--single mt-3">
@@ -419,7 +431,7 @@
                         emphasis
                     />
                 </x-detail-list>
-                @endcan
+                @endif
             </x-section-card>
             @endcan
         </div>

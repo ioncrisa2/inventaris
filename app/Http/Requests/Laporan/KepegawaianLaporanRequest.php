@@ -10,7 +10,11 @@ class KepegawaianLaporanRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('laporan.kepegawaian.view');
+        return match ($this->route()->getName()) {
+            'laporan.kepegawaian.cetak' => $this->user()->can('laporan.kepegawaian.cetak'),
+            'laporan.kepegawaian.export' => $this->user()->can('laporan.kepegawaian.export'),
+            default => $this->user()->can('laporan.kepegawaian.view'),
+        };
     }
 
     public function rules(): array

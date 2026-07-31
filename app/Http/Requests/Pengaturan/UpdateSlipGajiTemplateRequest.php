@@ -9,7 +9,10 @@ class UpdateSlipGajiTemplateRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('pengaturan.update');
+        return match ($this->route()->getName()) {
+            'pengaturan.slip-gaji.publish' => $this->user()->can('pengaturan.slip-gaji.publish'),
+            default => $this->user()->can('pengaturan.slip-gaji.update'),
+        };
     }
 
     public function rules(): array

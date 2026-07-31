@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToKoperasi;
 use Illuminate\Database\Eloquent\Model;
 
 class Absensi extends Model
 {
+    use BelongsToKoperasi;
+
     public const STATUSES = [
         'Hadir',
         'Izin',

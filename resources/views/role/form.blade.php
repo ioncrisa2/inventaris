@@ -17,6 +17,18 @@
         <div class="col-md-6">
             <x-form.input name="name" label="Nama Role" :value="$role->name" required autofocus maxlength="255" />
         </div>
+        @unless($role->exists)
+        <div class="col-md-6">
+            <x-form.select
+                name="koperasi_id"
+                label="Koperasi"
+                :options="$koperasis->pluck('nama', 'id')"
+                required
+                placeholder="Pilih koperasi"
+            />
+            <div class="form-text">Role ini cuma berlaku dan bisa dipilih oleh pengguna di koperasi ini.</div>
+        </div>
+        @endunless
     </div>
 
     <div class="border-bottom pb-3 mb-4">

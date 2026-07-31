@@ -103,6 +103,7 @@
                                         aria-label="Lihat transaksi gaji periode {{ $namaBulan[$data->bulan] }} {{ $data->tahun }}">
                                         <i class="bi bi-eye"></i>
                                     </a>
+                                    @can('cetak', $data)
                                     <button
                                         type="button"
                                         class="btn btn-sm btn-action btn-action-neutral"
@@ -115,6 +116,7 @@
                                     >
                                         <i class="bi bi-printer"></i>
                                     </button>
+                                    @endcan
                                     @can('transaksi-gaji.update')
                                         <a
                                             href="{{ route('transaksi-gaji.edit', $data->id) }}"

@@ -25,7 +25,7 @@
     <div
         class="slip-template-editor"
         data-slip-template-editor
-        data-readonly="{{ $canUpdate ? 'false' : 'true' }}"
+        data-readonly="{{ $canEdit ? 'false' : 'true' }}"
     >
         <form method="POST" action="{{ route('pengaturan.slip-gaji.draft') }}" data-slip-template-form>
             @csrf
@@ -54,7 +54,7 @@
                         class="form-select form-select-sm"
                         id="slipPaperLayoutDefault"
                         data-paper-layout-default
-                        @disabled(! $canUpdate)
+                        @disabled(! $canEdit)
                     >
                         <option value="left_right">Kiri–kanan</option>
                         <option value="top_bottom">Atas–bawah</option>
@@ -69,7 +69,7 @@
                         <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
                         Redo
                     </button>
-                    <button type="button" class="btn btn-sm btn-light border" data-editor-reset @disabled(! $canUpdate)>
+                    <button type="button" class="btn btn-sm btn-light border" data-editor-reset @disabled(! $canEdit)>
                         Reset pola
                     </button>
                     <button
@@ -82,11 +82,13 @@
                         <i class="bi bi-eye" aria-hidden="true"></i>
                         Preview F4
                     </button>
-                    @if($canUpdate)
+                    @if($canEdit)
                         <button type="submit" class="btn btn-sm btn-light border">
                             <i class="bi bi-save" aria-hidden="true"></i>
                             Simpan Draf
                         </button>
+                    @endif
+                    @if($canPublish)
                         <button
                             type="submit"
                             class="btn btn-sm btn-primary"
@@ -99,7 +101,7 @@
                 </div>
             </div>
 
-            @unless($canUpdate)
+            @unless($canEdit)
                 <div class="settings-callout mb-3">
                     <i class="bi bi-lock" aria-hidden="true"></i>
                     <div>
@@ -124,7 +126,7 @@
                             'title' => ['bi-type-h1', 'Judul & periode'],
                             'footer' => ['bi-calendar3', 'Tanggal cetak'],
                         ] as $type => [$icon, $label])
-                            <button type="button" class="slip-editor-add" data-add-slip-block="{{ $type }}" @disabled(! $canUpdate)>
+                            <button type="button" class="slip-editor-add" data-add-slip-block="{{ $type }}" @disabled(! $canEdit)>
                                 <i class="bi {{ $icon }}" aria-hidden="true"></i>
                                 <span>{{ $label }}</span>
                             </button>
@@ -138,7 +140,7 @@
                             'line' => ['bi-dash-lg', 'Garis'],
                             'box' => ['bi-square', 'Kotak'],
                         ] as $type => [$icon, $label])
-                            <button type="button" class="slip-editor-add" data-add-slip-block="{{ $type }}" @disabled(! $canUpdate)>
+                            <button type="button" class="slip-editor-add" data-add-slip-block="{{ $type }}" @disabled(! $canEdit)>
                                 <i class="bi {{ $icon }}" aria-hidden="true"></i>
                                 <span>{{ $label }}</span>
                             </button>

@@ -120,7 +120,7 @@ class TransaksiGajiController extends Controller
      */
     public function cetak(CetakSlipGajiRequest $request, TransaksiGaji $transaksiGaji)
     {
-        $this->authorize('view', $transaksiGaji);
+        $this->authorize('cetak', $transaksiGaji);
 
         $transaksiGaji->load('karyawan.unitKerja', 'details');
 
@@ -129,10 +129,10 @@ class TransaksiGajiController extends Controller
 
     public function cetakMassal(CetakSlipGajiMassalRequest $request)
     {
-        $this->authorize('viewAny', TransaksiGaji::class);
+        $this->authorize('cetak', TransaksiGaji::class);
 
         $transaksiGaji = $this->transaksiGajiService->slipsForBulkPrint($request->filter());
-        $transaksiGaji->each(fn (TransaksiGaji $transaksi) => $this->authorize('view', $transaksi));
+        $transaksiGaji->each(fn (TransaksiGaji $transaksi) => $this->authorize('cetak', $transaksi));
 
         return $this->renderSlipGaji($transaksiGaji, $request, route('transaksi-gaji.index'));
     }

@@ -65,6 +65,7 @@ class NavigationMenu
                     ['label' => 'Manajemen Pengguna', 'icon' => 'bi-person-gear', 'route' => 'pengguna.index', 'active_routes' => ['pengguna.*'], 'permission' => 'pengguna.view'],
                     ['label' => 'Role & Hak Akses', 'icon' => 'bi-shield-lock', 'route' => 'role.index', 'active_routes' => ['role.*'], 'permission' => 'role.view'],
                     ['label' => 'Pengaturan Aplikasi', 'icon' => 'bi-gear', 'route' => 'pengaturan.edit', 'active_routes' => ['pengaturan.*'], 'permission' => 'pengaturan.view'],
+                    ['label' => 'Manajemen Koperasi', 'icon' => 'bi-building-gear', 'route' => 'koperasi.index', 'active_routes' => ['koperasi.*'], 'permission' => null, 'super_admin_only' => true],
                 ],
             ],
         ];
@@ -82,7 +83,7 @@ class NavigationMenu
 
         foreach (self::groups() as $group) {
             if ($group['type'] === 'link') {
-                if ($group['permission'] !== null && ! $user->can($group['permission'])) {
+                if (! self::isVisibleTo($user, $group)) {
                     continue;
                 }
 
@@ -94,7 +95,7 @@ class NavigationMenu
 
             $items = array_values(array_filter(
                 $group['items'],
-                fn (array $item) => $user->can($item['permission'])
+                fn (array $item) => self::isVisibleTo($user, $item)
             ));
 
             if (empty($items)) {
@@ -115,5 +116,20 @@ class NavigationMenu
         }
 
         return $visible;
+    }
+
+    /**
+     * Item dengan 'super_admin_only' (mis. Manajemen Koperasi) tidak masuk
+     * akal digerbang permission biasa — tidak ada role tenant manapun yang
+     * seharusnya bisa melihatnya, jadi dicek lewat identitas super_admin
+     * langsung, konsisten dengan guard di EnsureIsSuperAdmin.
+     */
+    private static function isVisibleTo(User $user, array $item): bool
+    {
+        if ($item['super_admin_only'] ?? false) {
+            return $user->isSuperAdmin();
+        }
+
+        return $item['permission'] === null || $user->can($item['permission']);
     }
 }

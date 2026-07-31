@@ -46,7 +46,7 @@
             <x-form.select
                 name="role"
                 label="Role"
-                :options="$roles->pluck('name', 'name')"
+                :options="$roles->mapWithKeys(fn ($role) => [$role->name => $role->displayName()])"
                 :value="$user->roles->first()?->name"
                 required
                 placeholder="Pilih role"

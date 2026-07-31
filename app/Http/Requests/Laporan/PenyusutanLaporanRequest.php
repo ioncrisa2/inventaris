@@ -9,7 +9,11 @@ class PenyusutanLaporanRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('laporan.penyusutan.view');
+        return match ($this->route()->getName()) {
+            'laporan.penyusutan.cetak' => $this->user()->can('laporan.penyusutan.cetak'),
+            'laporan.penyusutan.export' => $this->user()->can('laporan.penyusutan.export'),
+            default => $this->user()->can('laporan.penyusutan.view'),
+        };
     }
 
     public function rules(): array

@@ -8,7 +8,7 @@ class StoreFotoBarangRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('update', $this->route('barang'));
+        return $this->user()->can('kelolaFoto', $this->route('barang'));
     }
 
     public function rules(): array

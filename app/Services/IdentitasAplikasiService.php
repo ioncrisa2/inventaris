@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Pengaturan;
+use App\Support\CurrentTenant;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -17,19 +18,30 @@ class IdentitasAplikasiService
 
     public function __construct(private TransactionalFileStorage $fileStorage) {}
 
+    /**
+     * Identitas ini murni milik satu koperasi — tidak ada "identitas
+     * super_admin". Tanpa sesi tenant yang jelas (halaman login sebelum
+     * login, atau super_admin yang tidak terikat koperasi manapun), kembali
+     * ke default aplikasi alih-alih membaca baris koperasi lain secara acak
+     * (lihat CurrentTenant::hasTenant()).
+     */
     public function nama(): string
     {
+        if (! CurrentTenant::hasTenant()) {
+            return config('app.name');
+        }
+
         return Pengaturan::get(self::KEY_NAMA) ?? config('app.name');
     }
 
     public function alamat(): ?string
     {
-        return Pengaturan::get(self::KEY_ALAMAT);
+        return CurrentTenant::hasTenant() ? Pengaturan::get(self::KEY_ALAMAT) : null;
     }
 
     public function logoPath(): ?string
     {
-        return Pengaturan::get(self::KEY_LOGO_PATH);
+        return CurrentTenant::hasTenant() ? Pengaturan::get(self::KEY_LOGO_PATH) : null;
     }
 
     public function logoUrl(): ?string
@@ -41,9 +53,16 @@ class IdentitasAplikasiService
 
     /**
      * @param  array{nama: string, alamat: ?string, logo: ?UploadedFile}  $data
+     *
+     * @throws \DomainException Jika tidak ada sesi tenant yang jelas (mis.
+     *                          super_admin) — lihat CurrentTenant::hasTenant().
      */
     public function simpan(array $data): void
     {
+        if (! CurrentTenant::hasTenant()) {
+            throw new \DomainException('Identitas koperasi khusus per koperasi, dikelola oleh admin_primer masing-masing koperasi.');
+        }
+
         DB::transaction(function () use ($data) {
             $logoLama = null;
 

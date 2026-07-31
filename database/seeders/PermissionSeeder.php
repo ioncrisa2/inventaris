@@ -2,16 +2,20 @@
 
 namespace Database\Seeders;
 
+use App\Models\Role;
 use App\Support\PermissionCatalog;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 class PermissionSeeder extends Seeder
 {
     /**
-     * Run the database seeds.
+     * Seed katalog permission + role sistem `super_admin` (global, semua
+     * permission). Role per-koperasi seperti `admin_primer` TIDAK di-seed
+     * di sini — itu dibuat saat sebuah koperasi di-provisioning (lihat
+     * docs/multi-tenant-koperasi.md), karena role tersebut terikat ke satu
+     * koperasi tertentu, bukan role global.
      */
     public function run(): void
     {
@@ -29,37 +33,8 @@ class PermissionSeeder extends Seeder
             ->whereIn('name', $semuaPermission)
             ->get();
 
-        Role::findOrCreate('Admin', 'web')
+        Role::findOrCreate('super_admin', 'web')
             ->syncPermissions($permissionModels);
-
-        Role::findOrCreate('Staff', 'web')
-            ->syncPermissions($permissionModels->whereIn('name', [
-                'dashboard.total-inventaris.view',
-                'dashboard.nilai-aset.view',
-                'dashboard.perlu-perbaikan.view',
-                'dashboard.karyawan-aktif.view',
-                'dashboard.tren-absensi.view',
-                'dashboard.kondisi-inventaris.view',
-                'dashboard.data-belum-lengkap.view',
-                'unit-kerja.view',
-                'karyawan.view',
-                'karyawan.create',
-                'karyawan.update',
-                'karyawan.riwayat.view',
-                'absensi.view',
-                'absensi.create',
-                'hari-libur.view',
-                'barang.view',
-                'barang.create',
-                'barang.update',
-                'komponen-gaji.view',
-                'transaksi-gaji.view',
-                'laporan.inventaris.view',
-                'laporan.absensi.view',
-                'laporan.kepegawaian.view',
-                'laporan.penggajian.view',
-                'laporan.penyusutan.view',
-            ]));
 
         $registrar->forgetCachedPermissions();
     }

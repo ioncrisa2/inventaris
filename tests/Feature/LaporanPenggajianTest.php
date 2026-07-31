@@ -2,6 +2,7 @@
 
 use App\Exports\PenggajianExport;
 use App\Models\Karyawan;
+use App\Models\Koperasi;
 use App\Models\TransaksiGaji;
 use App\Models\TransaksiGajiDetail;
 use App\Models\UnitKerja;
@@ -140,8 +141,10 @@ test('staff without payroll report permission cannot access it', function () {
     // Role Staff default punya laporan.penggajian.view, jadi buat role baru
     // tanpa permission sama sekali untuk memverifikasi endpoint benar-benar
     // digembok permission, bukan cuma disembunyikan di menu.
+    $koperasi = Koperasi::create(['nama' => 'Koperasi Laporan']);
     $this->actingAs(adminUser())->post(route('role.store'), [
         'name' => 'Tanpa Akses Laporan',
+        'koperasi_id' => $koperasi->id,
         'permissions' => [],
     ]);
 

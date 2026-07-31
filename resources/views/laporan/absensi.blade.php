@@ -23,14 +23,18 @@
                         target="absensiReportFilter"
                         :active-count="$absensiActiveFilterCount"
                     />
+                    @can('laporan.absensi.cetak')
                     <a class="btn btn-outline-primary" href="{{ route('laporan.absensi.cetak', request()->query()) }}" target="_blank" rel="noopener">
                         <i class="bi bi-printer"></i>
                         Cetak
                     </a>
+                    @endcan
+                    @can('laporan.absensi.export')
                     <a class="btn btn-outline-success" href="{{ route('laporan.absensi.export', request()->query()) }}">
                         <i class="bi bi-file-earmark-excel"></i>
                         Export Excel
                     </a>
+                    @endcan
                 </div>
             </x-slot:actions>
         </x-page-header>

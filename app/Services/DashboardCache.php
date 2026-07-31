@@ -20,12 +20,35 @@ class DashboardCache
     {
         $store = $this->cache->store();
         $version = $this->version($store);
+        $tenant = $this->tenantSegment();
 
         return $store->remember(
-            "dashboard:{$version}:{$key}",
+            "dashboard:{$version}:{$tenant}:{$key}",
             now()->addSeconds((int) config('inventaris.dashboard_cache_ttl_seconds', 60)),
             $resolver,
         );
+    }
+
+    /**
+     * Nilai yang dihitung DashboardRepository ter-scope per koperasi (lihat
+     * CurrentTenant/KoperasiScope) — cache key wajib ikut dipisah per
+     * tenant, kalau tidak hasil cache satu koperasi bisa "bocor" tampil ke
+     * koperasi lain selama TTL-nya belum habis. super_admin dapat bucket
+     * sendiri karena datanya sengaja tidak difilter (lintas semua koperasi).
+     */
+    private function tenantSegment(): string
+    {
+        $user = auth()->user();
+
+        if (! $user) {
+            return 'anon';
+        }
+
+        if ($user->isSuperAdmin()) {
+            return 'super-admin';
+        }
+
+        return 'koperasi-'.($user->koperasi_id ?? 'null');
     }
 
     public function invalidateAfterCommit(): void

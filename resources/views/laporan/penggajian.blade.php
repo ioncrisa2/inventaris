@@ -23,14 +23,18 @@
                         target="penggajianReportFilter"
                         :active-count="$penggajianActiveFilterCount"
                     />
+                    @can('laporan.penggajian.cetak')
                     <a class="btn btn-outline-primary" href="{{ route('laporan.penggajian.cetak', request()->query()) }}" target="_blank" rel="noopener">
                         <i class="bi bi-printer"></i>
                         Cetak
                     </a>
+                    @endcan
+                    @can('laporan.penggajian.export')
                     <a class="btn btn-outline-success" href="{{ route('laporan.penggajian.export', request()->query()) }}">
                         <i class="bi bi-file-earmark-excel"></i>
                         Export Excel
                     </a>
+                    @endcan
                 </div>
             </x-slot:actions>
         </x-page-header>

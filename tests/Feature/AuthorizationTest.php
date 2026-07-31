@@ -1,9 +1,10 @@
 <?php
 
 use App\Models\Karyawan;
+use App\Models\Koperasi;
+use App\Models\Role;
 use App\Models\UnitKerja;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
@@ -69,13 +70,15 @@ test('sidebar administration menu is hidden for staff and visible for admin', fu
 
 test('admin can create a role with a chosen set of permissions', function () {
     $this->actingAs(adminUser());
+    $koperasi = Koperasi::create(['nama' => 'Koperasi Gudang']);
 
     $this->post(route('role.store'), [
         'name' => 'Kepala Gudang',
+        'koperasi_id' => $koperasi->id,
         'permissions' => ['barang.view', 'barang.update'],
     ])->assertRedirect(route('role.index'));
 
-    $role = Role::findByName('Kepala Gudang', 'web');
+    $role = Role::where('koperasi_id', $koperasi->id)->where('name', 'Kepala Gudang')->firstOrFail();
 
     expect($role->permissions->pluck('name')->all())
         ->toEqualCanonicalizing(['barang.view', 'barang.update']);
@@ -101,11 +104,11 @@ test('admin can edit another user and change their role', function () {
     $this->put(route('pengguna.update', $staff), [
         'name' => 'Staff Baru',
         'email' => $staff->email,
-        'role' => 'Admin',
+        'role' => 'super_admin',
     ])->assertRedirect(route('pengguna.index'));
 
     expect($staff->fresh()->name)->toBe('Staff Baru');
-    expect($staff->fresh()->hasRole('Admin'))->toBeTrue();
+    expect($staff->fresh()->hasRole('super_admin'))->toBeTrue();
 });
 
 test('role still assigned to a user cannot be deleted', function () {

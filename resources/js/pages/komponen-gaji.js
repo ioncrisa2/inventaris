@@ -18,6 +18,18 @@ const perbaruiTampilanNilaiKomponen = (mode) => {
         suffix.classList.remove('d-none');
         input.removeAttribute('max');
         help.textContent = 'Nominal Rupiah per hari, dikalikan dengan jumlah hari pada rentang tanggal yang diinput manual saat membuat transaksi gaji.';
+    } else if (metode.value === 'harian_sehari') {
+        prefix.classList.remove('d-none');
+        suffix.textContent = '/hari';
+        suffix.classList.remove('d-none');
+        input.removeAttribute('max');
+        help.textContent = 'Nominal Rupiah per hari, dipakai satu kali untuk satu tanggal yang diinput manual saat membuat transaksi gaji.';
+    } else if (metode.value === 'harian_manual') {
+        prefix.classList.remove('d-none');
+        suffix.textContent = '/hari';
+        suffix.classList.remove('d-none');
+        input.removeAttribute('max');
+        help.textContent = 'Nominal Rupiah per hari, dikalikan jumlah hari yang diketik manual (bukan dari rentang tanggal) saat membuat transaksi gaji.';
     } else {
         prefix.classList.remove('d-none');
         suffix.classList.add('d-none');

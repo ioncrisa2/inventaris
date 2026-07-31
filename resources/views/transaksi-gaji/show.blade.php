@@ -15,6 +15,7 @@
         <x-page-header title="Detail Transaksi Gaji" subtitle="{{ $transaksiGaji->karyawan->nama_lengkap }} — {{ $namaBulan[$transaksiGaji->bulan] }} {{ $transaksiGaji->tahun }}">
             <x-slot:actions>
                 <div class="d-flex gap-2">
+                    @can('cetak', $transaksiGaji)
                     <button
                         class="btn btn-success"
                         type="button"
@@ -26,6 +27,7 @@
                         <i class="bi bi-printer"></i>
                         Cetak Slip Gaji
                     </button>
+                    @endcan
                     <a class="btn btn-primary" href="{{ route('transaksi-gaji.edit', $transaksiGaji) }}">
                         <i class="bi bi-pencil"></i>
                         Edit
@@ -92,6 +94,13 @@
                                                     @if($detail->tanggal_awal_snapshot && $detail->tanggal_akhir_snapshot)
                                                         <span class="text-body-secondary small d-block">{{ $detail->tanggal_awal_snapshot->format('d/m/Y') }} s.d. {{ $detail->tanggal_akhir_snapshot->format('d/m/Y') }}</span>
                                                     @endif
+                                                @elseif($detail->metode_perhitungan_snapshot === 'harian_sehari')
+                                                    Rp {{ number_format($detail->nilai_snapshot, 0, ',', '.') }} /hari
+                                                    @if($detail->tanggal_awal_snapshot)
+                                                        <span class="text-body-secondary small d-block">{{ $detail->tanggal_awal_snapshot->format('d/m/Y') }}</span>
+                                                    @endif
+                                                @elseif($detail->metode_perhitungan_snapshot === 'harian_manual')
+                                                    Rp {{ number_format($detail->nilai_snapshot, 0, ',', '.') }} /hari &times; {{ $detail->jumlah_hari_snapshot ?? 0 }} hari
                                                 @else
                                                     Rp {{ number_format($detail->nilai_snapshot, 0, ',', '.') }}
                                                 @endif

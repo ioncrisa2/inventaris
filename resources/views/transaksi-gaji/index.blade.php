@@ -6,7 +6,7 @@
 <x-app-page long-footer>
         <x-page-header title="Transaksi Gaji" subtitle="Riwayat pembayaran per karyawan.">
             <x-slot:actions>
-                @can('transaksi-gaji.view')
+                @can('cetak', \App\Models\TransaksiGaji::class)
                     <button
                         type="button"
                         class="btn btn-outline-primary"
@@ -82,7 +82,7 @@
         </x-data-table>
 </x-app-page>
 
-@can('transaksi-gaji.view')
+@can('cetak', \App\Models\TransaksiGaji::class)
     @include('transaksi-gaji._modal-cetak-slip-massal', [
         'karyawanCetak' => $karyawanCetak,
         'penandaTangan' => $penandaTangan,

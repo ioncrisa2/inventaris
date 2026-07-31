@@ -76,8 +76,7 @@
             <div class="card-body">
                 <div class="calendar-legend" aria-label="Keterangan kalender">
                     <span><i class="calendar-legend__swatch is-workday" aria-hidden="true"></i> Hari kerja</span>
-                    <span><i class="calendar-legend__swatch is-holiday" aria-hidden="true"></i> Hari libur (Minggu &amp;
-                        nasional)</span>
+                    <span><i class="calendar-legend__swatch is-holiday" aria-hidden="true"></i> Hari libur (Minggu &amp; nasional)</span>
                     <span><i class="calendar-legend__swatch is-outside" aria-hidden="true"></i> Di luar bulan</span>
                 </div>
 

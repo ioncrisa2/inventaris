@@ -9,7 +9,7 @@ class StoreRiwayatKondisiBarangRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('update', $this->route('barang'));
+        return $this->user()->can('catatKondisi', $this->route('barang'));
     }
 
     public function rules(): array

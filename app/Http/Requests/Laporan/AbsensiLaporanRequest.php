@@ -9,7 +9,11 @@ class AbsensiLaporanRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('laporan.absensi.view');
+        return match ($this->route()->getName()) {
+            'laporan.absensi.cetak' => $this->user()->can('laporan.absensi.cetak'),
+            'laporan.absensi.export' => $this->user()->can('laporan.absensi.export'),
+            default => $this->user()->can('laporan.absensi.view'),
+        };
     }
 
     public function rules(): array

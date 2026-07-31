@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToKoperasi;
 use Illuminate\Database\Eloquent\Model;
 
 class Karyawan extends Model
 {
+    use BelongsToKoperasi;
+
     /**
      * Jenis kepegawaian yang valid. Terpisah dari status aktif/keluar —
      * karyawan yang sudah keluar ditandai lewat `tanggal_mengundurkan_diri`,

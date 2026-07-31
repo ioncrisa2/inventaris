@@ -5,11 +5,12 @@ namespace App\Http\Controllers;
 use App\Http\Requests\BulkDeleteRequest;
 use App\Http\Requests\Role\StoreRoleRequest;
 use App\Http\Requests\Role\UpdateRoleRequest;
+use App\Models\Koperasi;
+use App\Models\Role;
 use App\Services\RoleService;
 use App\Support\PermissionCatalog;
 use App\Support\PerPage;
 use Illuminate\Http\Request;
-use Spatie\Permission\Models\Role;
 
 class RoleController extends Controller
 {
@@ -33,12 +34,14 @@ class RoleController extends Controller
     public function create()
     {
         $this->authorize('role.create');
+        abort_unless(auth()->user()->isSuperAdmin(), 403);
 
         $role = new Role;
         $permissionGroups = PermissionCatalog::groups();
         $selectedPermissions = [];
+        $koperasis = Koperasi::orderBy('nama')->get();
 
-        return view('role.form', compact('role', 'permissionGroups', 'selectedPermissions'));
+        return view('role.form', compact('role', 'permissionGroups', 'selectedPermissions', 'koperasis'));
     }
 
     /**
@@ -46,7 +49,11 @@ class RoleController extends Controller
      */
     public function store(StoreRoleRequest $request)
     {
-        $this->roleService->store($request->validated());
+        try {
+            $this->roleService->store($request->user(), $request->validated());
+        } catch (\DomainException $e) {
+            return back()->with('error', $e->getMessage())->withInput();
+        }
 
         return redirect()->route('role.index')->with('success', 'Role berhasil ditambahkan.');
     }
@@ -57,6 +64,7 @@ class RoleController extends Controller
     public function edit(Role $role)
     {
         $this->authorize('role.update');
+        $this->abortIfOtherTenant($role);
 
         $permissionGroups = PermissionCatalog::groups();
         $selectedPermissions = $role->permissions->pluck('name')->all();
@@ -69,6 +77,8 @@ class RoleController extends Controller
      */
     public function update(UpdateRoleRequest $request, Role $role)
     {
+        $this->abortIfOtherTenant($role);
+
         $this->roleService->update($role, $request->validated());
 
         return redirect()->route('role.index')->with('success', 'Role berhasil diperbarui.');
@@ -77,12 +87,12 @@ class RoleController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Role $role)
+    public function destroy(Request $request, Role $role)
     {
         $this->authorize('role.delete');
 
         try {
-            $this->roleService->destroy($role);
+            $this->roleService->destroy($request->user(), $role);
         } catch (\DomainException $e) {
             return back()->with('error', $e->getMessage());
         }
@@ -95,12 +105,25 @@ class RoleController extends Controller
         $this->authorize('role.delete');
 
         try {
-            $jumlah = $this->roleService->destroyMany($request->validated('ids'));
+            $jumlah = $this->roleService->destroyMany($request->user(), $request->validated('ids'));
         } catch (\DomainException $e) {
             return back()->with('error', $e->getMessage());
         }
 
         return redirect()->route('role.index')
             ->with('success', $jumlah.' role berhasil dihapus.');
+    }
+
+    /**
+     * Role TIDAK pakai global scope tenant (lihat catatan di App\Models\Role),
+     * jadi route model binding {role} tidak otomatis 404 untuk role milik
+     * koperasi lain — dicek manual di sini untuk aksi yang melihat/mengubah
+     * satu role spesifik.
+     */
+    private function abortIfOtherTenant(Role $role): void
+    {
+        $user = auth()->user();
+
+        abort_if(! $user->isSuperAdmin() && $role->koperasi_id !== $user->koperasi_id, 404);
     }
 }

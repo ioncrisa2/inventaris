@@ -6,6 +6,7 @@ use App\Models\DokumenBarang;
 use App\Models\DokumenKaryawan;
 use App\Models\FotoBarang;
 use App\Models\Karyawan;
+use App\Models\Koperasi;
 use App\Models\KomponenGaji;
 use App\Models\TransaksiGajiDetail;
 use App\Models\UnitKerja;
@@ -29,9 +30,9 @@ test('database seeder creates a complete usable demo dataset', function () {
     $this->seed(DatabaseSeeder::class);
 
     expect(SeederDataset::counts())->toBe([
-        'permissions' => 48,
-        'roles' => 2,
-        'users' => 7,
+        'permissions' => 70,
+        'roles' => 3,
+        'users' => 8,
         'units' => 6,
         'employees' => 15,
         'attendance' => 2028,
@@ -48,13 +49,27 @@ test('database seeder creates a complete usable demo dataset', function () {
     ]);
 
     $admin = User::where('email', 'admin@example.com')->firstOrFail();
+    $adminPrimer = User::where('email', 'admin.primer@example.com')->firstOrFail();
     $staff = User::where('email', 'staff@example.com')->firstOrFail();
+    $koperasi = Koperasi::where('nama', 'Koperasi Demo')->firstOrFail();
+
     expect(Hash::check((string) config('demo.user_password'), $admin->password))->toBeTrue()
-        ->and($admin->hasRole('Admin'))->toBeTrue()
+        ->and($admin->hasRole('super_admin'))->toBeTrue()
+        ->and($admin->koperasi_id)->toBeNull()
+        ->and($adminPrimer->hasRole('admin_primer'))->toBeTrue()
+        ->and($adminPrimer->koperasi_id)->toBe($koperasi->id)
         ->and($staff->hasRole('Staff'))->toBeTrue()
-        ->and($admin->getAllPermissions())->toHaveCount(48)
-        ->and($staff->getAllPermissions())->toHaveCount(24)
+        ->and($staff->koperasi_id)->toBe($koperasi->id)
+        ->and($admin->getAllPermissions())->toHaveCount(70)
+        ->and($adminPrimer->getAllPermissions())->toHaveCount(68)
+        ->and($staff->getAllPermissions())->toHaveCount(39)
+        // Semua data domain harus ikut ter-tag ke koperasi demo (bukan
+        // koperasi_id null) — ini yang paling penting dari sinkronisasi
+        // seeder ke arsitektur multi-tenant, bukan cuma jumlahnya benar.
         ->and(UnitKerja::whereNull('kode')->count())->toBe(0)
+        ->and(UnitKerja::where('koperasi_id', $koperasi->id)->count())->toBe(UnitKerja::count())
+        ->and(Karyawan::where('koperasi_id', $koperasi->id)->count())->toBe(Karyawan::count())
+        ->and(Barang::where('koperasi_id', $koperasi->id)->count())->toBe(Barang::count())
         ->and(Karyawan::whereNotNull('atasan_langsung_id')->count())->toBe(9)
         ->and(Karyawan::whereNotNull('foto_karyawan')->count())->toBe(12)
         ->and(Barang::whereNotNull('foto_sampul')->count())->toBe(40)

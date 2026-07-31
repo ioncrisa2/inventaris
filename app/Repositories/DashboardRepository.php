@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Models\Absensi;
 use App\Models\Karyawan;
+use App\Support\CurrentTenant;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 
@@ -12,7 +13,7 @@ class DashboardRepository
     /** @return array{total: int, nilai: string} */
     public function ringkasanInventaris(): array
     {
-        $ringkasan = DB::table('barang')
+        $ringkasan = CurrentTenant::scopeQuery(DB::table('barang'))
             ->selectRaw('COUNT(*) AS total')
             ->selectRaw('COALESCE(SUM(harga_perolehan), 0) AS nilai')
             ->first();
@@ -100,13 +101,13 @@ class DashboardRepository
      */
     public function dataBelumLengkap(): array
     {
-        $barang = DB::table('barang')
+        $barang = CurrentTenant::scopeQuery(DB::table('barang'))
             ->selectRaw('SUM(CASE WHEN NOT EXISTS (SELECT 1 FROM riwayat_kondisi_barang WHERE riwayat_kondisi_barang.barang_id = barang.id) THEN 1 ELSE 0 END) AS belum_diperiksa')
             ->selectRaw("SUM(CASE WHEN foto_sampul IS NULL OR foto_sampul = '' THEN 1 ELSE 0 END) AS tanpa_foto")
             ->selectRaw('SUM(CASE WHEN NOT EXISTS (SELECT 1 FROM dokumen_barang WHERE dokumen_barang.barang_id = barang.id AND dokumen_barang.jenis_dokumen = ?) THEN 1 ELSE 0 END) AS tanpa_nota', ['Nota Pembelian'])
             ->first();
 
-        $karyawanTidakLengkap = DB::table('karyawan')
+        $karyawanTidakLengkap = CurrentTenant::scopeQuery(DB::table('karyawan'))
             ->whereNull('tanggal_mengundurkan_diri')
             ->where(function ($query) {
                 $query->whereNull('tanggal_masuk_kerja')
@@ -148,7 +149,7 @@ class DashboardRepository
             ->selectRaw('MAX(riwayat.id) AS riwayat_id')
             ->groupBy('riwayat.barang_id');
 
-        return DB::table('barang')
+        return CurrentTenant::scopeQuery(DB::table('barang'))
             ->leftJoinSub($barisTerakhir, 'baris_terakhir', 'baris_terakhir.barang_id', '=', 'barang.id')
             ->leftJoin('riwayat_kondisi_barang AS kondisi_terakhir', 'kondisi_terakhir.id', '=', 'baris_terakhir.riwayat_id')
             ->select('kondisi_terakhir.kondisi')

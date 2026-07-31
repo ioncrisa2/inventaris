@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Models\User;
+use App\Support\CurrentTenant;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class UserRepository
@@ -12,7 +13,7 @@ class UserRepository
      */
     public function paginate(array $filters, int $perPage = 10): LengthAwarePaginator
     {
-        return User::query()
+        return CurrentTenant::scopeQuery(User::query())
             ->with('roles')
             ->when($filters['search'] ?? null, function ($query, $search) {
                 $query->where(function ($query) use ($search) {

@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Storage;
 uses(RefreshDatabase::class);
 
 test('admin can view and update hari operasional', function () {
-    $this->actingAs(adminUser());
+    $this->actingAs(adminPrimerUser());
 
     $this->get(route('pengaturan.edit'))
         ->assertOk()
@@ -44,7 +44,7 @@ test('staff cannot update hari operasional', function () {
 });
 
 test('admin can view and update pengaturan', function () {
-    $this->actingAs(adminUser());
+    $this->actingAs(adminPrimerUser());
 
     $this->get(route('pengaturan.edit'))
         ->assertOk()
@@ -154,7 +154,7 @@ test('identitas koperasi falls back to app name when not configured', function (
 
 test('admin can update identitas koperasi including a logo', function () {
     Storage::fake('public');
-    $this->actingAs(adminUser());
+    $this->actingAs(adminPrimerUser());
     $logo = UploadedFile::fake()->image('logo.png');
 
     $this->get(route('pengaturan.edit'))
@@ -177,7 +177,7 @@ test('admin can update identitas koperasi including a logo', function () {
 
 test('identitas logo is replaced and the old file is deleted', function () {
     Storage::fake('public');
-    $this->actingAs(adminUser());
+    $this->actingAs(adminPrimerUser());
 
     $this->put(route('pengaturan.identitas.update'), [
         'nama' => 'Koperasi Awal',
@@ -201,7 +201,7 @@ test('identitas logo is replaced and the old file is deleted', function () {
 
 test('identitas nama and alamat are preserved when update is submitted without a new logo', function () {
     Storage::fake('public');
-    $this->actingAs(adminUser());
+    $this->actingAs(adminPrimerUser());
 
     $this->put(route('pengaturan.identitas.update'), [
         'nama' => 'Koperasi Awal',
@@ -245,6 +245,8 @@ test('staff without pengaturan.view cannot see or update identitas koperasi', fu
 });
 
 test('kode barang generator respects the configured sequence digit count', function () {
+    $this->actingAs(adminPrimerUser());
+
     $generator = app(KodeBarangGenerator::class);
     $unitKerja = UnitKerja::create(['nama_unit' => 'IT', 'kode' => 'IT']);
 
@@ -252,4 +254,65 @@ test('kode barang generator respects the configured sequence digit count', funct
 
     expect($generator->generate('Bukan Bangunan - Kelompok 1', $unitKerja->id, '2026-07-21'))
         ->toBe('INV-000001');
+});
+
+test('super_admin sees the default app identity instead of any koperasi\'s branding', function () {
+    $this->actingAs(adminPrimerUser());
+    $this->put(route('pengaturan.identitas.update'), [
+        'nama' => 'Koperasi Rahasia',
+        'alamat' => 'Jl. Tenant, Kota Tenant',
+    ]);
+
+    $this->actingAs(adminUser());
+
+    expect(app(IdentitasAplikasiService::class)->nama())->toBe(config('app.name'))
+        ->and(app(IdentitasAplikasiService::class)->alamat())->toBeNull()
+        ->and(app(IdentitasAplikasiService::class)->logoUrl())->toBeNull();
+
+    $this->get(route('pengaturan.edit'))
+        ->assertOk()
+        ->assertDontSee('Koperasi Rahasia');
+});
+
+test('super_admin cannot save identitas koperasi, kode barang, or hari operasional', function () {
+    $this->actingAs(adminPrimerUser());
+    $this->put(route('pengaturan.identitas.update'), ['nama' => 'Koperasi Awal']);
+
+    $this->actingAs(adminUser());
+
+    $this->put(route('pengaturan.identitas.update'), [
+        'nama' => 'Koperasi Dibajak Super Admin',
+    ])->assertRedirect();
+    expect(app(IdentitasAplikasiService::class)->nama())->toBe(config('app.name'));
+
+    $this->put(route('pengaturan.update'), [
+        'format_kode_barang' => 'SA-{URUT}',
+        'digit_nomor_urut' => 4,
+    ])->assertRedirect();
+
+    $this->put(route('pengaturan.hari-operasional.update'), [
+        'hari_operasional' => [1, 2, 3],
+    ])->assertRedirect();
+});
+
+test('super_admin sees read-only settings page, not editable forms', function () {
+    $this->actingAs(adminUser());
+
+    $this->get(route('pengaturan.edit'))
+        ->assertOk()
+        ->assertDontSee('id="identitasForm"', false)
+        ->assertDontSee('id="inventoryNumberingForm"', false)
+        ->assertDontSee('id="hariOperasionalForm"', false)
+        ->assertSee('dikelola oleh admin_primer masing-masing koperasi');
+});
+
+test('login page always shows the default app identity, never a tenant\'s branding', function () {
+    $this->actingAs(adminPrimerUser());
+    $this->put(route('pengaturan.identitas.update'), ['nama' => 'Koperasi Terlihat Di Login']);
+    auth()->logout();
+
+    $this->get(route('login'))
+        ->assertOk()
+        ->assertSee(config('app.name'))
+        ->assertDontSee('Koperasi Terlihat Di Login');
 });

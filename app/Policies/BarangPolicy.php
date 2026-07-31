@@ -30,4 +30,19 @@ class BarangPolicy
     {
         return $user->can('barang.delete');
     }
+
+    public function catatKondisi(User $user): bool
+    {
+        return $user->can('barang.kondisi.catat');
+    }
+
+    public function kelolaFoto(User $user): bool
+    {
+        return $user->can('barang.foto.kelola');
+    }
+
+    public function kelolaDokumen(User $user): bool
+    {
+        return $user->can('barang.dokumen.kelola');
+    }
 }

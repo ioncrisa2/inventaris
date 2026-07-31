@@ -9,7 +9,11 @@ class PenggajianLaporanRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('laporan.penggajian.view');
+        return match ($this->route()->getName()) {
+            'laporan.penggajian.cetak' => $this->user()->can('laporan.penggajian.cetak'),
+            'laporan.penggajian.export' => $this->user()->can('laporan.penggajian.export'),
+            default => $this->user()->can('laporan.penggajian.view'),
+        };
     }
 
     public function rules(): array

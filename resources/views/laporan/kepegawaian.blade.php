@@ -22,14 +22,18 @@
                         target="kepegawaianReportFilter"
                         :active-count="$kepegawaianActiveFilterCount"
                     />
+                    @can('laporan.kepegawaian.cetak')
                     <a class="btn btn-outline-primary" href="{{ route('laporan.kepegawaian.cetak', request()->query()) }}" target="_blank" rel="noopener">
                         <i class="bi bi-printer"></i>
                         Cetak
                     </a>
+                    @endcan
+                    @can('laporan.kepegawaian.export')
                     <a class="btn btn-outline-success" href="{{ route('laporan.kepegawaian.export', request()->query()) }}">
                         <i class="bi bi-file-earmark-excel"></i>
                         Export Excel
                     </a>
+                    @endcan
                 </div>
             </x-slot:actions>
         </x-page-header>

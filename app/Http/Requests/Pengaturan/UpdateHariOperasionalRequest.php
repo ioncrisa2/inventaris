@@ -9,7 +9,7 @@ class UpdateHariOperasionalRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('pengaturan.update');
+        return $this->user()->can('pengaturan.hari-operasional.update');
     }
 
     public function rules(): array

@@ -28,7 +28,7 @@ class DokumenBarangController extends Controller
 
     public function destroy(Barang $barang, DokumenBarang $dokumenBarang)
     {
-        $this->authorize('update', $barang);
+        $this->authorize('kelolaDokumen', $barang);
         abort_unless($dokumenBarang->barang_id === $barang->id, 404);
 
         $this->dokumenBarangService->destroy($barang, $dokumenBarang);

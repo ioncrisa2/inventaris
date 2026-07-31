@@ -55,28 +55,40 @@ class PengaturanController extends Controller
 
     public function update(UpdatePengaturanRequest $request)
     {
-        $this->kodeBarangGenerator->simpanPengaturan(
-            $request->validated('format_kode_barang'),
-            (int) $request->validated('digit_nomor_urut'),
-        );
+        try {
+            $this->kodeBarangGenerator->simpanPengaturan(
+                $request->validated('format_kode_barang'),
+                (int) $request->validated('digit_nomor_urut'),
+            );
+        } catch (\DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
         return redirect()->route('pengaturan.edit')->with('success', 'Pengaturan berhasil disimpan.');
     }
 
     public function updateHariOperasional(UpdateHariOperasionalRequest $request)
     {
-        $this->hariOperasionalService->simpan($request->validated('hari_operasional'));
+        try {
+            $this->hariOperasionalService->simpan($request->validated('hari_operasional'));
+        } catch (\DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
         return redirect()->route('pengaturan.edit')->with('success', 'Hari operasional berhasil disimpan.');
     }
 
     public function updateIdentitas(UpdateIdentitasAplikasiRequest $request)
     {
-        $this->identitasAplikasiService->simpan([
-            'nama' => $request->validated('nama'),
-            'alamat' => $request->validated('alamat'),
-            'logo' => $request->file('logo'),
-        ]);
+        try {
+            $this->identitasAplikasiService->simpan([
+                'nama' => $request->validated('nama'),
+                'alamat' => $request->validated('alamat'),
+                'logo' => $request->file('logo'),
+            ]);
+        } catch (\DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
         return redirect()->route('pengaturan.edit')->with('success', 'Identitas koperasi berhasil disimpan.');
     }

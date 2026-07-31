@@ -61,10 +61,12 @@ $kondisi = $barang->kondisiTerakhir?->kondisi ?? 'Belum diperiksa';
             <div class="col-lg-7">
                 <x-data-table title="Riwayat Kondisi" subtitle="Catatan pemeriksaan dan biaya perbaikan." class="h-100">
                     <x-slot:toolbar>
+                        @can('catatKondisi', $barang)
                         <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="modal" data-bs-target="#modalCatatKondisi">
                             <i class="bi bi-plus-circle"></i>
                             Catat Kondisi
                         </button>
+                        @endcan
                     </x-slot:toolbar>
                         <table class="table table-hover align-middle mb-0">
                             <thead>
@@ -133,10 +135,12 @@ $kondisi = $barang->kondisiTerakhir?->kondisi ?? 'Belum diperiksa';
             <div class="col-12">
                 <x-section-card title="Foto Pendukung" subtitle="Dokumentasi visual kondisi dan identitas barang.">
                     <x-slot:actions>
+                        @can('kelolaFoto', $barang)
                         <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="modal" data-bs-target="#modalUploadFoto">
                             <i class="bi bi-plus-circle"></i>
                             Upload Foto
                         </button>
+                        @endcan
                     </x-slot:actions>
                     <div class="media-gallery">
                         @forelse($barang->fotoPendukung as $foto)
@@ -149,12 +153,14 @@ $kondisi = $barang->kondisiTerakhir?->kondisi ?? 'Belum diperiksa';
                             @if($foto->keterangan)
                             <div class="small text-body-secondary text-truncate mt-2" title="{{ $foto->keterangan }}">{{ $foto->keterangan }}</div>
                             @endif
+                            @can('kelolaFoto', $barang)
                             <x-delete-button
                                 :url="route('barang.foto.destroy', [$barang, $foto])"
                                 message="Yakin ingin menghapus foto pendukung ini?"
                                 label="Hapus foto pendukung"
                                 class="mt-1"
                             />
+                            @endcan
                         </div>
                         @empty
                         <x-empty-state icon="bi-images" title="Belum ada foto" class="w-100">
@@ -170,10 +176,12 @@ $kondisi = $barang->kondisiTerakhir?->kondisi ?? 'Belum diperiksa';
             <div class="col-12">
                 <x-data-table title="Dokumen Pendukung">
                     <x-slot:toolbar>
+                        @can('kelolaDokumen', $barang)
                         <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="modal" data-bs-target="#modalUploadDokumen">
                             <i class="bi bi-plus-circle"></i>
                             Unggah Dokumen
                         </button>
+                        @endcan
                     </x-slot:toolbar>
                     <table class="table table-hover align-middle mb-0">
                         <thead>
@@ -200,11 +208,13 @@ $kondisi = $barang->kondisiTerakhir?->kondisi ?? 'Belum diperiksa';
                                             title="Lihat/Unduh">
                                             <i class="bi bi-eye"></i>
                                         </a>
+                                        @can('kelolaDokumen', $barang)
                                         <x-delete-button
                                             :url="route('barang.dokumen.destroy', [$barang, $dokumen])"
                                             :message="'Yakin ingin menghapus dokumen &quot;'.$dokumen->nama_asli.'&quot;?'"
                                             :label="'Hapus '.$dokumen->nama_asli"
                                         />
+                                        @endcan
                                     </div>
                                 </td>
                             </tr>

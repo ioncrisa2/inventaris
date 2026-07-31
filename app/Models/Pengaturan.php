@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToKoperasi;
 use Illuminate\Database\Eloquent\Model;
 
 class Pengaturan extends Model
 {
+    use BelongsToKoperasi;
+
     protected $table = 'pengaturan';
 
     protected $fillable = ['key', 'value'];

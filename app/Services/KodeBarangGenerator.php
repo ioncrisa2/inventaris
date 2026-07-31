@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Pengaturan;
 use App\Repositories\BarangRepository;
 use App\Repositories\UnitKerjaRepository;
+use App\Support\CurrentTenant;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -34,8 +35,15 @@ class KodeBarangGenerator
         return Pengaturan::get('format_kode_barang', self::DEFAULT_TEMPLATE);
     }
 
+    /**
+     * @throws \DomainException Jika aktor super_admin — format kode barang
+     *                          khusus per koperasi, super_admin tidak
+     *                          terikat koperasi manapun untuk disimpan.
+     */
     public function simpanTemplate(string $template): void
     {
+        $this->ensureBukanSuperAdmin();
+
         DB::transaction(fn () => Pengaturan::set('format_kode_barang', $template), 3);
     }
 
@@ -44,12 +52,31 @@ class KodeBarangGenerator
         return (int) Pengaturan::get('digit_nomor_urut', (string) self::DEFAULT_SEQUENCE_DIGITS);
     }
 
+    /**
+     * @throws \DomainException Jika aktor super_admin.
+     */
     public function simpanPengaturan(string $template, int $sequenceDigits): void
     {
+        $this->ensureBukanSuperAdmin();
+
         DB::transaction(function () use ($template, $sequenceDigits) {
             Pengaturan::set('format_kode_barang', $template);
             Pengaturan::set('digit_nomor_urut', (string) $sequenceDigits);
         }, 3);
+    }
+
+    /**
+     * Guard tulis (bukan baca — lihat catatan di HariOperasionalService)
+     * supaya super_admin yang login sungguhan tidak menimpa format kode
+     * barang milik koperasi lain secara tidak sengaja.
+     *
+     * @throws \DomainException
+     */
+    private function ensureBukanSuperAdmin(): void
+    {
+        if (CurrentTenant::isSuperAdmin()) {
+            throw new \DomainException('Penomoran inventaris khusus per koperasi, dikelola oleh admin_primer masing-masing koperasi.');
+        }
     }
 
     /**
@@ -99,14 +126,18 @@ class KodeBarangGenerator
     private function pengaturanTerkunci(): array
     {
         $waktu = now();
+        $koperasiId = auth()->user()?->koperasi_id;
+
         Pengaturan::query()->insertOrIgnore([
             [
+                'koperasi_id' => $koperasiId,
                 'key' => 'digit_nomor_urut',
                 'value' => (string) self::DEFAULT_SEQUENCE_DIGITS,
                 'created_at' => $waktu,
                 'updated_at' => $waktu,
             ],
             [
+                'koperasi_id' => $koperasiId,
                 'key' => 'format_kode_barang',
                 'value' => self::DEFAULT_TEMPLATE,
                 'created_at' => $waktu,

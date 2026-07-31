@@ -20,7 +20,8 @@ class SlipGajiTemplateController extends Controller
             'defaultConfiguration' => SlipGajiTemplateSchema::default(),
             'fontFamilies' => SlipGajiTemplateSchema::FONT_FAMILIES,
             'colors' => SlipGajiTemplateSchema::COLORS,
-            'canUpdate' => $request->user()->can('pengaturan.update'),
+            'canEdit' => $request->user()->can('pengaturan.slip-gaji.update'),
+            'canPublish' => $request->user()->can('pengaturan.slip-gaji.publish'),
         ]);
     }
 

@@ -27,6 +27,8 @@
             <option value="nominal_tetap" @selected($baris['metode'] === 'nominal_tetap')>Nominal Tetap</option>
             <option value="persentase" @selected($baris['metode'] === 'persentase')>Persentase</option>
             <option value="per_hari" @selected($baris['metode'] === 'per_hari')>Per Hari (Range Tanggal)</option>
+            <option value="harian_sehari" @selected($baris['metode'] === 'harian_sehari')>Harian (Sehari)</option>
+            <option value="harian_manual" @selected($baris['metode'] === 'harian_manual')>Harian (Dikali Jumlah Hari)</option>
         </select>
     </td>
     <td>
@@ -44,8 +46,31 @@
             <span class="input-group-text d-none" id="{{ $idAwalan }}_suffix">%</span>
         </div>
         <div class="salary-date-range mt-2 {{ $baris['metode'] === 'per_hari' ? '' : 'd-none' }}" id="{{ $idAwalan }}_rentang">
-            <x-form.input name="{{ $namaField }}[tanggal_awal]" type="date" label="Dari Tanggal" :value="$baris['tanggal_awal'] ?? null" />
-            <x-form.input name="{{ $namaField }}[tanggal_akhir]" type="date" label="Sampai Tanggal" :value="$baris['tanggal_akhir'] ?? null" />
+            <x-form.date-range
+                name-awal="{{ $namaField }}[tanggal_awal]"
+                name-akhir="{{ $namaField }}[tanggal_akhir]"
+                label="Periode"
+                :value-awal="$baris['tanggal_awal'] ?? null"
+                :value-akhir="$baris['tanggal_akhir'] ?? null"
+            />
+        </div>
+        <div class="salary-single-date mt-2 {{ $baris['metode'] === 'harian_sehari' ? '' : 'd-none' }}" id="{{ $idAwalan }}_tanggal_tunggal">
+            <x-form.input
+                name="{{ $namaField }}[tanggal]"
+                type="date"
+                label="Tanggal"
+                :value="$baris['tanggal'] ?? null"
+            />
+        </div>
+        <div class="salary-jumlah-hari mt-2 {{ $baris['metode'] === 'harian_manual' ? '' : 'd-none' }}" id="{{ $idAwalan }}_jumlah_hari">
+            <x-form.input
+                name="{{ $namaField }}[jumlah_hari]"
+                type="number"
+                label="Jumlah Hari"
+                :value="$baris['jumlah_hari'] ?? null"
+                min="1"
+                max="366"
+            />
         </div>
     </td>
     @else
@@ -58,8 +83,38 @@
         @elseif($baris['metode'] === 'per_hari')
             Rp {{ number_format($baris['nilai'], 0, ',', '.') }} /hari
             <div class="salary-date-range mt-2">
-                <x-form.input name="{{ $namaField }}[tanggal_awal]" type="date" label="Dari Tanggal" :value="$baris['tanggal_awal'] ?? null" required />
-                <x-form.input name="{{ $namaField }}[tanggal_akhir]" type="date" label="Sampai Tanggal" :value="$baris['tanggal_akhir'] ?? null" required />
+                <x-form.date-range
+                    name-awal="{{ $namaField }}[tanggal_awal]"
+                    name-akhir="{{ $namaField }}[tanggal_akhir]"
+                    label="Periode"
+                    :value-awal="$baris['tanggal_awal'] ?? null"
+                    :value-akhir="$baris['tanggal_akhir'] ?? null"
+                    required
+                />
+            </div>
+        @elseif($baris['metode'] === 'harian_sehari')
+            Rp {{ number_format($baris['nilai'], 0, ',', '.') }} /hari
+            <div class="salary-single-date mt-2">
+                <x-form.input
+                    name="{{ $namaField }}[tanggal]"
+                    type="date"
+                    label="Tanggal"
+                    :value="$baris['tanggal'] ?? null"
+                    required
+                />
+            </div>
+        @elseif($baris['metode'] === 'harian_manual')
+            Rp {{ number_format($baris['nilai'], 0, ',', '.') }} /hari
+            <div class="salary-jumlah-hari mt-2">
+                <x-form.input
+                    name="{{ $namaField }}[jumlah_hari]"
+                    type="number"
+                    label="Jumlah Hari"
+                    :value="$baris['jumlah_hari'] ?? null"
+                    min="1"
+                    max="366"
+                    required
+                />
             </div>
         @else
             Rp {{ number_format($baris['nilai'], 0, ',', '.') }}

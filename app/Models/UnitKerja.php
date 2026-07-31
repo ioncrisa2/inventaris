@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToKoperasi;
 use Illuminate\Database\Eloquent\Model;
 
 class UnitKerja extends Model
 {
+    use BelongsToKoperasi;
+
     protected $table = 'unit_kerja';
 
     protected $fillable = ['nama_unit', 'kode'];

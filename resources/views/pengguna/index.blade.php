@@ -40,7 +40,7 @@
                         <select class="form-select" id="role" name="role">
                             <option value="">Semua role</option>
                             @foreach($roles as $r)
-                                <option value="{{ $r->name }}" @selected(request('role') === $r->name)>{{ $r->name }}</option>
+                                <option value="{{ $r->name }}" @selected(request('role') === $r->name)>{{ $r->displayName() }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -77,11 +77,11 @@
                             <tr>
                                 @can('pengguna.delete')
                                 <td class="selection-column">
-                                    @unless($data->is(auth()->user()))
+                                    @if(! $data->is(auth()->user()) && auth()->user()->can('delete', $data))
                                         <x-table-checkbox group="pengguna" :value="$data->id" :label="'Pilih '.$data->name" />
                                     @else
-                                        <i class="bi bi-lock text-body-tertiary" aria-label="Akun aktif tidak dapat dipilih"></i>
-                                    @endunless
+                                        <i class="bi bi-lock text-body-tertiary" aria-label="Akun ini tidak dapat dipilih"></i>
+                                    @endif
                                 </td>
                                 @endcan
                                 <td><strong>{{ $data->name }}</strong></td>
@@ -89,14 +89,14 @@
                                 <td>{{ $data->unitKerja?->nama_unit ?? '-' }}</td>
                                 <td>
                                     @forelse($data->roles as $role)
-                                        <x-badge color="bg-primary">{{ $role->name }}</x-badge>
+                                        <x-badge color="bg-primary">{{ $role->displayName() }}</x-badge>
                                     @empty
                                         <x-badge color="bg-secondary">Belum ada role</x-badge>
                                     @endforelse
                                 </td>
                                 <td class="text-nowrap">
                                     <div class="table-actions">
-                                        @can('pengguna.update')
+                                        @can('update', $data)
                                         <a
                                             class="btn btn-sm btn-action btn-action-neutral"
                                             href="{{ route('pengguna.edit', $data) }}"
@@ -106,7 +106,7 @@
                                             <i class="bi bi-pencil"></i>
                                         </a>
                                         @endcan
-                                        @can('pengguna.delete')
+                                        @can('delete', $data)
                                         @unless($data->is(auth()->user()))
                                         <x-delete-button
                                             :url="route('pengguna.destroy', $data)"

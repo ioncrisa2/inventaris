@@ -32,7 +32,15 @@ class StoreTransaksiGajiRequest extends FormRequest
             'tahun' => ['required', 'integer', 'digits:4'],
             'baris' => ['required', 'array', 'min:1'],
             'baris.*' => ['array'],
-            'baris.*.pakai' => ['nullable', 'accepted'],
+            // 'accepted' itu implicit rule (tetap dievaluasi walau field-nya
+            // sama sekali tidak ada di input) — dikombinasikan dengan
+            // 'nullable' tetap gagal untuk baris master yang checkbox-nya
+            // TIDAK dicentang tapi field tanggal/jumlah_hari-nya tetap ikut
+            // terkirim kosong (selalu dirender di _baris.blade.php terlepas
+            // status checkbox). 'in:1' bukan implicit rule, jadi baru
+            // dievaluasi kalau memang ada isinya — perilaku yang benar-benar
+            // "opsional" yang dimaksud oleh 'nullable' di sini.
+            'baris.*.pakai' => ['nullable', 'in:1'],
         ];
     }
 
@@ -119,6 +127,16 @@ class StoreTransaksiGajiRequest extends FormRequest
                             continue;
                         }
 
+                        if ($komponenMaster->metode_perhitungan === 'harian_sehari'
+                            && ! $this->validasiTanggalTunggal($validator, $kunci, $row)) {
+                            continue;
+                        }
+
+                        if ($komponenMaster->metode_perhitungan === 'harian_manual'
+                            && ! $this->validasiJumlahHariManual($validator, $kunci, $row)) {
+                            continue;
+                        }
+
                         $adaBarisSah = true;
 
                         continue;
@@ -152,12 +170,18 @@ class StoreTransaksiGajiRequest extends FormRequest
 
                     if ($metode === 'per_hari') {
                         $this->validasiRentangTanggal($validator, $kunci, $row);
+                    } elseif ($metode === 'harian_sehari') {
+                        $this->validasiTanggalTunggal($validator, $kunci, $row);
+                    } elseif ($metode === 'harian_manual') {
+                        $this->validasiJumlahHariManual($validator, $kunci, $row);
                     }
 
                     if (! $validator->errors()->has("baris.{$kunci}.metode_perhitungan")
                         && ! $validator->errors()->has("baris.{$kunci}.nilai")
                         && ! $validator->errors()->has("baris.{$kunci}.tanggal_awal")
-                        && ! $validator->errors()->has("baris.{$kunci}.tanggal_akhir")) {
+                        && ! $validator->errors()->has("baris.{$kunci}.tanggal_akhir")
+                        && ! $validator->errors()->has("baris.{$kunci}.tanggal")
+                        && ! $validator->errors()->has("baris.{$kunci}.jumlah_hari")) {
                         $adaBarisSah = true;
                     }
                 }
@@ -185,6 +209,60 @@ class StoreTransaksiGajiRequest extends FormRequest
             'tanggal_akhir.required' => 'Tanggal akhir wajib diisi.',
             'tanggal_akhir.date' => 'Tanggal akhir tidak valid.',
             'tanggal_akhir.after_or_equal' => 'Tanggal akhir tidak boleh sebelum tanggal awal.',
+        ]);
+
+        if ($subValidator->fails()) {
+            foreach ($subValidator->errors()->messages() as $field => $messages) {
+                foreach ($messages as $message) {
+                    $validator->errors()->add("baris.{$kunci}.{$field}", $message);
+                }
+            }
+
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Validasi tanggal tunggal untuk baris dengan metode harian_sehari.
+     * Sama seperti validasiRentangTanggal(), dipakai untuk baris master
+     * maupun custom karena tanggalnya memang input per-transaksi.
+     */
+    private function validasiTanggalTunggal(Validator $validator, string $kunci, array $row): bool
+    {
+        $subValidator = ValidatorFacade::make($row, [
+            'tanggal' => ['required', 'date'],
+        ], [
+            'tanggal.required' => 'Tanggal wajib diisi.',
+            'tanggal.date' => 'Tanggal tidak valid.',
+        ]);
+
+        if ($subValidator->fails()) {
+            foreach ($subValidator->errors()->messages() as $field => $messages) {
+                foreach ($messages as $message) {
+                    $validator->errors()->add("baris.{$kunci}.{$field}", $message);
+                }
+            }
+
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Validasi jumlah hari manual untuk baris dengan metode harian_manual.
+     */
+    private function validasiJumlahHariManual(Validator $validator, string $kunci, array $row): bool
+    {
+        $subValidator = ValidatorFacade::make($row, [
+            'jumlah_hari' => ['required', 'integer', 'min:1', 'max:366'],
+        ], [
+            'jumlah_hari.required' => 'Jumlah hari wajib diisi.',
+            'jumlah_hari.integer' => 'Jumlah hari harus berupa angka bulat.',
+            'jumlah_hari.min' => 'Jumlah hari minimal 1.',
+            'jumlah_hari.max' => 'Jumlah hari maksimal 366.',
         ]);
 
         if ($subValidator->fails()) {

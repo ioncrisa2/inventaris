@@ -92,12 +92,16 @@
                                     <span class="text-body-secondary small">(dasar: gaji pokok)</span>
                                 @elseif($data->metode_perhitungan === 'per_hari')
                                     <span class="text-body-secondary small">(dikali jumlah hari sesuai rentang tanggal yang diinput saat transaksi dibuat)</span>
+                                @elseif($data->metode_perhitungan === 'harian_sehari')
+                                    <span class="text-body-secondary small">(dipakai sekali untuk satu tanggal yang diinput saat transaksi dibuat)</span>
+                                @elseif($data->metode_perhitungan === 'harian_manual')
+                                    <span class="text-body-secondary small">(dikali jumlah hari yang diketik manual saat transaksi dibuat)</span>
                                 @endif
                             </td>
                             <td class="text-end">
                                 @if($data->metode_perhitungan === 'persentase')
                                     {{ rtrim(rtrim($data->nilai_default, '0'), '.') }}%
-                                @elseif($data->metode_perhitungan === 'per_hari')
+                                @elseif(in_array($data->metode_perhitungan, ['per_hari', 'harian_sehari', 'harian_manual'], true))
                                     Rp {{ number_format($data->nilai_default, 0, ',', '.') }} /hari
                                 @else
                                     Rp {{ number_format($data->nilai_default, 0, ',', '.') }}
@@ -195,6 +199,8 @@
                                 <option value="nominal_tetap" @selected(($mode === 'create' ? $createOld('metode_perhitungan', 'nominal_tetap') : $editOld('metode_perhitungan', 'nominal_tetap')) === 'nominal_tetap')>Nominal Tetap</option>
                                 <option value="persentase" @selected(($mode === 'create' ? $createOld('metode_perhitungan', 'nominal_tetap') : $editOld('metode_perhitungan', 'nominal_tetap')) === 'persentase')>Persentase</option>
                                 <option value="per_hari" @selected(($mode === 'create' ? $createOld('metode_perhitungan', 'nominal_tetap') : $editOld('metode_perhitungan', 'nominal_tetap')) === 'per_hari')>Per Hari (Range Tanggal)</option>
+                                <option value="harian_sehari" @selected(($mode === 'create' ? $createOld('metode_perhitungan', 'nominal_tetap') : $editOld('metode_perhitungan', 'nominal_tetap')) === 'harian_sehari')>Harian (Sehari)</option>
+                                <option value="harian_manual" @selected(($mode === 'create' ? $createOld('metode_perhitungan', 'nominal_tetap') : $editOld('metode_perhitungan', 'nominal_tetap')) === 'harian_manual')>Harian (Dikali Jumlah Hari)</option>
                             </select>
                             @if($mode === 'create' ? $createErr('metode_perhitungan') : $editErr('metode_perhitungan'))
                                 <div class="invalid-feedback d-block">{{ $errors->first('metode_perhitungan') }}</div>

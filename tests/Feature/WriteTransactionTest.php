@@ -1,20 +1,24 @@
 <?php
 
+use App\Models\Koperasi;
 use App\Models\Pengaturan;
+use App\Models\Role;
 use App\Models\User;
 use App\Services\KodeBarangGenerator;
 use App\Services\RoleService;
 use App\Services\UserService;
+use Database\Seeders\DemoStaffRoleSeeder;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Exceptions\PermissionDoesNotExist;
 use Spatie\Permission\Exceptions\RoleDoesNotExist;
-use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
 test('pembuatan pengguna dibatalkan jika sinkronisasi role gagal', function () {
-    expect(fn () => app(UserService::class)->store([
+    $actor = User::factory()->create();
+
+    expect(fn () => app(UserService::class)->store($actor, [
         'name' => 'Pengguna Transaksi',
         'email' => 'transaction@example.com',
         'password' => 'password',
@@ -26,10 +30,12 @@ test('pembuatan pengguna dibatalkan jika sinkronisasi role gagal', function () {
 
 test('perubahan pengguna dibatalkan jika sinkronisasi role gagal', function () {
     $this->seed(PermissionSeeder::class);
+    $this->seed(DemoStaffRoleSeeder::class);
+    $actor = User::factory()->create();
     $user = User::factory()->create(['name' => 'Nama Lama', 'email' => 'lama@example.com']);
     $user->assignRole('Staff');
 
-    expect(fn () => app(UserService::class)->update($user, [
+    expect(fn () => app(UserService::class)->update($actor, $user, [
         'name' => 'Nama Baru',
         'email' => 'baru@example.com',
         'password' => '',
@@ -43,9 +49,12 @@ test('perubahan pengguna dibatalkan jika sinkronisasi role gagal', function () {
 
 test('pembuatan dan perubahan role bersifat atomik', function () {
     $this->seed(PermissionSeeder::class);
+    $actor = tap(User::factory()->create())->assignRole('super_admin');
+    $koperasi = Koperasi::create(['nama' => 'Koperasi Atomik']);
 
-    expect(fn () => app(RoleService::class)->store([
+    expect(fn () => app(RoleService::class)->store($actor, [
         'name' => 'Role Gagal',
+        'koperasi_id' => $koperasi->id,
         'permissions' => ['permission.tidak-ada'],
     ]))->toThrow(PermissionDoesNotExist::class);
     $this->assertDatabaseMissing('roles', ['name' => 'Role Gagal']);

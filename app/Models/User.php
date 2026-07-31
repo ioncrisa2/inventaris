@@ -7,6 +7,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
@@ -21,6 +22,31 @@ class User extends Authenticatable
     protected $with = [
         'unitKerja',
     ];
+
+    /**
+     * User SENGAJA TIDAK pakai trait BelongsToKoperasi (tidak ada global
+     * scope) — beda dari model tenant lain. Auth::user() me-resolve User
+     * lewat query (User::find($id) di provider sesi); kalau query itu kena
+     * KoperasiScope, apply()-nya butuh manggil auth()->user() buat cek
+     * isSuperAdmin(), yang mana masih dalam proses di-resolve -> guard
+     * belum sempat cache $this->user -> query User lagi -> rekursi tanpa
+     * henti sampai kehabisan memory. Sama persis kelas masalah yang sudah
+     * didokumentasikan di App\Models\Role. Listing user per-koperasi difilter
+     * eksplisit lewat CurrentTenant::scopeQuery() (lihat UserRepository).
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (User $user) {
+            if ($user->koperasi_id === null && auth()->check()) {
+                $user->koperasi_id = auth()->user()->koperasi_id;
+            }
+        });
+    }
+
+    public function koperasi(): BelongsTo
+    {
+        return $this->belongsTo(Koperasi::class);
+    }
 
     /**
      * Get the attributes that should be cast.
@@ -39,6 +65,20 @@ class User extends Authenticatable
     public function unitKerja()
     {
         return $this->belongsTo(UnitKerja::class);
+    }
+
+    /**
+     * super_admin bersifat global (lintas koperasi) — dipakai KoperasiScope
+     * untuk bypass filter tenant. Role ini baru benar-benar di-seed di Fase 4.
+     */
+    public function isSuperAdmin(): bool
+    {
+        return $this->hasRole('super_admin');
+    }
+
+    public function isAdminPrimer(): bool
+    {
+        return $this->hasRole('admin_primer');
     }
 
     /**

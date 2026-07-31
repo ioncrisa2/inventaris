@@ -6,12 +6,12 @@
 <x-app-page>
         <x-page-header title="Role & Hak Akses">
             <x-slot:actions>
-                @can('role.create')
+                @if(auth()->user()->isSuperAdmin())
                 <a class="btn btn-primary" href="{{ route('role.create') }}">
                     <i class="bi bi-shield-plus"></i>
                     Tambah Role
                 </a>
-                @endcan
+                @endif
             </x-slot:actions>
         </x-page-header>
 
@@ -22,6 +22,9 @@
                     <thead>
                         <tr>
                             <th>Nama Role</th>
+                            @if(auth()->user()->isSuperAdmin())
+                            <th>Koperasi</th>
+                            @endif
                             <th class="text-end table-col-width-120">Jumlah Permission</th>
                             <th class="text-end table-col-width-120">Jumlah Pengguna</th>
                             <th class="text-nowrap table-col-width-100">Aksi</th>
@@ -30,7 +33,10 @@
                     <tbody>
                         @forelse($roles as $role)
                             <tr>
-                                <td><strong>{{ $role->name }}</strong></td>
+                                <td><strong>{{ $role->displayName() }}</strong></td>
+                                @if(auth()->user()->isSuperAdmin())
+                                <td>{{ $role->koperasi?->nama ?? 'Global' }}</td>
+                                @endif
                                 <td class="text-end">{{ $role->permissions_count }}</td>
                                 <td class="text-end">{{ $role->users_count }}</td>
                                 <td class="text-nowrap">
@@ -39,24 +45,24 @@
                                         <a
                                             class="btn btn-sm btn-action btn-action-neutral"
                                             href="{{ route('role.edit', $role) }}"
-                                            aria-label="Edit {{ $role->name }}"
+                                            aria-label="Edit {{ $role->displayName() }}"
                                             title="Edit"
                                         >
                                             <i class="bi bi-pencil"></i>
                                         </a>
                                         @endcan
-                                        @can('role.delete')
+                                        @if(auth()->user()->isSuperAdmin())
                                         <x-delete-button
                                             :url="route('role.destroy', $role)"
-                                            :message="'Yakin ingin menghapus role &quot;'.$role->name.'&quot;?'"
-                                            :label="'Hapus '.$role->name"
+                                            :message="'Yakin ingin menghapus role &quot;'.$role->displayName().'&quot;?'"
+                                            :label="'Hapus '.$role->displayName()"
                                         />
-                                        @endcan
+                                        @endif
                                     </div>
                                 </td>
                             </tr>
                         @empty
-                            <x-empty-row :colspan="4">Belum ada role terdaftar.</x-empty-row>
+                            <x-empty-row :colspan="auth()->user()->isSuperAdmin() ? 5 : 4">Belum ada role terdaftar.</x-empty-row>
                         @endforelse
                     </tbody>
                 </table>

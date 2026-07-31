@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToKoperasi;
 use Illuminate\Database\Eloquent\Model;
 
 class TemplateSlipGaji extends Model
 {
+    use BelongsToKoperasi;
+
     protected $table = 'template_slip_gaji';
 
     protected $fillable = [
