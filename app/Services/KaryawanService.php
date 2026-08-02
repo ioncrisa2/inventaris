@@ -3,11 +3,13 @@
 namespace App\Services;
 
 use App\Models\Karyawan;
+use App\Models\UnitKerja;
 use App\Repositories\KaryawanRepository;
 use App\Support\PerPage;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class KaryawanService
 {
@@ -32,6 +34,8 @@ class KaryawanService
      */
     public function store(array $data): Karyawan
     {
+        $this->ensureRelasiTenantValid($data);
+
         return DB::transaction(function () use ($data) {
             $dokumenBaris = $this->dokumenTerisi($data);
             unset($data['dokumen']);
@@ -166,5 +170,22 @@ class KaryawanService
         $bulan = (int) $mulai->copy()->addYears($tahun)->diffInMonths($akhir);
 
         return "{$tahun} tahun {$bulan} bulan";
+    }
+
+    private function ensureRelasiTenantValid(array $data): void
+    {
+        if (! UnitKerja::query()->whereKey((int) $data['unit_kerja_id'])->exists()) {
+            throw ValidationException::withMessages([
+                'unit_kerja_id' => 'Unit kerja tidak tersedia dalam koperasi Anda.',
+            ]);
+        }
+
+        $atasanId = $data['atasan_langsung_id'] ?? null;
+
+        if ($atasanId !== null && ! Karyawan::query()->whereKey((int) $atasanId)->exists()) {
+            throw ValidationException::withMessages([
+                'atasan_langsung_id' => 'Atasan langsung tidak tersedia dalam koperasi Anda.',
+            ]);
+        }
     }
 }

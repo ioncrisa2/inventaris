@@ -11,11 +11,9 @@ use Spatie\Permission\PermissionRegistrar;
 class PermissionSeeder extends Seeder
 {
     /**
-     * Seed katalog permission + role sistem `super_admin` (global, semua
-     * permission). Role per-koperasi seperti `admin_primer` TIDAK di-seed
-     * di sini — itu dibuat saat sebuah koperasi di-provisioning (lihat
-     * docs/multi-tenant-koperasi.md), karena role tersebut terikat ke satu
-     * koperasi tertentu, bukan role global.
+     * Seed katalog permission + role `super_admin` global. Super admin hanya
+     * mendapat akses control-plane dan baca lintas koperasi; permission
+     * mutasi operasional tetap milik role tenant seperti admin_primer.
      */
     public function run(): void
     {
@@ -33,8 +31,21 @@ class PermissionSeeder extends Seeder
             ->whereIn('name', $semuaPermission)
             ->get();
 
-        Role::findOrCreate('super_admin', 'web')
-            ->syncPermissions($permissionModels);
+        $superAdminRole = Role::query()
+            ->where('name', 'super_admin')
+            ->where('guard_name', 'web')
+            ->whereNull('koperasi_id')
+            ->first();
+
+        if (! $superAdminRole) {
+            $superAdminRole = new Role(['name' => 'super_admin', 'guard_name' => 'web']);
+            $superAdminRole->koperasi_id = null;
+            $superAdminRole->save();
+        }
+
+        $superAdminRole->syncPermissions(
+            $permissionModels->whereIn('name', PermissionCatalog::superAdminTemplate())
+        );
 
         $registrar->forgetCachedPermissions();
     }

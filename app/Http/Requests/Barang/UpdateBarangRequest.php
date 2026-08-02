@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Barang;
 
+use App\Support\TenantRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -20,7 +21,10 @@ class UpdateBarangRequest extends FormRequest
             'nama_barang' => ['required', 'string', 'max:255'],
             'kategori' => ['required', Rule::in(config('inventaris.kategori'))],
             'jenis_barang' => ['required', 'string', 'max:255', Rule::in($jenisBarang)],
-            'unit_kerja_id' => ['required', Rule::exists('unit_kerja', 'id')],
+            'unit_kerja_id' => [
+                'required',
+                TenantRule::existsFor('unit_kerja', 'id', $this->route('barang')?->koperasi_id),
+            ],
             'tanggal_perolehan' => ['required', 'date', 'before_or_equal:today'],
             'harga_perolehan' => ['required', 'numeric', 'min:0'],
             'foto_sampul' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],

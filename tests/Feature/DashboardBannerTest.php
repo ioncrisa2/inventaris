@@ -1,12 +1,11 @@
 <?php
 
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
 test('dashboard shows a compact welcome banner until the user dismisses it', function () {
-    $user = User::factory()->create();
+    $user = adminUser();
 
     $this->actingAs($user)
         ->get(route('dashboard'))
@@ -19,8 +18,8 @@ test('dashboard shows a compact welcome banner until the user dismisses it', fun
 });
 
 test('dismissing the dashboard banner is stored for the authenticated user only', function () {
-    $user = User::factory()->create();
-    $otherUser = User::factory()->create();
+    $user = adminUser();
+    $otherUser = adminUser();
 
     $this->actingAs($user)
         ->patch(route('dashboard.banner.dismiss'))
@@ -58,7 +57,7 @@ test('dashboard banner actions and quick guide require authentication', function
 });
 
 test('dismissing the banner preserves the selected dashboard period', function () {
-    $user = User::factory()->create();
+    $user = adminUser();
 
     $this->actingAs($user)
         ->patch(route('dashboard.banner.dismiss'), ['periode' => '2026-05-25'])
@@ -68,7 +67,7 @@ test('dismissing the banner preserves the selected dashboard period', function (
 });
 
 test('authenticated users can open the quick guide as a separate page', function () {
-    $this->actingAs(User::factory()->create())
+    $this->actingAs(adminUser())
         ->get(route('panduan-singkat'))
         ->assertOk()
         ->assertSee('Panduan Singkat')

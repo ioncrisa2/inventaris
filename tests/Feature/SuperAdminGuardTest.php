@@ -24,7 +24,7 @@ test('non super admin cannot create a role even via direct request', function ()
 
 test('non super admin cannot delete a role even with role.delete permission', function () {
     $this->seed(PermissionSeeder::class);
-    $superAdmin = adminUser();
+    $superAdmin = superAdminUser();
     $koperasi = Koperasi::create(['nama' => 'Koperasi Guard']);
     $role = app(RoleService::class)->store($superAdmin, [
         'name' => 'Role Untuk Dihapus',
@@ -46,20 +46,24 @@ test('non super admin cannot assign super_admin role to a user', function () {
     $this->seed(PermissionSeeder::class);
     $staff = staffUser();
     $staff->givePermissionTo(['pengguna.create', 'pengguna.update']);
-    $target = staffUser();
+    $target = staffUser(['koperasi_id' => $staff->koperasi_id]);
+    $superAdminRole = Role::query()
+        ->where('name', 'super_admin')
+        ->whereNull('koperasi_id')
+        ->firstOrFail();
 
     $this->actingAs($staff)
         ->put(route('pengguna.update', $target), [
             'name' => $target->name,
             'email' => $target->email,
-            'role' => 'super_admin',
+            'role_id' => $superAdminRole->id,
         ])->assertRedirect();
 
     expect($target->fresh()->hasRole('super_admin'))->toBeFalse();
 });
 
 test('super admin can still create and delete roles normally', function () {
-    $superAdmin = adminUser();
+    $superAdmin = superAdminUser();
     $koperasi = Koperasi::create(['nama' => 'Koperasi Sah']);
 
     $this->actingAs($superAdmin)

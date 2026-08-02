@@ -33,8 +33,10 @@ class RoleService
         }, 3);
     }
 
-    public function update(Role $role, array $data): Role
+    public function update(User $actor, Role $role, array $data): Role
     {
+        $this->ensureActorCanUpdate($actor, $role);
+
         return DB::transaction(function () use ($role, $data) {
             $this->roleRepository->update($role, $data['name']);
             $role->syncPermissions($data['permissions']);
@@ -69,6 +71,10 @@ class RoleService
             }
 
             $roles->each(function (Role $role) {
+                if ($role->isSystem()) {
+                    throw new \DomainException('Role sistem tidak dapat dihapus.');
+                }
+
                 $atribut = $role->getAttributes();
                 if ((bool) $atribut['users_exists']) {
                     throw new \DomainException('Role tidak dapat dihapus karena masih dipakai oleh pengguna. Pindahkan pengguna ke role lain terlebih dahulu.');
@@ -92,6 +98,22 @@ class RoleService
     {
         if (! $actor->isSuperAdmin()) {
             throw new \DomainException('Hanya super admin yang dapat membuat atau menghapus role.');
+        }
+    }
+
+    /**
+     * Role sistem adalah jangkar identitas keamanan dan tidak boleh diedit
+     * lewat UI. Role tenant biasa hanya dapat diubah oleh aktor tenant yang
+     * sama atau oleh super admin global.
+     */
+    private function ensureActorCanUpdate(User $actor, Role $role): void
+    {
+        if ($role->isSystem()) {
+            throw new \DomainException('Role sistem tidak dapat diubah.');
+        }
+
+        if (! $actor->isSuperAdmin() && (int) $role->koperasi_id !== (int) $actor->koperasi_id) {
+            throw new \DomainException('Role tidak berada dalam koperasi Anda.');
         }
     }
 }

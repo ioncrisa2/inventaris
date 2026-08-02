@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Laporan;
 
+use App\Support\TenantRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class AbsensiLaporanRequest extends FormRequest
 {
@@ -19,7 +19,7 @@ class AbsensiLaporanRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'karyawan_id' => ['nullable', Rule::exists('karyawan', 'id')],
+            'karyawan_id' => ['nullable', TenantRule::exists('karyawan')],
             'bulan' => ['nullable', 'integer', 'between:1,12'],
             'tahun' => ['nullable', 'integer', 'digits:4'],
         ];

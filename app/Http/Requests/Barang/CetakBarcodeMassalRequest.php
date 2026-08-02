@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Barang;
 
+use App\Support\TenantRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class CetakBarcodeMassalRequest extends FormRequest
@@ -15,7 +16,7 @@ class CetakBarcodeMassalRequest extends FormRequest
     {
         return [
             'barang_ids' => ['required', 'array', 'min:1', 'max:100'],
-            'barang_ids.*' => ['required', 'integer', 'distinct', 'exists:barang,id'],
+            'barang_ids.*' => ['required', 'integer', 'distinct', TenantRule::exists('barang')],
         ];
     }
 

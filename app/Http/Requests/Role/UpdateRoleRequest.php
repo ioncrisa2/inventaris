@@ -6,7 +6,13 @@ class UpdateRoleRequest extends StoreRoleRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('role.update');
+        $user = $this->user();
+        $role = $this->route('role');
+
+        return $user->can('role.update')
+            && $role !== null
+            && ! $role->isSystem()
+            && ($user->isSuperAdmin() || $role->koperasi_id === $user->koperasi_id);
     }
 
     protected function roleId(): ?int

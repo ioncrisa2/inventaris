@@ -41,7 +41,7 @@
                                 <td class="text-end">{{ $role->users_count }}</td>
                                 <td class="text-nowrap">
                                     <div class="table-actions">
-                                        @can('role.update')
+                                        @if(auth()->user()->can('role.update') && ! $role->isSystem())
                                         <a
                                             class="btn btn-sm btn-action btn-action-neutral"
                                             href="{{ route('role.edit', $role) }}"
@@ -50,8 +50,8 @@
                                         >
                                             <i class="bi bi-pencil"></i>
                                         </a>
-                                        @endcan
-                                        @if(auth()->user()->isSuperAdmin())
+                                        @endif
+                                        @if(auth()->user()->isSuperAdmin() && ! $role->isSystem())
                                         <x-delete-button
                                             :url="route('role.destroy', $role)"
                                             :message="'Yakin ingin menghapus role &quot;'.$role->displayName().'&quot;?'"

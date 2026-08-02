@@ -11,6 +11,8 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     Storage::fake('local');
+    $this->admin = adminUser();
+    $this->actingAs($this->admin);
 
     $this->unitKerja = UnitKerja::create(['nama_unit' => 'IT', 'kode' => 'IT']);
     $this->barang = Barang::create([
@@ -24,7 +26,7 @@ beforeEach(function () {
 });
 
 test('document can be uploaded by an authorized user', function () {
-    $this->actingAs(adminUser());
+    $this->actingAs($this->admin);
 
     $file = UploadedFile::fake()->create('nota.pdf', 200, 'application/pdf');
 
@@ -43,7 +45,7 @@ test('document can be uploaded by an authorized user', function () {
 });
 
 test('document can be downloaded by a user with barang.view permission', function () {
-    $this->actingAs(adminUser());
+    $this->actingAs($this->admin);
 
     $dokumen = buatDokumenBarangUntuk($this->barang);
 
@@ -52,7 +54,7 @@ test('document can be downloaded by a user with barang.view permission', functio
 });
 
 test('document download is forbidden for a user without barang.view permission', function () {
-    $tanpaAkses = adminUser();
+    $tanpaAkses = staffUser(['koperasi_id' => $this->admin->koperasi_id]);
     $tanpaAkses->syncRoles([]);
     $this->actingAs($tanpaAkses);
 
@@ -63,7 +65,7 @@ test('document download is forbidden for a user without barang.view permission',
 });
 
 test('document can be deleted', function () {
-    $this->actingAs(adminUser());
+    $this->actingAs($this->admin);
 
     $dokumen = buatDokumenBarangUntuk($this->barang);
 
@@ -75,7 +77,7 @@ test('document can be deleted', function () {
 });
 
 test('barang with documents cannot be deleted and its files remain', function () {
-    $this->actingAs(adminUser());
+    $this->actingAs($this->admin);
 
     $dokumen = buatDokumenBarangUntuk($this->barang);
 
@@ -90,7 +92,7 @@ test('barang with documents cannot be deleted and its files remain', function ()
 });
 
 test('jenis_dokumen outside the configured list is rejected', function () {
-    $this->actingAs(adminUser());
+    $this->actingAs($this->admin);
 
     $file = UploadedFile::fake()->create('dokumen.pdf', 100, 'application/pdf');
 
@@ -101,7 +103,7 @@ test('jenis_dokumen outside the configured list is rejected', function () {
 });
 
 test('oversized or invalid mime documents are rejected', function () {
-    $this->actingAs(adminUser());
+    $this->actingAs($this->admin);
 
     $terlaluBesar = UploadedFile::fake()->create('besar.pdf', 6000, 'application/pdf');
 

@@ -3,14 +3,16 @@
 namespace App\Services;
 
 use App\Models\Barang;
+use App\Models\UnitKerja;
 use App\Repositories\BarangRepository;
 use App\Repositories\RiwayatKondisiBarangRepository;
+use App\Support\PerPage;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Writer\SvgWriter;
-use App\Support\PerPage;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Picqer\Barcode\BarcodeGeneratorSVG;
 
 class BarangService
@@ -39,6 +41,8 @@ class BarangService
      */
     public function store(array $data): Barang
     {
+        $this->ensureUnitKerjaTersedia((int) $data['unit_kerja_id']);
+
         return DB::transaction(function () use ($data) {
             $kondisiAwal = $this->kondisiAwal((float) $data['harga_perolehan']);
             $data['kode_barang'] = $this->kodeBarangGenerator->generate(
@@ -74,6 +78,8 @@ class BarangService
 
     public function update(Barang $barang, array $data): Barang
     {
+        $this->ensureUnitKerjaTersedia((int) $data['unit_kerja_id'], $barang->koperasi_id);
+
         return DB::transaction(function () use ($barang, $data) {
             $fotoLama = null;
 
@@ -214,5 +220,18 @@ class BarangService
         }
 
         return 'Cukup Baik';
+    }
+
+    private function ensureUnitKerjaTersedia(int $unitKerjaId, ?int $koperasiId = null): void
+    {
+        $unitKerja = UnitKerja::query()->find($unitKerjaId);
+        $valid = $unitKerja !== null
+            && ($koperasiId === null || (int) $unitKerja->koperasi_id === (int) $koperasiId);
+
+        if (! $valid) {
+            throw ValidationException::withMessages([
+                'unit_kerja_id' => 'Unit kerja tidak tersedia dalam koperasi Anda.',
+            ]);
+        }
     }
 }

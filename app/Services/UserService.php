@@ -3,12 +3,14 @@
 namespace App\Services;
 
 use App\Models\Role;
+use App\Models\UnitKerja;
 use App\Models\User;
 use App\Repositories\UserRepository;
 use App\Support\PerPage;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Exceptions\RoleDoesNotExist;
 
 class UserService
@@ -16,7 +18,7 @@ class UserService
     public function __construct(private UserRepository $userRepository) {}
 
     /**
-     * @param  array{search?: ?string, role?: ?string}  $filters
+     * @param  array{search?: ?string, role_id?: ?string}  $filters
      */
     public function list(array $filters, int $perPage = PerPage::DEFAULT): LengthAwarePaginator
     {
@@ -29,7 +31,8 @@ class UserService
      */
     public function store(User $actor, array $data): User
     {
-        $role = $this->resolveAssignableRole($actor, $data['role']);
+        $role = $this->resolveAssignableRole($actor, (int) $data['role_id']);
+        $this->ensureUnitBelongsToTenant($data['unit_kerja_id'] ?? null, $role->koperasi_id);
 
         return DB::transaction(function () use ($data, $role) {
             $user = $this->userRepository->create([
@@ -37,6 +40,7 @@ class UserService
                 'email' => $data['email'],
                 'password' => Hash::make($data['password']),
                 'unit_kerja_id' => $data['unit_kerja_id'] ?? null,
+                'koperasi_id' => $role->koperasi_id,
             ]);
 
             $user->syncRoles([$role]);
@@ -54,13 +58,15 @@ class UserService
     {
         $this->ensureCanManage($actor, $user);
 
-        $role = $this->resolveAssignableRole($actor, $data['role']);
+        $role = $this->resolveAssignableRole($actor, (int) $data['role_id']);
+        $this->ensureUnitBelongsToTenant($data['unit_kerja_id'] ?? null, $role->koperasi_id);
 
         return DB::transaction(function () use ($user, $data, $role) {
             $this->userRepository->update($user, [
                 'name' => $data['name'],
                 'email' => $data['email'],
                 'unit_kerja_id' => $data['unit_kerja_id'] ?? null,
+                'koperasi_id' => $role->koperasi_id,
                 ...(filled($data['password'] ?? null) ? ['password' => Hash::make($data['password'])] : []),
             ]);
 
@@ -110,30 +116,56 @@ class UserService
     }
 
     /**
-     * Resolve role berdasarkan nama, di-scope ke koperasi aktor (kecuali
-     * super_admin). Role TIDAK pakai global scope tenant (lihat catatan di
-     * App\Models\Role), dan banyak koperasi bisa punya role dengan nama
-     * SAMA PERSIS (mis. tiap koperasi punya "admin_primer" sendiri) — kalau
-     * di-assign lewat nama tanpa filter koperasi_id di sini, Spatie bisa
-     * salah pilih role milik tenant lain. Sekalian menolak penetapan role
-     * super_admin/admin_primer oleh aktor yang bukan super_admin —
-     * hardcoded, bukan sekadar permission checkbox.
+     * Resolve role berdasarkan primary key dan scope koperasi aktor. Nama
+     * role tidak cukup sebagai identitas karena banyak koperasi boleh punya
+     * nama role yang sama. Role global hanya sah untuk super_admin; role
+     * sistem tenant tidak dapat ditetapkan oleh aktor non-super.
      *
      * @throws \DomainException
      * @throws RoleDoesNotExist
      */
-    private function resolveAssignableRole(User $actor, string $roleName): Role
+    private function resolveAssignableRole(User $actor, int $roleId): Role
     {
-        if (in_array($roleName, ['super_admin', 'admin_primer'], true) && ! $actor->isSuperAdmin()) {
-            throw new \DomainException('Anda tidak memiliki izin untuk menetapkan role ini.');
-        }
-
-        $query = Role::query()->where('name', $roleName)->where('guard_name', 'web');
+        $query = Role::query()->whereKey($roleId)->where('guard_name', 'web');
 
         if (! $actor->isSuperAdmin()) {
             $query->where('koperasi_id', $actor->koperasi_id);
         }
 
-        return $query->first() ?? throw RoleDoesNotExist::named($roleName, 'web');
+        $role = $query->first() ?? throw RoleDoesNotExist::withId($roleId, 'web');
+
+        if ($role->koperasi_id === null && ! $role->isSuperAdminRole()) {
+            throw new \DomainException('Role global tanpa koperasi tidak dapat ditetapkan kepada pengguna.');
+        }
+
+        if ($role->isSystem() && ! $actor->isSuperAdmin()) {
+            throw new \DomainException('Anda tidak memiliki izin untuk menetapkan role ini.');
+        }
+
+        return $role;
+    }
+
+    /**
+     * Unit kerja dan role menentukan tenant user yang sama. Query sengaja
+     * melepas global scope lalu memasang kedua ID secara eksplisit supaya
+     * tetap benar saat super admin membuat/memindahkan user lintas koperasi.
+     */
+    private function ensureUnitBelongsToTenant(mixed $unitKerjaId, ?int $koperasiId): void
+    {
+        if (blank($unitKerjaId)) {
+            return;
+        }
+
+        $valid = $koperasiId !== null
+            && UnitKerja::withoutGlobalScopes()
+                ->whereKey((int) $unitKerjaId)
+                ->where('koperasi_id', $koperasiId)
+                ->exists();
+
+        if (! $valid) {
+            throw ValidationException::withMessages([
+                'unit_kerja_id' => 'Unit kerja tidak berada dalam koperasi role yang dipilih.',
+            ]);
+        }
     }
 }

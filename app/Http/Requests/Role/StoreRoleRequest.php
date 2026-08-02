@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Role;
 
+use App\Models\Role as AppRole;
 use App\Support\PermissionCatalog;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -22,7 +23,7 @@ class StoreRoleRequest extends FormRequest
     {
         return [
             'name' => [
-                'required', 'string', 'max:255',
+                'required', 'string', 'max:255', Rule::notIn(AppRole::SYSTEM_NAMES),
                 Rule::unique('roles', 'name')
                     ->where('koperasi_id', $this->koperasiIdForUniqueCheck())
                     ->ignore($this->roleId()),

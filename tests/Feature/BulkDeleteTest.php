@@ -156,10 +156,12 @@ test('clean records can be bulk deleted across every supported master table', fu
         ->assertRedirect(route('komponen-gaji.index'));
     $this->delete(route('pengguna.bulk-destroy'), ['ids' => [$user->id]])
         ->assertRedirect(route('pengguna.index'));
-    $this->delete(route('role.bulk-destroy'), ['ids' => [$role->id]])
-        ->assertRedirect(route('role.index'));
     $this->delete(route('hari-libur.bulk-destroy'), ['ids' => [$hariLibur->id]])
         ->assertRedirect(route('hari-libur.tahun', ['tahun' => 2026]));
+
+    $this->actingAs(superAdminUser());
+    $this->delete(route('role.bulk-destroy'), ['ids' => [$role->id]])
+        ->assertRedirect(route('role.index'));
 
     $this->assertDatabaseMissing('transaksi_gaji', ['id' => $transaksi->id]);
     $this->assertDatabaseMissing('karyawan', ['id' => $karyawan->id]);
@@ -267,9 +269,11 @@ test('bulk user deletion rejects a selection containing the active account', fun
 });
 
 test('bulk role deletion rejects roles still assigned to users', function () {
-    $used = Role::findByName('Staff');
+    $staff = staffUser(['koperasi_id' => $this->admin->koperasi_id]);
+    $used = $staff->roles()->firstOrFail();
     $clean = Role::create(['name' => 'Role Kosong', 'guard_name' => 'web']);
-    User::factory()->create()->assignRole($used);
+
+    $this->actingAs(superAdminUser());
 
     $this->from(route('role.index'))
         ->delete(route('role.bulk-destroy'), ['ids' => [$clean->id, $used->id]])

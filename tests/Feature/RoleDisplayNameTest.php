@@ -6,7 +6,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 test('system role names are shown with a friendly label instead of the raw snake_case name', function () {
-    $this->actingAs(adminUser());
+    $this->actingAs(superAdminUser());
 
     $this->get(route('role.index'))
         ->assertOk()

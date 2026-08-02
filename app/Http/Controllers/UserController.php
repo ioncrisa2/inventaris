@@ -29,7 +29,7 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $users = $this->userService->list(
-            $request->only(['search', 'role']),
+            $request->only(['search', 'role_id']),
             PerPage::resolve($request),
         );
         $roles = $this->selectableRoles($request->user());
@@ -73,6 +73,7 @@ class UserController extends Controller
     public function edit(Request $request, User $pengguna)
     {
         $user = $pengguna;
+        $user->loadMissing('roles');
         $unitKerjas = $this->unitKerjaRepository->orderedList();
         $roles = $this->selectableRoles($request->user());
 
@@ -135,6 +136,17 @@ class UserController extends Controller
     private function selectableRoles(User $actor)
     {
         return CurrentTenant::scopeQuery(Role::query())
+            ->with('koperasi:id,nama')
+            ->when(
+                $actor->isSuperAdmin(),
+                fn ($query) => $query->where(function ($query) {
+                    $query->whereNotNull('koperasi_id')
+                        ->orWhere(function ($query) {
+                            $query->where('name', 'super_admin')
+                                ->whereNull('koperasi_id');
+                        });
+                }),
+            )
             ->when(
                 ! $actor->isSuperAdmin(),
                 fn ($query) => $query->whereNotIn('name', ['super_admin', 'admin_primer']),

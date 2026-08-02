@@ -11,6 +11,8 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     Storage::fake('local');
+    $this->admin = adminUser();
+    $this->actingAs($this->admin);
 
     $this->unitKerja = UnitKerja::create(['nama_unit' => 'IT', 'kode' => 'IT']);
     $this->karyawan = Karyawan::create([
@@ -25,7 +27,7 @@ beforeEach(function () {
 });
 
 test('document can be downloaded by a user with karyawan.view permission', function () {
-    $this->actingAs(adminUser());
+    $this->actingAs($this->admin);
 
     $dokumen = buatDokumenUntuk($this->karyawan);
 
@@ -34,7 +36,7 @@ test('document can be downloaded by a user with karyawan.view permission', funct
 });
 
 test('document download is forbidden for a user without karyawan.view permission', function () {
-    $tanpaAkses = adminUser();
+    $tanpaAkses = staffUser(['koperasi_id' => $this->admin->koperasi_id]);
     $tanpaAkses->syncRoles([]);
     $this->actingAs($tanpaAkses);
 
@@ -45,7 +47,7 @@ test('document download is forbidden for a user without karyawan.view permission
 });
 
 test('deleting karyawan cascades its documents', function () {
-    $this->actingAs(adminUser());
+    $this->actingAs($this->admin);
 
     $dokumen = buatDokumenUntuk($this->karyawan);
 

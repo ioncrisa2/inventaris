@@ -3,11 +3,12 @@
 use App\Models\Absensi;
 use App\Models\HariLibur;
 use App\Models\Karyawan;
-use App\Models\Koperasi;
 use App\Models\KomponenGaji;
+use App\Models\Koperasi;
 use App\Models\Role;
 use App\Models\TransaksiGaji;
 use App\Models\UnitKerja;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -17,7 +18,7 @@ uses(RefreshDatabase::class);
  * (unit kerja, karyawan, absensi, hari libur, komponen gaji, transaksi
  * gaji), dipakai bareng oleh semua test isolasi per-modul di file ini.
  *
- * @return array{koperasiA: Koperasi, koperasiB: Koperasi, adminA: \App\Models\User, adminB: \App\Models\User}
+ * @return array{koperasiA: Koperasi, koperasiB: Koperasi, adminA: User, adminB: User}
  */
 function seedTwoTenants(): array
 {
@@ -43,7 +44,7 @@ function seedCoreDataAs(string $label): array
         'gaji_pokok' => 5000000,
     ]);
     Absensi::create(['karyawan_id' => $karyawan->id, 'tanggal' => '2026-07-01', 'status' => 'Hadir']);
-    $hariLibur = HariLibur::create(['tanggal' => "2026-0".(($label === 'A') ? '8' : '9')."-17", 'keterangan' => "Libur {$label}"]);
+    $hariLibur = HariLibur::create(['tanggal' => '2026-0'.(($label === 'A') ? '8' : '9').'-17', 'keterangan' => "Libur {$label}"]);
     $komponenGaji = KomponenGaji::create([
         'nama_komponen' => "Tunjangan {$label}",
         'jenis' => 'Tunjangan',
@@ -114,7 +115,7 @@ test('super_admin can see business data across every koperasi', function () {
     $this->actingAs($adminB);
     $dataB = seedCoreDataAs('B');
 
-    $this->actingAs(adminUser());
+    $this->actingAs(superAdminUser());
 
     expect(Karyawan::count())->toBe(2)
         ->and(Karyawan::pluck('id')->sort()->values()->all())
@@ -137,23 +138,27 @@ test('admin_primer cannot create a new role, delete a role, or assign the super_
     ])->assertForbidden();
     $this->assertDatabaseMissing('roles', ['name' => 'Role Bayangan']);
 
-    $ownRole = \App\Models\Role::where('koperasi_id', $adminA->koperasi_id)->where('name', 'admin_primer')->firstOrFail();
+    $ownRole = Role::where('koperasi_id', $adminA->koperasi_id)->where('name', 'admin_primer')->firstOrFail();
     $this->delete(route('role.destroy', $ownRole))->assertForbidden();
     $this->assertDatabaseHas('roles', ['id' => $ownRole->id]);
 
-    $target = \App\Models\User::factory()->create(['koperasi_id' => $adminA->koperasi_id]);
+    $target = User::factory()->create(['koperasi_id' => $adminA->koperasi_id]);
+    $superAdminRole = Role::query()
+        ->where('name', 'super_admin')
+        ->whereNull('koperasi_id')
+        ->firstOrFail();
 
     $this->put(route('pengguna.update', $target), [
         'name' => $target->name,
         'email' => $target->email,
-        'role' => 'super_admin',
+        'role_id' => $superAdminRole->id,
     ])->assertRedirect();
     expect($target->fresh()->hasRole('super_admin'))->toBeFalse();
 
     $this->put(route('pengguna.update', $target), [
         'name' => $target->name,
         'email' => $target->email,
-        'role' => 'admin_primer',
+        'role_id' => $ownRole->id,
     ])->assertRedirect();
     expect($target->fresh()->hasRole('admin_primer'))->toBeFalse();
 });
@@ -161,7 +166,7 @@ test('admin_primer cannot create a new role, delete a role, or assign the super_
 test('super_admin can provision a custom role for one specific koperasi, and only that koperasi can see or assign it', function () {
     ['koperasiA' => $koperasiA, 'adminA' => $adminA, 'adminB' => $adminB] = seedTwoTenants();
 
-    $this->actingAs(adminUser());
+    $this->actingAs(superAdminUser());
     $this->post(route('role.store'), [
         'name' => 'Kasir',
         'koperasi_id' => $koperasiA->id,
@@ -175,11 +180,11 @@ test('super_admin can provision a custom role for one specific koperasi, and onl
     $this->get(route('role.index'))->assertOk()->assertSee('Kasir');
     $this->get(route('pengguna.create'))->assertOk()->assertSee('Kasir');
 
-    $kasir = \App\Models\User::factory()->create(['koperasi_id' => $koperasiA->id]);
+    $kasir = User::factory()->create(['koperasi_id' => $koperasiA->id]);
     $this->put(route('pengguna.update', $kasir), [
         'name' => $kasir->name,
         'email' => $kasir->email,
-        'role' => 'Kasir',
+        'role_id' => $kasirRole->id,
     ])->assertRedirect(route('pengguna.index'));
     expect($kasir->fresh()->hasRole($kasirRole))->toBeTrue();
 

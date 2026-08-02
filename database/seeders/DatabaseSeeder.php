@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Koperasi;
+use App\Models\Role;
 use App\Models\User;
 use App\Services\KoperasiService;
 use Illuminate\Database\Seeder;
@@ -94,6 +95,11 @@ class DatabaseSeeder extends Seeder
             'name' => 'Super Admin',
             'email_verified_at' => $user->email_verified_at ?? now(),
         ])->save();
-        $user->syncRoles(['super_admin']);
+        $superAdminRole = Role::query()
+            ->where('name', 'super_admin')
+            ->where('guard_name', 'web')
+            ->whereNull('koperasi_id')
+            ->firstOrFail();
+        $user->syncRoles([$superAdminRole]);
     }
 }

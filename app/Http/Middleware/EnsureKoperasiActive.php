@@ -10,20 +10,36 @@ class EnsureKoperasiActive
 {
     /**
      * Blokir akses kalau koperasi milik user sudah nonaktif/lewat masa
-     * aktif. User tanpa koperasi (super_admin, atau belum ada koperasi
-     * ter-provisioning) tidak terpengaruh sama sekali.
+     * aktif. Hanya super_admin yang sah boleh tidak memiliki koperasi;
+     * akun tenant tanpa koperasi harus ditolak secara fail-closed.
      */
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
 
-        if (! $user || $user->koperasi_id === null) {
+        if (! $user) {
             return $next($request);
         }
 
+        if ($user->isSuperAdmin()) {
+            return $next($request);
+        }
+
+        abort_if(
+            $user->koperasi_id === null,
+            403,
+            'Akun Anda belum terhubung dengan koperasi primer.',
+        );
+
         $koperasi = $user->koperasi;
 
-        if ($koperasi && $koperasi->is_active && (! $koperasi->expires_at || ! $koperasi->expires_at->isPast())) {
+        abort_if(
+            $koperasi === null,
+            403,
+            'Koperasi primer untuk akun ini tidak tersedia.',
+        );
+
+        if ($koperasi->is_active && (! $koperasi->expires_at || ! $koperasi->expires_at->isPast())) {
             return $next($request);
         }
 

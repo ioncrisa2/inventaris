@@ -21,6 +21,7 @@ describe('laporan absensi', function () {
 
     it('can display formatted printable absensi report with status summaries', function () {
         $user = adminUser();
+        $this->actingAs($user);
         $unitKerja = UnitKerja::create(['nama_unit' => 'IT']);
         $karyawan = Karyawan::create([
             'nik' => 'EMP-001',
@@ -76,6 +77,7 @@ describe('laporan absensi', function () {
 
     it('can export the absensi report to excel with the selected filters', function () {
         $user = adminUser();
+        $this->actingAs($user);
         $unitKerja = UnitKerja::create(['nama_unit' => 'IT']);
         $karyawan = Karyawan::create([
             'nik' => 'EMP-001',

@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\UnitKerja;
 
+use App\Support\TenantRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class UpdateUnitKerjaRequest extends FormRequest
 {
@@ -19,7 +19,11 @@ class UpdateUnitKerjaRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('unit_kerja', 'nama_unit')->ignore($this->route('unit_kerja')),
+                TenantRule::uniqueFor(
+                    'unit_kerja',
+                    'nama_unit',
+                    $this->route('unit_kerja')?->koperasi_id,
+                )->ignore($this->route('unit_kerja')),
             ],
             'kode' => ['nullable', 'string', 'max:10'],
         ];

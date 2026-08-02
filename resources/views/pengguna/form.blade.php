@@ -44,10 +44,12 @@
 
         <div class="col-md-6">
             <x-form.select
-                name="role"
+                name="role_id"
                 label="Role"
-                :options="$roles->mapWithKeys(fn ($role) => [$role->name => $role->displayName()])"
-                :value="$user->roles->first()?->name"
+                :options="$roles->mapWithKeys(fn ($role) => [
+                    $role->id => $role->displayName().(auth()->user()->isSuperAdmin() ? ' — '.($role->koperasi?->nama ?? 'Global') : '')
+                ])"
+                :value="$user->roles->first()?->id"
                 required
                 placeholder="Pilih role"
             />

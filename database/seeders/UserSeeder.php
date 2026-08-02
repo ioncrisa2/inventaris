@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Role;
 use App\Models\UnitKerja;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -27,6 +28,11 @@ class UserSeeder extends Seeder
         }
 
         $units = UnitKerja::pluck('id', 'nama_unit');
+        $staffRole = Role::query()
+            ->where('name', 'Staff')
+            ->where('guard_name', 'web')
+            ->where('koperasi_id', auth()->user()?->koperasi_id)
+            ->firstOrFail();
         $users = [
             ['name' => 'Staff Teknologi Informasi', 'email' => 'it@example.com', 'unit' => 'IT', 'role' => 'Staff'],
             ['name' => 'Staff Keuangan', 'email' => 'staff@example.com', 'unit' => 'Keuangan', 'role' => 'Staff'],
@@ -51,7 +57,7 @@ class UserSeeder extends Seeder
                 'email_verified_at' => $user->email_verified_at ?? now(),
                 'unit_kerja_id' => $units[$data['unit']],
             ])->save();
-            $user->syncRoles([$data['role']]);
+            $user->syncRoles([$staffRole]);
         }
     }
 }

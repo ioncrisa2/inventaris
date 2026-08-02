@@ -3,6 +3,7 @@
 use App\Exports\PenggajianExport;
 use App\Models\Karyawan;
 use App\Models\Koperasi;
+use App\Models\Role;
 use App\Models\TransaksiGaji;
 use App\Models\TransaksiGajiDetail;
 use App\Models\UnitKerja;
@@ -142,14 +143,21 @@ test('staff without payroll report permission cannot access it', function () {
     // tanpa permission sama sekali untuk memverifikasi endpoint benar-benar
     // digembok permission, bukan cuma disembunyikan di menu.
     $koperasi = Koperasi::create(['nama' => 'Koperasi Laporan']);
-    $this->actingAs(adminUser())->post(route('role.store'), [
+    $this->actingAs(superAdminUser())->post(route('role.store'), [
         'name' => 'Tanpa Akses Laporan',
         'koperasi_id' => $koperasi->id,
         'permissions' => [],
     ]);
 
-    $userTanpaAkses = staffUser(['email' => 'tanpa-akses@example.com']);
-    $userTanpaAkses->syncRoles(['Tanpa Akses Laporan']);
+    $userTanpaAkses = staffUser([
+        'email' => 'tanpa-akses@example.com',
+        'koperasi_id' => $koperasi->id,
+    ]);
+    $roleTanpaAkses = Role::query()
+        ->where('koperasi_id', $koperasi->id)
+        ->where('name', 'Tanpa Akses Laporan')
+        ->firstOrFail();
+    $userTanpaAkses->syncRoles([$roleTanpaAkses]);
 
     $this->actingAs($userTanpaAkses)
         ->get(route('laporan.penggajian'))

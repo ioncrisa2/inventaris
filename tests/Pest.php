@@ -55,17 +55,29 @@ function something()
     // ..
 }
 
-/**
- * Buat user dengan role super_admin (semua permission, lintas koperasi)
- * untuk test yang butuh akses penuh. Menjalankan PermissionSeeder supaya
- * role & permission-nya tersedia di database in-memory milik test yang
- * bersangkutan.
- */
+/** Buat admin operasional tenant untuk mayoritas feature test. */
 function adminUser(array $attributes = []): User
+{
+    return adminPrimerUser(null, $attributes);
+}
+
+/** Buat super admin global untuk test control-plane/lintas tenant. */
+function superAdminUser(array $attributes = []): User
 {
     test()->seed(PermissionSeeder::class);
 
-    return tap(User::factory()->create($attributes))->assignRole('super_admin');
+    $role = Role::query()
+        ->where('name', 'super_admin')
+        ->where('guard_name', 'web')
+        ->whereNull('koperasi_id')
+        ->firstOrFail();
+
+    $user = User::factory()->create($attributes);
+    $user->koperasi_id = null;
+    $user->save();
+    $user->assignRole($role);
+
+    return $user;
 }
 
 /**
@@ -77,17 +89,40 @@ function adminUser(array $attributes = []): User
 function staffUser(array $attributes = []): User
 {
     test()->seed(PermissionSeeder::class);
-    test()->seed(DemoStaffRoleSeeder::class);
 
-    return tap(User::factory()->create($attributes))->assignRole('Staff');
+    $koperasiId = $attributes['koperasi_id']
+        ?? auth()->user()?->koperasi_id
+        ?? Koperasi::create(['nama' => 'Koperasi Staff Test '.uniqid()])->id;
+
+    $user = User::factory()->create($attributes);
+    $user->koperasi_id = $koperasiId;
+    $user->save();
+
+    $previousUser = auth()->user();
+    auth()->setUser($user);
+    test()->seed(DemoStaffRoleSeeder::class);
+    if ($previousUser) {
+        auth()->setUser($previousUser);
+    } else {
+        auth()->logout();
+    }
+
+    $role = Role::query()
+        ->where('name', 'Staff')
+        ->where('guard_name', 'web')
+        ->where('koperasi_id', $koperasiId)
+        ->firstOrFail();
+    $user->assignRole($role);
+
+    return $user;
 }
 
 /**
  * Buat user dengan role admin_primer, terikat ke satu koperasi (baru
  * dibuat kecuali diberikan lewat $koperasi). Dipakai test yang perlu
  * memverifikasi perilaku ter-scope per-tenant sungguhan (lihat
- * KoperasiScope/BelongsToKoperasi) — beda dari adminUser()/staffUser()
- * yang koperasi_id-nya tetap null.
+ * KoperasiScope/BelongsToKoperasi). adminUser() adalah alias praktis untuk
+ * helper ini; staffUser() juga selalu memiliki koperasi.
  */
 function adminPrimerUser(?Koperasi $koperasi = null, array $attributes = []): User
 {
@@ -95,9 +130,18 @@ function adminPrimerUser(?Koperasi $koperasi = null, array $attributes = []): Us
 
     $koperasi ??= Koperasi::create(['nama' => 'Koperasi Test '.uniqid()]);
 
-    $role = new Role(['name' => 'admin_primer', 'guard_name' => 'web']);
-    $role->koperasi_id = $koperasi->id;
-    $role->save();
+    $role = Role::query()
+        ->where('name', 'admin_primer')
+        ->where('guard_name', 'web')
+        ->where('koperasi_id', $koperasi->id)
+        ->first();
+
+    if (! $role) {
+        $role = new Role(['name' => 'admin_primer', 'guard_name' => 'web']);
+        $role->koperasi_id = $koperasi->id;
+        $role->save();
+    }
+
     $role->syncPermissions(PermissionCatalog::adminPrimerTemplate());
 
     $user = User::factory()->create($attributes);

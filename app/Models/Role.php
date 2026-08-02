@@ -20,6 +20,8 @@ use Spatie\Permission\Models\Role as SpatieRole;
  */
 class Role extends SpatieRole
 {
+    public const SYSTEM_NAMES = ['super_admin', 'admin_primer'];
+
     /**
      * Nama role sistem (super_admin, admin_primer) sengaja snake_case di
      * kode/DB, tapi harus tampil ramah-baca di UI. Role custom bikinan
@@ -34,6 +36,21 @@ class Role extends SpatieRole
     public function displayName(): string
     {
         return self::DISPLAY_NAMES[$this->name] ?? $this->name;
+    }
+
+    public function isSystem(): bool
+    {
+        return in_array($this->name, self::SYSTEM_NAMES, true);
+    }
+
+    public function isSuperAdminRole(): bool
+    {
+        return $this->name === 'super_admin' && $this->koperasi_id === null;
+    }
+
+    public function isAdminPrimerRole(): bool
+    {
+        return $this->name === 'admin_primer' && $this->koperasi_id !== null;
     }
 
     /**

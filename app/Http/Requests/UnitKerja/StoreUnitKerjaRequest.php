@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\UnitKerja;
 
+use App\Support\TenantRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class StoreUnitKerjaRequest extends FormRequest
 {
@@ -15,7 +15,7 @@ class StoreUnitKerjaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nama_unit' => ['required', 'string', 'max:255', Rule::unique('unit_kerja', 'nama_unit')],
+            'nama_unit' => ['required', 'string', 'max:255', TenantRule::unique('unit_kerja', 'nama_unit')],
             'kode' => ['nullable', 'string', 'max:10'],
         ];
     }

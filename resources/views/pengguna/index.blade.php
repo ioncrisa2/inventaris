@@ -22,7 +22,7 @@
                 <x-filter-form
                     :action="route('pengguna.index')"
                     :reset-route="route('pengguna.index')"
-                    :has-filters="request()->hasAny(['search', 'role'])"
+                    :has-filters="request()->hasAny(['search', 'role_id'])"
                 >
                     <div class="col-12 col-lg-auto">
                         <label class="visually-hidden" for="search">Cari pengguna</label>
@@ -36,11 +36,13 @@
                         >
                     </div>
                     <div class="col-12 col-sm-6 col-lg-auto">
-                        <label class="visually-hidden" for="role">Role</label>
-                        <select class="form-select" id="role" name="role">
+                        <label class="visually-hidden" for="role_id">Role</label>
+                        <select class="form-select" id="role_id" name="role_id">
                             <option value="">Semua role</option>
                             @foreach($roles as $r)
-                                <option value="{{ $r->name }}" @selected(request('role') === $r->name)>{{ $r->displayName() }}</option>
+                                <option value="{{ $r->id }}" @selected((string) request('role_id') === (string) $r->id)>
+                                    {{ $r->displayName() }}{{ auth()->user()->isSuperAdmin() ? ' — '.($r->koperasi?->nama ?? 'Global') : '' }}
+                                </option>
                             @endforeach
                         </select>
                     </div>
@@ -120,7 +122,7 @@
                             </tr>
                         @empty
                             <x-empty-row :colspan="auth()->user()->can('pengguna.delete') ? 6 : 5">
-                                @if(request()->hasAny(['search', 'role']))
+                                @if(request()->hasAny(['search', 'role_id']))
                                     Tidak ada pengguna yang cocok dengan filter.
                                     <a href="{{ route('pengguna.index') }}">Hapus filter</a>.
                                 @else

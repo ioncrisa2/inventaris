@@ -27,7 +27,7 @@ test('guests are redirected to login from protected pages', function (string $pa
 ]);
 
 test('users can login with valid credentials', function () {
-    $user = User::factory()->create([
+    $user = adminUser([
         'email' => 'admin@example.com',
         'password' => 'password',
     ]);

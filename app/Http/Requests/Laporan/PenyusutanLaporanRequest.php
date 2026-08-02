@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Laporan;
 
+use App\Support\TenantRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -19,7 +20,7 @@ class PenyusutanLaporanRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'unit_kerja_id' => ['nullable', Rule::exists('unit_kerja', 'id')],
+            'unit_kerja_id' => ['nullable', TenantRule::exists('unit_kerja')],
             'kategori' => ['nullable', Rule::in(config('inventaris.kategori'))],
             'tahun' => ['nullable', 'integer', 'digits:4'],
         ];

@@ -16,13 +16,13 @@ test('non super admin cannot access koperasi management pages', function () {
 });
 
 test('super admin can view koperasi index', function () {
-    $this->actingAs(adminUser());
+    $this->actingAs(superAdminUser());
 
     $this->get(route('koperasi.index'))->assertOk();
 });
 
 test('super admin provisioning a koperasi creates the koperasi, its admin_primer role, and the first user', function () {
-    $this->actingAs(adminUser());
+    $this->actingAs(superAdminUser());
 
     $this->post(route('koperasi.store'), [
         'nama' => 'Koperasi Sejahtera',
@@ -44,7 +44,7 @@ test('super admin provisioning a koperasi creates the koperasi, its admin_primer
 });
 
 test('two koperasi each get their own admin_primer role without name collisions', function () {
-    $this->actingAs(adminUser());
+    $this->actingAs(superAdminUser());
 
     $this->post(route('koperasi.store'), [
         'nama' => 'Koperasi A',
@@ -79,7 +79,7 @@ test('two koperasi each get their own admin_primer role without name collisions'
 });
 
 test('admin_primer of one koperasi cannot see data belonging to another koperasi', function () {
-    $this->actingAs(adminUser());
+    $this->actingAs(superAdminUser());
 
     $this->post(route('koperasi.store'), [
         'nama' => 'Koperasi A',
@@ -108,7 +108,7 @@ test('admin_primer of one koperasi cannot see data belonging to another koperasi
 });
 
 test('super admin can update koperasi expiry and deactivate it', function () {
-    $this->actingAs(adminUser());
+    $this->actingAs(superAdminUser());
 
     $this->post(route('koperasi.store'), [
         'nama' => 'Koperasi C',

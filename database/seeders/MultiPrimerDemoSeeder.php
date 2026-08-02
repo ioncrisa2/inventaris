@@ -4,8 +4,9 @@ namespace Database\Seeders;
 
 use App\Models\Barang;
 use App\Models\Karyawan;
-use App\Models\Koperasi;
 use App\Models\KomponenGaji;
+use App\Models\Koperasi;
+use App\Models\Role;
 use App\Models\TransaksiGaji;
 use App\Models\UnitKerja;
 use App\Models\User;
@@ -128,7 +129,12 @@ class MultiPrimerDemoSeeder extends Seeder
             'name' => 'Super Admin',
             'email_verified_at' => $user->email_verified_at ?? now(),
         ])->save();
-        $user->syncRoles(['super_admin']);
+        $superAdminRole = Role::query()
+            ->where('name', 'super_admin')
+            ->where('guard_name', 'web')
+            ->whereNull('koperasi_id')
+            ->firstOrFail();
+        $user->syncRoles([$superAdminRole]);
     }
 
     private function seedPrimer(array $primer, int $primerIndex): void
@@ -204,10 +210,8 @@ class MultiPrimerDemoSeeder extends Seeder
                 'jenis_kelamin' => $i % 2 === 0 ? 'Laki-laki' : 'Perempuan',
                 'agama' => 'Islam',
                 'status_perkawinan' => $i % 3 === 0 ? 'Belum Kawin' : 'Kawin',
-                // Nomor KTP adalah identitas nasional (unique GLOBAL di
-                // tabel karyawan, bukan per-koperasi) — prefix per primer
-                // (primerIndex) menjamin tidak pernah bentrok antar primer
-                // maupun dengan data "Koperasi Demo".
+                // Prefix per primer membuat data demo mudah dibedakan, walau
+                // constraint nomor KTP kini memang ter-scope per koperasi.
                 'nomor_ktp' => sprintf('9%02d%013d', $primerIndex + 1, $i + 1),
                 'unit_kerja_id' => $unitKerjaIds[$unit],
                 'tanggal_masuk_kerja' => $tanggalMasuk->toDateString(),

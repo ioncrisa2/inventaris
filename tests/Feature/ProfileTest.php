@@ -8,12 +8,13 @@ use Illuminate\Support\Facades\Hash;
 uses(RefreshDatabase::class);
 
 test('profile page displays authenticated user data', function () {
-    $unitKerja = UnitKerja::create(['nama_unit' => 'IT']);
-    $user = User::factory()->create([
+    $user = adminUser([
         'name' => 'Admin Inventaris',
         'email' => 'admin@example.com',
-        'unit_kerja_id' => $unitKerja->id,
     ]);
+    $this->actingAs($user);
+    $unitKerja = UnitKerja::create(['nama_unit' => 'IT']);
+    $user->update(['unit_kerja_id' => $unitKerja->id]);
 
     $this->actingAs($user)
         ->get(route('profile.show'))
@@ -24,11 +25,12 @@ test('profile page displays authenticated user data', function () {
 });
 
 test('profile information can be updated', function () {
-    $unitKerja = UnitKerja::create(['nama_unit' => 'Keuangan']);
-    $user = User::factory()->create([
+    $user = adminUser([
         'name' => 'Admin Lama',
         'email' => 'lama@example.com',
     ]);
+    $this->actingAs($user);
+    $unitKerja = UnitKerja::create(['nama_unit' => 'Keuangan']);
 
     $this->actingAs($user)
         ->put(route('profile.update'), [
@@ -48,7 +50,7 @@ test('profile information can be updated', function () {
 });
 
 test('profile email must remain unique', function () {
-    $user = User::factory()->create(['email' => 'admin@example.com']);
+    $user = adminUser(['email' => 'admin@example.com']);
     User::factory()->create(['email' => 'used@example.com']);
 
     $this->actingAs($user)
@@ -63,7 +65,7 @@ test('profile email must remain unique', function () {
 });
 
 test('password update requires the current password', function () {
-    $user = User::factory()->create(['password' => 'password']);
+    $user = adminUser(['password' => 'password']);
 
     $this->actingAs($user)
         ->from(route('profile.show').'#keamanan')
@@ -79,7 +81,7 @@ test('password update requires the current password', function () {
 });
 
 test('password can be updated with valid credentials', function () {
-    $user = User::factory()->create(['password' => 'password']);
+    $user = adminUser(['password' => 'password']);
 
     $this->actingAs($user)
         ->put(route('profile.password.update'), [

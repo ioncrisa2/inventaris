@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\TransaksiGaji;
 
+use App\Support\TenantRule;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
@@ -17,7 +18,12 @@ class CetakSlipGajiMassalRequest extends CetakSlipGajiRequest
             'mode' => ['required', Rule::in(['periode', 'karyawan'])],
             'bulan' => [Rule::requiredIf($modePeriode), Rule::prohibitedIf(! $modePeriode), 'integer', 'between:1,12'],
             'tahun' => [Rule::requiredIf($modePeriode), Rule::prohibitedIf(! $modePeriode), 'integer', 'between:2000,2100'],
-            'karyawan_id' => [Rule::requiredIf($modeKaryawan), Rule::prohibitedIf(! $modeKaryawan), 'integer', 'exists:karyawan,id'],
+            'karyawan_id' => [
+                Rule::requiredIf($modeKaryawan),
+                Rule::prohibitedIf(! $modeKaryawan),
+                'integer',
+                TenantRule::exists('karyawan'),
+            ],
             'periode_awal' => [Rule::requiredIf($modeKaryawan), Rule::prohibitedIf(! $modeKaryawan), 'date_format:Y-m'],
             'periode_akhir' => [Rule::requiredIf($modeKaryawan), Rule::prohibitedIf(! $modeKaryawan), 'date_format:Y-m'],
         ];

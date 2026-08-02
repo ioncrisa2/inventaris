@@ -160,6 +160,52 @@ class PermissionCatalog
     }
 
     /**
+     * Super admin adalah control-plane koperasi sekunder: boleh membaca data
+     * lintas koperasi dan mengelola koperasi, pengguna, serta role, tetapi
+     * tidak menulis data operasional koperasi primer. Tanpa tenant aktif,
+     * mutasi operasional berisiko menghasilkan data yatim tanpa koperasi_id.
+     *
+     * @return list<string>
+     */
+    public static function superAdminTemplate(): array
+    {
+        $tenantMutationPermissions = [
+            'unit-kerja.create',
+            'unit-kerja.update',
+            'unit-kerja.delete',
+            'karyawan.create',
+            'karyawan.update',
+            'karyawan.kepegawaian.update',
+            'karyawan.gaji.update',
+            'karyawan.delete',
+            'absensi.create',
+            'hari-libur.create',
+            'hari-libur.update',
+            'hari-libur.delete',
+            'barang.create',
+            'barang.update',
+            'barang.delete',
+            'barang.kondisi.catat',
+            'barang.foto.kelola',
+            'barang.dokumen.kelola',
+            'komponen-gaji.create',
+            'komponen-gaji.update',
+            'komponen-gaji.delete',
+            'transaksi-gaji.create',
+            'transaksi-gaji.update',
+            'transaksi-gaji.delete',
+            'transaksi-gaji.cetak',
+            'pengaturan.kode-barang.update',
+            'pengaturan.hari-operasional.update',
+            'pengaturan.identitas.update',
+            'pengaturan.slip-gaji.update',
+            'pengaturan.slip-gaji.publish',
+        ];
+
+        return array_values(array_diff(self::all(), $tenantMutationPermissions));
+    }
+
+    /**
      * Permission untuk role sistem admin_primer (dipakai KoperasiService saat
      * provisioning koperasi baru) — seluruh permission KECUALI role.create
      * & role.delete. Pembuatan/penghapusan role dikunci ke super_admin lewat

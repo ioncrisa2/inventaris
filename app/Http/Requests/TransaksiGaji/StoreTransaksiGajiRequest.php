@@ -4,6 +4,7 @@ namespace App\Http\Requests\TransaksiGaji;
 
 use App\Models\KomponenGaji;
 use App\Rules\Decimal15Two;
+use App\Support\TenantRule;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Validator as ValidatorFacade;
@@ -21,7 +22,7 @@ class StoreTransaksiGajiRequest extends FormRequest
         return [
             'karyawan_id' => [
                 'required',
-                'exists:karyawan,id',
+                TenantRule::exists('karyawan'),
                 Rule::unique('transaksi_gaji', 'karyawan_id')
                     ->where(fn ($query) => $query
                         ->where('bulan', $this->input('bulan'))

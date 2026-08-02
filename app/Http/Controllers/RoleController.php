@@ -65,6 +65,7 @@ class RoleController extends Controller
     {
         $this->authorize('role.update');
         $this->abortIfOtherTenant($role);
+        abort_if($role->isSystem(), 403, 'Role sistem tidak dapat diubah.');
 
         $permissionGroups = PermissionCatalog::groups();
         $selectedPermissions = $role->permissions->pluck('name')->all();
@@ -79,7 +80,11 @@ class RoleController extends Controller
     {
         $this->abortIfOtherTenant($role);
 
-        $this->roleService->update($role, $request->validated());
+        try {
+            $this->roleService->update($request->user(), $role, $request->validated());
+        } catch (\DomainException $e) {
+            return back()->with('error', $e->getMessage())->withInput();
+        }
 
         return redirect()->route('role.index')->with('success', 'Role berhasil diperbarui.');
     }

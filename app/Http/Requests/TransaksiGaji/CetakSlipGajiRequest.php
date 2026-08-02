@@ -3,6 +3,7 @@
 namespace App\Http\Requests\TransaksiGaji;
 
 use App\Support\SlipGajiPaperLayout;
+use App\Support\TenantRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -10,7 +11,7 @@ class CetakSlipGajiRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        $transaksiGaji = $this->route('transaksiGaji');
+        $transaksiGaji = $this->route('transaksi_gaji');
 
         return $transaksiGaji
             ? $this->user()->can('cetak', $transaksiGaji)
@@ -32,7 +33,10 @@ class CetakSlipGajiRequest extends FormRequest
 
     protected function commonRules(): array
     {
-        $penandaTanganAktif = fn () => Rule::exists('karyawan', 'id')
+        $koperasiId = $this->route('transaksi_gaji')?->koperasi_id;
+        $penandaTanganAktif = fn () => ($koperasiId === null
+            ? TenantRule::exists('karyawan')
+            : TenantRule::existsFor('karyawan', 'id', $koperasiId))
             ->whereNull('tanggal_mengundurkan_diri');
 
         return [

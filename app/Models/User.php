@@ -73,12 +73,29 @@ class User extends Authenticatable
      */
     public function isSuperAdmin(): bool
     {
-        return $this->hasRole('super_admin');
+        if ($this->koperasi_id !== null) {
+            return false;
+        }
+
+        $this->loadMissing('roles');
+
+        return $this->roles->contains(
+            fn (Role $role) => $role->name === 'super_admin' && $role->koperasi_id === null,
+        );
     }
 
     public function isAdminPrimer(): bool
     {
-        return $this->hasRole('admin_primer');
+        if ($this->koperasi_id === null) {
+            return false;
+        }
+
+        $this->loadMissing('roles');
+
+        return $this->roles->contains(
+            fn (Role $role) => $role->name === 'admin_primer'
+                && (int) $role->koperasi_id === (int) $this->koperasi_id,
+        );
     }
 
     /**

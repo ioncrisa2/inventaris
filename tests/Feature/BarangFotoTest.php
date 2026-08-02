@@ -6,11 +6,11 @@ use App\Models\FotoBarang;
 use App\Models\UnitKerja;
 use App\Services\BarangService;
 use App\Services\FotoBarangService;
-use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 uses(RefreshDatabase::class);
 
@@ -87,7 +87,7 @@ test('foto baru dibersihkan dan foto lama dipertahankan ketika update database r
     expect(fn () => app(BarangService::class)->update($barang, [
         'unit_kerja_id' => 999999,
         'foto_sampul' => UploadedFile::fake()->image('baru.jpg'),
-    ]))->toThrow(QueryException::class);
+    ]))->toThrow(ValidationException::class);
 
     expect($barang->refresh()->foto_sampul)->toBe('barang-sampul/lama.jpg');
     Storage::disk('public')->assertExists('barang-sampul/lama.jpg');

@@ -5,10 +5,10 @@ use App\Models\Barang;
 use App\Models\DokumenBarang;
 use App\Models\Karyawan;
 use App\Models\RiwayatKondisiBarang;
+use App\Models\Role;
 use App\Models\UnitKerja;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
@@ -157,6 +157,9 @@ test('dashboard suppresses empty condition and completeness cards', function () 
 });
 
 test('dashboard only shows widgets the role has permission for', function () {
+    $user = staffUser(['email' => 'terbatas@example.com']);
+    $this->actingAs($user);
+
     Barang::create([
         'kode_barang' => 'INV-001',
         'nama_barang' => 'Laptop Operasional',
@@ -166,14 +169,12 @@ test('dashboard only shows widgets the role has permission for', function () {
         'harga_perolehan' => 2000000,
     ]);
 
-    // staffUser() menjalankan PermissionSeeder dulu, supaya permission-nya
-    // sudah ada di database sebelum dipakai oleh role kustom di bawah ini.
-    $user = staffUser(['email' => 'terbatas@example.com']);
-
     // Role kustom: hanya izin untuk kartu Total Inventaris, tanpa widget lain.
-    $role = Role::findOrCreate('Hanya Total Inventaris', 'web');
+    $role = new Role(['name' => 'Hanya Total Inventaris', 'guard_name' => 'web']);
+    $role->koperasi_id = $user->koperasi_id;
+    $role->save();
     $role->syncPermissions(['dashboard.total-inventaris.view']);
-    $user->syncRoles(['Hanya Total Inventaris']);
+    $user->syncRoles([$role]);
 
     $response = $this->actingAs($user)->get(route('dashboard'));
 
@@ -205,10 +206,12 @@ test('dashboard attendance navigation uses an explicit 25 to 24 payroll period',
 });
 
 test('dashboard shows an empty state when the role has no dashboard widget permission at all', function () {
-    $role = Role::findOrCreate('Tanpa Widget Dashboard', 'web');
-    $role->syncPermissions([]);
     $user = staffUser(['email' => 'kosong@example.com']);
-    $user->syncRoles(['Tanpa Widget Dashboard']);
+    $role = new Role(['name' => 'Tanpa Widget Dashboard', 'guard_name' => 'web']);
+    $role->koperasi_id = $user->koperasi_id;
+    $role->save();
+    $role->syncPermissions([]);
+    $user->syncRoles([$role]);
 
     $this->actingAs($user)
         ->get(route('dashboard'))

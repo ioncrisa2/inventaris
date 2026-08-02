@@ -33,10 +33,16 @@ test('user whose koperasi is still active can access the app normally', function
         ->assertOk();
 });
 
-test('user without a koperasi is not blocked', function () {
+test('non-super user without a koperasi is rejected fail-closed', function () {
     $user = User::factory()->create(['koperasi_id' => null]);
 
     $this->actingAs($user)
+        ->get('/dashboard')
+        ->assertForbidden();
+});
+
+test('valid global super admin can access without a koperasi', function () {
+    $this->actingAs(superAdminUser())
         ->get('/dashboard')
         ->assertOk();
 });

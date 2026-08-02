@@ -105,6 +105,11 @@ class AbsensiService
 
     public function simpan(Karyawan $karyawan, array $validated): Absensi
     {
+        // Jangan percaya instance yang dipasok pemanggil service. Resolve ulang
+        // lewat query berscope agar objek tenant lain tidak dapat dipakai untuk
+        // membuat absensi dengan koperasi_id milik aktor saat ini.
+        $karyawan = $this->karyawanRepository->findOrFail($karyawan->id);
+
         return DB::transaction(function () use ($karyawan, $validated) {
             $absensi = $this->absensiRepository->simpanUntukTanggal($karyawan->id, $validated['tanggal'], [
                 'status' => $validated['status'],

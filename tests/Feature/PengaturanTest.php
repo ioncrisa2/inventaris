@@ -263,7 +263,7 @@ test('super_admin sees the default app identity instead of any koperasi\'s brand
         'alamat' => 'Jl. Tenant, Kota Tenant',
     ]);
 
-    $this->actingAs(adminUser());
+    $this->actingAs(superAdminUser());
 
     expect(app(IdentitasAplikasiService::class)->nama())->toBe(config('app.name'))
         ->and(app(IdentitasAplikasiService::class)->alamat())->toBeNull()
@@ -278,25 +278,25 @@ test('super_admin cannot save identitas koperasi, kode barang, or hari operasion
     $this->actingAs(adminPrimerUser());
     $this->put(route('pengaturan.identitas.update'), ['nama' => 'Koperasi Awal']);
 
-    $this->actingAs(adminUser());
+    $this->actingAs(superAdminUser());
 
     $this->put(route('pengaturan.identitas.update'), [
         'nama' => 'Koperasi Dibajak Super Admin',
-    ])->assertRedirect();
+    ])->assertForbidden();
     expect(app(IdentitasAplikasiService::class)->nama())->toBe(config('app.name'));
 
     $this->put(route('pengaturan.update'), [
         'format_kode_barang' => 'SA-{URUT}',
         'digit_nomor_urut' => 4,
-    ])->assertRedirect();
+    ])->assertForbidden();
 
     $this->put(route('pengaturan.hari-operasional.update'), [
         'hari_operasional' => [1, 2, 3],
-    ])->assertRedirect();
+    ])->assertForbidden();
 });
 
 test('super_admin sees read-only settings page, not editable forms', function () {
-    $this->actingAs(adminUser());
+    $this->actingAs(superAdminUser());
 
     $this->get(route('pengaturan.edit'))
         ->assertOk()

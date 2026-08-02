@@ -9,6 +9,21 @@ use Illuminate\Support\Facades\Auth;
 class CurrentTenant
 {
     /**
+     * ID koperasi milik user tenant yang sedang login. Super admin dan tamu
+     * tidak memiliki satu tenant aktif, sehingga hasilnya null.
+     */
+    public static function id(): ?int
+    {
+        $user = Auth::user();
+
+        if (! $user || $user->isSuperAdmin() || $user->koperasi_id === null) {
+            return null;
+        }
+
+        return (int) $user->koperasi_id;
+    }
+
+    /**
      * Terapkan filter koperasi_id ke query builder — dipakai di query yang
      * TIDAK otomatis kena global scope KoperasiScope: query mentah
      * (DB::table(), tidak lewat Eloquent sama sekali), atau model yang
@@ -29,7 +44,14 @@ class CurrentTenant
             return $query;
         }
 
-        return $query->where($column, $user->koperasi_id);
+        // Akun non-super-admin tanpa koperasi adalah akun tidak valid. Jangan
+        // pernah memetakan kondisi ini ke WHERE koperasi_id IS NULL karena itu
+        // justru akan membuka semua baris yatim/global kepadanya.
+        if ($user->koperasi_id === null) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->where($column, (int) $user->koperasi_id);
     }
 
     /**
@@ -44,7 +66,9 @@ class CurrentTenant
     {
         $user = Auth::user();
 
-        return $user !== null && ! $user->isSuperAdmin();
+        return $user !== null
+            && ! $user->isSuperAdmin()
+            && $user->koperasi_id !== null;
     }
 
     /**

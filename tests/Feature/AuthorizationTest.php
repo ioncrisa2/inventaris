@@ -52,7 +52,7 @@ test('staff role cannot access pengguna or role management pages', function () {
 });
 
 test('admin role can access pengguna and role management pages', function () {
-    $this->actingAs(adminUser());
+    $this->actingAs(superAdminUser());
 
     $this->get(route('pengguna.index'))->assertOk();
     $this->get(route('pengguna.create'))->assertOk();
@@ -69,7 +69,7 @@ test('sidebar administration menu is hidden for staff and visible for admin', fu
 });
 
 test('admin can create a role with a chosen set of permissions', function () {
-    $this->actingAs(adminUser());
+    $this->actingAs(superAdminUser());
     $koperasi = Koperasi::create(['nama' => 'Koperasi Gudang']);
 
     $this->post(route('role.store'), [
@@ -89,22 +89,26 @@ test('user cannot delete their own account', function () {
     $this->actingAs($admin);
 
     $this->delete(route('pengguna.destroy', $admin))
-        ->assertRedirect();
+        ->assertForbidden();
 
     $this->assertDatabaseHas('users', ['id' => $admin->id]);
 });
 
 test('admin can edit another user and change their role', function () {
-    $this->actingAs(adminUser());
+    $this->actingAs(superAdminUser());
 
     $staff = staffUser(['name' => 'Staff Lama']);
+    $superAdminRole = Role::query()
+        ->where('name', 'super_admin')
+        ->whereNull('koperasi_id')
+        ->firstOrFail();
 
     $this->get(route('pengguna.edit', $staff))->assertOk();
 
     $this->put(route('pengguna.update', $staff), [
         'name' => 'Staff Baru',
         'email' => $staff->email,
-        'role' => 'super_admin',
+        'role_id' => $superAdminRole->id,
     ])->assertRedirect(route('pengguna.index'));
 
     expect($staff->fresh()->name)->toBe('Staff Baru');
@@ -112,11 +116,12 @@ test('admin can edit another user and change their role', function () {
 });
 
 test('role still assigned to a user cannot be deleted', function () {
-    $this->actingAs(adminUser());
+    $this->actingAs(superAdminUser());
 
-    staffUser();
+    $staff = staffUser();
+    $staffRole = $staff->roles()->firstOrFail();
 
-    $staffRole = Role::findByName('Staff', 'web');
+    expect($staffRole->users()->whereKey($staff->id)->exists())->toBeTrue();
 
     $this->delete(route('role.destroy', $staffRole))->assertRedirect();
 

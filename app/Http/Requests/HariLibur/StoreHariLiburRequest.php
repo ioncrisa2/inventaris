@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\HariLibur;
 
+use App\Support\TenantRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class StoreHariLiburRequest extends FormRequest
 {
@@ -15,7 +15,7 @@ class StoreHariLiburRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'tanggal' => ['required', 'date', Rule::unique('hari_libur', 'tanggal')],
+            'tanggal' => ['required', 'date', TenantRule::unique('hari_libur', 'tanggal')],
             'keterangan' => ['required', 'string', 'max:255'],
         ];
     }

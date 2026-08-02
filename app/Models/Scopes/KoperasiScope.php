@@ -22,6 +22,15 @@ class KoperasiScope implements Scope
             return;
         }
 
-        $builder->where($model->qualifyColumn('koperasi_id'), $user->koperasi_id);
+        // Akun tenant tanpa koperasi adalah kondisi data yang tidak sah. Scope
+        // harus fail-closed; whereNull akan membuat akun itu melihat seluruh
+        // record yatim yang koperasi_id-nya null.
+        if ($user->koperasi_id === null) {
+            $builder->whereRaw('1 = 0');
+
+            return;
+        }
+
+        $builder->where($model->qualifyColumn('koperasi_id'), (int) $user->koperasi_id);
     }
 }

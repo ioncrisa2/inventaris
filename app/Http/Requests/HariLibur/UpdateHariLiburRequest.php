@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\HariLibur;
 
+use App\Support\TenantRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class UpdateHariLiburRequest extends FormRequest
 {
@@ -18,7 +18,11 @@ class UpdateHariLiburRequest extends FormRequest
             'tanggal' => [
                 'required',
                 'date',
-                Rule::unique('hari_libur', 'tanggal')->ignore($this->route('hari_libur')),
+                TenantRule::uniqueFor(
+                    'hari_libur',
+                    'tanggal',
+                    $this->route('hari_libur')?->koperasi_id,
+                )->ignore($this->route('hari_libur')),
             ],
             'keterangan' => ['required', 'string', 'max:255'],
         ];

@@ -5,6 +5,7 @@ namespace App\Http\Requests\Karyawan;
 use App\Models\Karyawan;
 use App\Rules\Decimal15Two;
 use App\Support\KaryawanPerubahanSchema;
+use App\Support\TenantRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -56,7 +57,8 @@ class StoreRiwayatKaryawanRequest extends FormRequest
                     'required',
                     'string',
                     'max:20',
-                    Rule::unique('karyawan', 'nik')->ignore($karyawan?->id),
+                    TenantRule::uniqueFor('karyawan', 'nik', $karyawan?->koperasi_id)
+                        ->ignore($karyawan?->id),
                 ],
                 'nama_lengkap' => ['required', 'string', 'max:255'],
                 'tempat_lahir' => ['required', 'string', 'max:255'],
@@ -66,7 +68,8 @@ class StoreRiwayatKaryawanRequest extends FormRequest
                 'nomor_ktp' => [
                     'required',
                     'digits:16',
-                    Rule::unique('karyawan', 'nomor_ktp')->ignore($karyawan?->id),
+                    TenantRule::uniqueFor('karyawan', 'nomor_ktp', $karyawan?->koperasi_id)
+                        ->ignore($karyawan?->id),
                 ],
                 'npwp' => ['required', 'string', 'max:30'],
                 'alamat_ktp' => ['required', 'string', 'max:2000'],
@@ -94,11 +97,14 @@ class StoreRiwayatKaryawanRequest extends FormRequest
             ],
             'mutasi_promosi' => [
                 ...$rules,
-                'unit_kerja_id' => ['required', Rule::exists('unit_kerja', 'id')],
+                'unit_kerja_id' => [
+                    'required',
+                    TenantRule::existsFor('unit_kerja', 'id', $karyawan?->koperasi_id),
+                ],
                 'jabatan' => ['required', 'string', 'max:255'],
                 'atasan_langsung_id' => [
                     'nullable',
-                    Rule::exists('karyawan', 'id'),
+                    TenantRule::existsFor('karyawan', 'id', $karyawan?->koperasi_id),
                     Rule::notIn([$karyawan?->id]),
                 ],
                 'nomor_sk_pengangkatan' => ['required', 'string', 'max:255'],

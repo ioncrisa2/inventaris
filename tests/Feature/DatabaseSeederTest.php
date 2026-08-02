@@ -6,11 +6,12 @@ use App\Models\DokumenBarang;
 use App\Models\DokumenKaryawan;
 use App\Models\FotoBarang;
 use App\Models\Karyawan;
-use App\Models\Koperasi;
 use App\Models\KomponenGaji;
+use App\Models\Koperasi;
 use App\Models\TransaksiGajiDetail;
 use App\Models\UnitKerja;
 use App\Models\User;
+use App\Support\PermissionCatalog;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -60,7 +61,7 @@ test('database seeder creates a complete usable demo dataset', function () {
         ->and($adminPrimer->koperasi_id)->toBe($koperasi->id)
         ->and($staff->hasRole('Staff'))->toBeTrue()
         ->and($staff->koperasi_id)->toBe($koperasi->id)
-        ->and($admin->getAllPermissions())->toHaveCount(70)
+        ->and($admin->getAllPermissions())->toHaveCount(count(PermissionCatalog::superAdminTemplate()))
         ->and($adminPrimer->getAllPermissions())->toHaveCount(68)
         ->and($staff->getAllPermissions())->toHaveCount(39)
         // Semua data domain harus ikut ter-tag ke koperasi demo (bukan

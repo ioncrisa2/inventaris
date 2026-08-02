@@ -73,9 +73,19 @@ class DemoStaffRoleSeeder extends Seeder
             ->whereIn('name', $permissionNames)
             ->get();
 
-        $role = Role::findOrCreate('Staff', 'web');
-        $role->koperasi_id ??= auth()->user()?->koperasi_id;
-        $role->save();
+        $koperasiId = auth()->user()?->koperasi_id;
+        $role = Role::query()
+            ->where('name', 'Staff')
+            ->where('guard_name', 'web')
+            ->where('koperasi_id', $koperasiId)
+            ->first();
+
+        if (! $role) {
+            $role = new Role(['name' => 'Staff', 'guard_name' => 'web']);
+            $role->koperasi_id = $koperasiId;
+            $role->save();
+        }
+
         $role->syncPermissions($permissionModels);
 
         $registrar->forgetCachedPermissions();

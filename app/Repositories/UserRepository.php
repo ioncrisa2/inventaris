@@ -9,7 +9,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 class UserRepository
 {
     /**
-     * @param  array{search?: ?string, role?: ?string}  $filters
+     * @param  array{search?: ?string, role_id?: ?string}  $filters
      */
     public function paginate(array $filters, int $perPage = 10): LengthAwarePaginator
     {
@@ -21,9 +21,9 @@ class UserRepository
                         ->orWhere('email', 'like', "%{$search}%");
                 });
             })
-            ->when($filters['role'] ?? null, function ($query, $role) {
-                $query->whereHas('roles', function ($query) use ($role) {
-                    $query->where('name', $role);
+            ->when($filters['role_id'] ?? null, function ($query, $roleId) {
+                $query->whereHas('roles', function ($query) use ($roleId) {
+                    $query->whereKey((int) $roleId);
                 });
             })
             ->orderBy('name')
@@ -33,11 +33,23 @@ class UserRepository
 
     public function create(array $data): User
     {
-        return User::create($data);
+        $koperasiId = $data['koperasi_id'] ?? null;
+        unset($data['koperasi_id']);
+
+        $user = new User($data);
+        $user->koperasi_id = $koperasiId;
+        $user->save();
+
+        return $user;
     }
 
     public function update(User $user, array $data): User
     {
+        if (array_key_exists('koperasi_id', $data)) {
+            $user->koperasi_id = $data['koperasi_id'];
+            unset($data['koperasi_id']);
+        }
+
         $user->update($data);
 
         return $user;
