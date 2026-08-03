@@ -122,6 +122,7 @@ test('foreign tenant identifiers are rejected in writes bulk actions filters and
         'kategori' => 'Bukan Bangunan - Kelompok 1',
         'jenis_barang' => 'Access point Wi-Fi',
         'unit_kerja_id' => $unitB->id,
+        'lokasi_penempatan' => 'Kantor Pusat',
         'tanggal_perolehan' => '2026-01-01',
         'harga_perolehan' => 1000000,
     ])->assertSessionHasErrors('unit_kerja_id');

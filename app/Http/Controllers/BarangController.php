@@ -31,7 +31,7 @@ class BarangController extends Controller
     public function index(Request $request)
     {
         $selectedKoperasiId = TenantContext::selectedKoperasiId($request);
-        $filters = $request->only(['search', 'unit_kerja_id', 'kategori', 'kondisi', 'kelengkapan']);
+        $filters = $request->only(['search', 'unit_kerja_id', 'kategori', 'lokasi_penempatan', 'kondisi', 'kelengkapan']);
         if ($selectedKoperasiId) {
             $filters['koperasi_id'] = $selectedKoperasiId;
         }

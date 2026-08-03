@@ -37,4 +37,17 @@ const initializeJenisBarangSelect = () => {
     renderOptions(initialValue);
 };
 
+const initializeLokasiPenempatanHint = () => {
+    const lokasiSelect = document.querySelector('[data-lokasi-penempatan-select]');
+    const hint = document.querySelector('[data-lokasi-cabang-hint]');
+
+    if (!lokasiSelect || !hint) return;
+
+    const toggleHint = () => hint.classList.toggle('d-none', lokasiSelect.value !== 'Cabang');
+
+    lokasiSelect.addEventListener('change', toggleHint);
+    toggleHint();
+};
+
 document.addEventListener('DOMContentLoaded', initializeJenisBarangSelect);
+document.addEventListener('DOMContentLoaded', initializeLokasiPenempatanHint);

@@ -25,6 +25,7 @@ test('barang is created with a default initial condition', function () {
         'kategori' => 'Bukan Bangunan - Kelompok 1',
         'jenis_barang' => 'Laptop / notebook',
         'unit_kerja_id' => $this->unitKerja->id,
+        'lokasi_penempatan' => 'Kantor Pusat',
         'tanggal_perolehan' => now()->subDay()->toDateString(),
         'harga_perolehan' => 12000000,
     ])->assertRedirect(route('barang.index'));
@@ -74,6 +75,7 @@ test('jenis barang must belong to the selected depreciation group', function () 
         'kategori' => 'Bukan Bangunan - Kelompok 2',
         'jenis_barang' => 'Laptop / notebook',
         'unit_kerja_id' => $this->unitKerja->id,
+        'lokasi_penempatan' => 'Kantor Pusat',
         'tanggal_perolehan' => now()->subDay()->toDateString(),
         'harga_perolehan' => 12000000,
     ];
@@ -89,6 +91,7 @@ test('jenis barang is required when creating or updating an inventory item', fun
         'nama_barang' => 'Laptop Tanpa Jenis',
         'kategori' => 'Bukan Bangunan - Kelompok 1',
         'unit_kerja_id' => $this->unitKerja->id,
+        'lokasi_penempatan' => 'Kantor Pusat',
         'tanggal_perolehan' => now()->subDay()->toDateString(),
         'harga_perolehan' => 12000000,
     ];
@@ -103,6 +106,7 @@ test('barang accepts any kategori and kondisi option offered by the config list'
         'kategori' => 'Bangunan - Permanen',
         'jenis_barang' => 'Gedung kantor permanen',
         'unit_kerja_id' => $this->unitKerja->id,
+        'lokasi_penempatan' => 'Kantor Pusat',
         'tanggal_perolehan' => now()->subDay()->toDateString(),
         'harga_perolehan' => 1500000,
     ])->assertRedirect(route('barang.index'));
@@ -159,6 +163,7 @@ test('master data update does not change condition history', function () {
         'kategori' => 'Bukan Bangunan - Kelompok 1',
         'jenis_barang' => 'Laptop / notebook',
         'unit_kerja_id' => $this->unitKerja->id,
+        'lokasi_penempatan' => 'Kantor Pusat',
         'tanggal_perolehan' => now()->subMonth()->toDateString(),
         'harga_perolehan' => 12500000,
     ])->assertRedirect(route('barang.index'));

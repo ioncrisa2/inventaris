@@ -25,6 +25,8 @@ class UpdateBarangRequest extends FormRequest
                 'required',
                 TenantRule::existsFor('unit_kerja', 'id', $this->route('barang')?->koperasi_id),
             ],
+            'lokasi_penempatan' => ['required', Rule::in(config('inventaris.lokasi_penempatan'))],
+            'keterangan_lokasi' => ['nullable', 'string', 'max:255'],
             'tanggal_perolehan' => ['required', 'date', 'before_or_equal:today'],
             'harga_perolehan' => ['required', 'numeric', 'min:0'],
             'foto_sampul' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],

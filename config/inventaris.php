@@ -16,6 +16,14 @@ return [
         'Bangunan - Permanen',
         'Bangunan - Bukan Permanen',
     ],
+    /**
+     * Lokasi penempatan barang — kantor pusat primer atau cabang primer,
+     * dipakai koperasi sekunder untuk audit fisik lebih cepat.
+     */
+    'lokasi_penempatan' => [
+        'Kantor Pusat',
+        'Cabang',
+    ],
     'kondisi' => [
         'Baru',
         'Sangat Baik',

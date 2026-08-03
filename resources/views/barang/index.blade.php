@@ -25,7 +25,7 @@
                 <x-filter-form
                     :action="route('barang.index')"
                     :reset-route="route('barang.index')"
-                    :has-filters="request()->hasAny(['search', 'koperasi_id', 'unit_kerja_id', 'kategori', 'kondisi', 'kelengkapan'])"
+                    :has-filters="request()->hasAny(['search', 'koperasi_id', 'unit_kerja_id', 'kategori', 'lokasi_penempatan', 'kondisi', 'kelengkapan'])"
                 >
                     <div class="col-12 col-lg-auto">
                         <label class="visually-hidden" for="search">Cari barang</label>
@@ -58,6 +58,15 @@
                                 @selected(request('kategori')===$kategori)>
                                 {{ $kategori }}
                             </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-12 col-sm-6 col-lg-auto">
+                        <label class="visually-hidden" for="lokasi_penempatan">Lokasi penempatan</label>
+                        <select class="form-select" id="lokasi_penempatan" name="lokasi_penempatan">
+                            <option value="">Semua lokasi</option>
+                            @foreach(config('inventaris.lokasi_penempatan') as $lokasi)
+                            <option value="{{ $lokasi }}" @selected(request('lokasi_penempatan')===$lokasi)>{{ $lokasi }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -144,7 +153,10 @@
                                 <td>{{ $barang->koperasi?->nama ?? 'Tanpa koperasi' }}</td>
                             @endif
                             <td title="{{ $barang->kategori }}">{{ config('inventaris.kategori_label_singkat')[$barang->kategori] ?? $barang->kategori }}</td>
-                            <td>{{ $barang->unitKerja?->nama_unit ?? 'Belum ditentukan' }}</td>
+                            <td>
+                                {{ $barang->unitKerja?->nama_unit ?? 'Belum ditentukan' }}
+                                <div class="small text-body-secondary">{{ $barang->lokasi_penempatan }}</div>
+                            </td>
                             <td>{{ $barang->tanggal_perolehan->format('d/m/Y') }}</td>
                             <td class="text-end">Rp {{ number_format($barang->harga_perolehan, 0, ',', '.') }}</td>
                             <td><x-badge :color="config('inventaris.kondisi_warna')[$kondisi] ?? 'bg-secondary'">{{ $kondisi }}</x-badge></td>

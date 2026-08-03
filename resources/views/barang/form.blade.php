@@ -73,6 +73,31 @@
         </div>
 
         <div class="col-md-6">
+            <x-form.select
+                name="lokasi_penempatan"
+                label="Lokasi Penempatan"
+                :options="collect(config('inventaris.lokasi_penempatan'))->mapWithKeys(fn ($lokasi) => [$lokasi => $lokasi])"
+                :value="$barang->lokasi_penempatan ?? 'Kantor Pusat'"
+                required
+                data-lokasi-penempatan-select
+            />
+            <div class="form-text d-none" data-lokasi-cabang-hint>
+                Barang berada di cabang primer — isi "Keterangan Lokasi" di bawah supaya mudah ditemukan koperasi sekunder saat audit.
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <x-form.input
+                name="keterangan_lokasi"
+                label="Keterangan Lokasi"
+                :value="$barang->keterangan_lokasi"
+                maxlength="255"
+                help="Contoh: Ruang Server lantai 2, rak B3 — memudahkan pencarian saat audit."
+                data-keterangan-lokasi-field
+            />
+        </div>
+
+        <div class="col-md-6">
             <x-form.input
                 name="tanggal_perolehan"
                 label="Tanggal Perolehan"

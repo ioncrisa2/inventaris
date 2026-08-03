@@ -16,6 +16,8 @@ return new class extends Migration
             $table->string('kategori');
             $table->string('jenis_barang')->nullable();
             $table->foreignId('unit_kerja_id')->constrained('unit_kerja')->restrictOnDelete();
+            $table->string('lokasi_penempatan')->default('Kantor Pusat');
+            $table->string('keterangan_lokasi')->nullable();
             $table->date('tanggal_perolehan');
             $table->decimal('harga_perolehan', 15, 2)->default(0);
             $table->string('foto_sampul')->nullable();

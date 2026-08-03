@@ -22,6 +22,8 @@ class StoreBarangRequest extends FormRequest
             'kategori' => ['required', Rule::in(config('inventaris.kategori'))],
             'jenis_barang' => ['required', 'string', 'max:255', Rule::in($jenisBarang)],
             'unit_kerja_id' => ['required', TenantRule::exists('unit_kerja')],
+            'lokasi_penempatan' => ['required', Rule::in(config('inventaris.lokasi_penempatan'))],
+            'keterangan_lokasi' => ['nullable', 'string', 'max:255'],
             'tanggal_perolehan' => ['required', 'date', 'before_or_equal:today'],
             'harga_perolehan' => ['required', 'numeric', 'min:0'],
             'foto_sampul' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],

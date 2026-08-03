@@ -263,6 +263,8 @@ class MultiPrimerDemoSeeder extends Seeder
             $tanggalPerolehan = $tanggalDasar->addDays($index * 17 + $primerIndex * 45)->toDateString();
             $langkah = max(1, intdiv($hargaMax - $hargaMin, 50000));
             $harga = $hargaMin + (($index * 13 + $primerIndex * 29) % ($langkah + 1)) * 50000;
+            $lokasiPenempatan = ($index + $primerIndex) % 3 === 0 ? 'Cabang' : 'Kantor Pusat';
+            $keteranganLokasi = $lokasiPenempatan === 'Cabang' ? 'Gudang cabang, rak '.chr(65 + $index % 5) : null;
 
             Barang::updateOrCreate(
                 ['kode_barang' => sprintf('%s-BRG-%03d', $primer['kode'], $index + 1)],
@@ -271,6 +273,8 @@ class MultiPrimerDemoSeeder extends Seeder
                     'kategori' => $kategori,
                     'jenis_barang' => $jenisBarang,
                     'unit_kerja_id' => $unitKerjaId,
+                    'lokasi_penempatan' => $lokasiPenempatan,
+                    'keterangan_lokasi' => $keteranganLokasi,
                     'tanggal_perolehan' => $tanggalPerolehan,
                     'harga_perolehan' => $harga,
                 ],

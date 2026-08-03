@@ -57,6 +57,8 @@ $kondisi = $barang->kondisiTerakhir?->kondisi ?? 'Belum diperiksa';
                         @endif
                         <x-detail-item label="Golongan" :value="$barang->kategori" />
                         <x-detail-item label="Unit Kerja" :value="$barang->unitKerja?->nama_unit ?? 'Belum ditentukan'" />
+                        <x-detail-item label="Lokasi Penempatan" :value="$barang->lokasi_penempatan" />
+                        <x-detail-item label="Keterangan Lokasi" :value="$barang->keterangan_lokasi ?? 'Tidak ada keterangan'" />
                         <x-detail-item label="Tanggal Perolehan" :value="$barang->tanggal_perolehan->translatedFormat('d F Y')" />
                         <x-detail-item label="Harga Perolehan" emphasis>Rp {{ number_format($barang->harga_perolehan, 0, ',', '.') }}</x-detail-item>
                     </x-detail-list>

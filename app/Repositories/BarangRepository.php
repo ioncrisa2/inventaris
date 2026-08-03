@@ -9,7 +9,7 @@ use Illuminate\Support\Collection;
 class BarangRepository
 {
     /**
-     * @param  array{search?: ?string, koperasi_id?: ?int, unit_kerja_id?: ?string, kategori?: ?string, kondisi?: ?string, kelengkapan?: ?string}  $filters
+     * @param  array{search?: ?string, koperasi_id?: ?int, unit_kerja_id?: ?string, kategori?: ?string, lokasi_penempatan?: ?string, kondisi?: ?string, kelengkapan?: ?string}  $filters
      */
     public function paginate(array $filters, int $perPage = 10): LengthAwarePaginator
     {
@@ -30,7 +30,8 @@ class BarangRepository
                     $query->where('kode_barang', 'like', "%{$search}%")
                         ->orWhere('nama_barang', 'like', "%{$search}%")
                         ->orWhere('jenis_barang', 'like', "%{$search}%")
-                        ->orWhere('kategori', 'like', "%{$search}%");
+                        ->orWhere('kategori', 'like', "%{$search}%")
+                        ->orWhere('keterangan_lokasi', 'like', "%{$search}%");
                 });
             })
             ->when($filters['unit_kerja_id'] ?? null, function ($query, $unitKerjaId) {
@@ -38,6 +39,9 @@ class BarangRepository
             })
             ->when($filters['kategori'] ?? null, function ($query, $kategori) {
                 $query->where('kategori', $kategori);
+            })
+            ->when($filters['lokasi_penempatan'] ?? null, function ($query, $lokasiPenempatan) {
+                $query->where('lokasi_penempatan', $lokasiPenempatan);
             })
             ->when($filters['kondisi'] ?? null, function ($query, $kondisi) {
                 $grup = config("inventaris.kondisi_grup.{$kondisi}");

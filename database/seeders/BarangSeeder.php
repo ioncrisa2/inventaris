@@ -51,6 +51,8 @@ class BarangSeeder extends Seeder
             $tanggalPerolehan = $tanggalDasar->addDays($index * 23)->toDateString();
             $jumlahLangkah = max(1, intdiv($hargaMax - $hargaMin, 50000));
             $harga = $hargaMin + (($index * 17) % ($jumlahLangkah + 1)) * 50000;
+            $lokasiPenempatan = $index % 3 === 0 ? 'Cabang' : 'Kantor Pusat';
+            $keteranganLokasi = $lokasiPenempatan === 'Cabang' ? 'Gudang cabang, rak '.chr(65 + $index % 5) : null;
 
             Barang::updateOrCreate(
                 ['kode_barang' => 'BRG-'.str_pad((string) $nomor, 3, '0', STR_PAD_LEFT)],
@@ -59,6 +61,8 @@ class BarangSeeder extends Seeder
                     'kategori' => $item['kategori'],
                     'jenis_barang' => $item['jenis_barang'],
                     'unit_kerja_id' => $unitKerjaId,
+                    'lokasi_penempatan' => $lokasiPenempatan,
+                    'keterangan_lokasi' => $keteranganLokasi,
                     'tanggal_perolehan' => $tanggalPerolehan,
                     'harga_perolehan' => $harga,
                 ]

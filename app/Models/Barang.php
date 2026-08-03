@@ -17,6 +17,8 @@ class Barang extends Model
         'kategori',
         'jenis_barang',
         'unit_kerja_id',
+        'lokasi_penempatan',
+        'keterangan_lokasi',
         'tanggal_perolehan',
         'harga_perolehan',
         'foto_sampul',
