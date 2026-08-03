@@ -16,13 +16,6 @@
             <nav class="card settings-nav" aria-label="Bagian pengaturan">
                 <div class="card-body">
                     <div class="settings-nav__label">Pengaturan</div>
-                    <a href="#tampilan" class="settings-nav__link">
-                        <i class="bi bi-palette" aria-hidden="true"></i>
-                        <span>
-                            <strong>Tampilan</strong>
-                            <small>Menu dan tema warna</small>
-                        </span>
-                    </a>
                     @can('pengaturan.view')
                     <a href="#identitas" class="settings-nav__link">
                         <i class="bi bi-building" aria-hidden="true"></i>
@@ -58,61 +51,6 @@
         </aside>
 
         <div class="col-lg-9 d-grid gap-4">
-            <x-section-card
-                id="tampilan"
-                title="Tampilan Aplikasi"
-                subtitle="Preferensi ini disimpan pada browser dan hanya berlaku di perangkat ini."
-                class="settings-section"
-            >
-                <fieldset class="settings-fieldset">
-                    <legend>Tampilan menu</legend>
-                    <p>Pilih posisi navigasi yang paling sesuai dengan cara kerja Anda.</p>
-
-                    <div class="layout-option-group">
-                        <label class="layout-option">
-                            <input class="visually-hidden" type="radio" name="app-layout" value="sidebar" id="layoutOptionSidebar">
-                            <i class="bi bi-layout-sidebar-inset" aria-hidden="true"></i>
-                            <strong>Sidebar</strong>
-                            <small>Menu utama tetap berada di sisi kiri.</small>
-                        </label>
-                        <label class="layout-option">
-                            <input class="visually-hidden" type="radio" name="app-layout" value="topbar" id="layoutOptionTopbar">
-                            <i class="bi bi-layout-text-window" aria-hidden="true"></i>
-                            <strong>Top Bar</strong>
-                            <small>Menu utama ditampilkan secara horizontal.</small>
-                        </label>
-                    </div>
-                </fieldset>
-
-                <hr class="my-4">
-
-                <fieldset class="settings-fieldset">
-                    <legend>Tema warna</legend>
-                    <p>Pilih tema terang, gelap, atau ikuti pengaturan sistem perangkat.</p>
-
-                    <div class="btn-group color-mode-group" role="group" aria-label="Pilihan tema warna">
-                        <input type="radio" class="btn-check" name="color-mode" value="auto" id="colorModeAuto" autocomplete="off">
-                        <label class="btn btn-outline-primary" for="colorModeAuto">
-                            <i class="bi bi-circle-half" aria-hidden="true"></i>
-                            Sistem
-                        </label>
-
-                        <input type="radio" class="btn-check" name="color-mode" value="light" id="colorModeLight" autocomplete="off">
-                        <label class="btn btn-outline-primary" for="colorModeLight">
-                            <i class="bi bi-sun" aria-hidden="true"></i>
-                            Terang
-                        </label>
-
-                        <input type="radio" class="btn-check" name="color-mode" value="dark" id="colorModeDark" autocomplete="off">
-                        <label class="btn btn-outline-primary" for="colorModeDark">
-                            <i class="bi bi-moon-stars" aria-hidden="true"></i>
-                            Gelap
-                        </label>
-                    </div>
-                </fieldset>
-
-            </x-section-card>
-
             @can('pengaturan.view')
             <x-section-card
                 id="identitas"
@@ -435,11 +373,6 @@
             </x-section-card>
             @endcan
         </div>
-    </div>
-
-    <div class="settings-save-toast" data-settings-save-toast role="status" aria-live="polite" hidden>
-        <i class="bi bi-check-circle" aria-hidden="true"></i>
-        Perubahan tampilan disimpan.
     </div>
 </x-app-page>
 @endsection

@@ -12,7 +12,7 @@
 
 @section('content')
 <x-app-page long-footer>
-        <x-page-header title="Transaksi Gaji — {{ $karyawan->nama_lengkap }}" subtitle="Seluruh riwayat transaksi gaji karyawan ini.">
+        <x-page-header title="Transaksi Gaji — {{ $karyawan->nama_lengkap }}" subtitle="Seluruh riwayat transaksi gaji karyawan ini{{ auth()->user()->isSuperAdmin() ? ' · '.($karyawan->koperasi?->nama ?? 'Tanpa koperasi') : '' }}.">
             <x-slot:actions>
                 <a href="{{ route('transaksi-gaji.index') }}" class="btn btn-light">
                     <i class="bi bi-arrow-left"></i>
@@ -138,7 +138,14 @@
                             </td>
                         </tr>
                         @empty
-                        <x-empty-row :colspan="auth()->user()->can('transaksi-gaji.delete') ? 5 : 4">Belum ada transaksi gaji untuk karyawan ini.</x-empty-row>
+                        <x-empty-row :colspan="auth()->user()->can('transaksi-gaji.delete') ? 5 : 4">
+                            @if(request()->hasAny(['bulan', 'tahun']))
+                                Tidak ada transaksi gaji yang cocok dengan filter.
+                                <a href="{{ route('transaksi-gaji.karyawan', $karyawan) }}">Hapus filter</a>.
+                            @else
+                                Belum ada transaksi gaji untuk karyawan ini.
+                            @endif
+                        </x-empty-row>
                         @endforelse
                     </tbody>
                 </table>

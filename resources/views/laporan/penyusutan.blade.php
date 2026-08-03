@@ -5,13 +5,18 @@
 @section('content')
 <x-app-page>
         @php
-            $penyusutanActiveFilterCount = (request()->filled('unit_kerja_id') ? 1 : 0)
+            $showTenant = auth()->user()->isSuperAdmin();
+            $penyusutanActiveFilterCount = ($selectedKoperasiId ? 1 : 0)
+                + (request()->filled('unit_kerja_id') ? 1 : 0)
                 + (request()->filled('kategori') ? 1 : 0)
                 + ((int) $tahun !== now()->year ? 1 : 0);
 
             $penyusutanSelectedUnit = request()->filled('unit_kerja_id')
                 ? ($unitKerjas->firstWhere('id', (int) request('unit_kerja_id'))?->nama_unit ?? 'Unit tidak tersedia')
                 : 'Semua unit kerja';
+            $penyusutanSelectedTenant = $selectedKoperasiId
+                ? ($koperasis->firstWhere('id', $selectedKoperasiId)?->nama ?? 'Koperasi tidak tersedia')
+                : 'Seluruh koperasi';
         @endphp
 
         <x-page-header title="Laporan Penyusutan" subtitle="Rekap penyusutan fiskal aset per tahun — dasar pelaporan SPT.">
@@ -39,6 +44,7 @@
 
         <x-report-filter-summary
             :items="[
+                ['label' => 'Koperasi', 'value' => $showTenant ? $penyusutanSelectedTenant : auth()->user()->koperasi?->nama],
                 ['label' => 'Tahun', 'value' => $tahun],
                 ['label' => 'Unit', 'value' => $penyusutanSelectedUnit],
                 ['label' => 'Golongan', 'value' => request('kategori') ?: 'Semua golongan'],
@@ -53,6 +59,18 @@
             :has-filters="$penyusutanActiveFilterCount > 0"
             :has-errors="$errors->any()"
         >
+            @if($showTenant)
+                <div class="col-md-4">
+                    <label class="form-label" for="penyusutan_koperasi_id">Koperasi</label>
+                    <select class="form-select @error('koperasi_id') is-invalid @enderror" id="penyusutan_koperasi_id" name="koperasi_id">
+                        <option value="">Seluruh koperasi</option>
+                        @foreach($koperasis as $koperasi)
+                            <option value="{{ $koperasi->id }}" @selected((string) old('koperasi_id', $selectedKoperasiId) === (string) $koperasi->id)>{{ $koperasi->nama }}</option>
+                        @endforeach
+                    </select>
+                    @error('koperasi_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
+            @endif
             <div class="col-md-4">
                 <label class="form-label" for="penyusutan_tahun">Tahun</label>
                 <input
@@ -74,7 +92,7 @@
                     <option value="">Semua unit kerja</option>
                     @foreach($unitKerjas as $unit)
                         <option value="{{ $unit->id }}" @selected((string) old('unit_kerja_id', request('unit_kerja_id')) === (string) $unit->id)>
-                            {{ $unit->nama_unit }}
+                            {{ $showTenant ? (($unit->koperasi?->nama ?? 'Tanpa koperasi').' — '.$unit->nama_unit) : $unit->nama_unit }}
                         </option>
                     @endforeach
                 </select>
@@ -135,6 +153,9 @@
                         <tr>
                             <th>Kode</th>
                             <th>Nama Barang</th>
+                            @if($showTenant)
+                                <th>Koperasi</th>
+                            @endif
                             <th>Golongan</th>
                             <th>Metode</th>
                             <th class="text-end">Harga Perolehan</th>
@@ -150,6 +171,9 @@
                         <tr>
                             <td><strong>{{ $barang->kode_barang }}</strong></td>
                             <td>{{ $barang->nama_barang }}</td>
+                            @if($showTenant)
+                                <td>{{ $barang->koperasi?->nama ?? 'Tanpa koperasi' }}</td>
+                            @endif
                             <td>{{ config('inventaris.kategori_label_singkat')[$barang->kategori] ?? $barang->kategori }}</td>
                             <td>{{ \App\Support\PenyusutanCalculator::namaMetode($r['metode']) }}</td>
                             <td class="text-end">Rp {{ number_format($barang->harga_perolehan, 0, ',', '.') }}</td>
@@ -159,12 +183,12 @@
                             <td class="text-end">Rp {{ number_format($r['nilai_buku_akhir_tahun'], 0, ',', '.') }}</td>
                         </tr>
                         @empty
-                        <x-empty-row :colspan="9">Tidak ada aset yang cocok dengan filter untuk tahun {{ $tahun }}.</x-empty-row>
+                        <x-empty-row :colspan="$showTenant ? 10 : 9">Tidak ada aset yang cocok dengan filter untuk tahun {{ $tahun }}.</x-empty-row>
                         @endforelse
                     </tbody>
                     <tfoot class="table-light fw-semibold">
                         <tr>
-                            <td colspan="4">Total</td>
+                            <td colspan="{{ $showTenant ? 5 : 4 }}">Total</td>
                             <td class="text-end">Rp {{ number_format($totalHargaPerolehan, 0, ',', '.') }}</td>
                             <td class="text-end">Rp {{ number_format($totalAkumulasiAwalTahun, 0, ',', '.') }}</td>
                             <td class="text-end">Rp {{ number_format($totalPenyusutanTahunIni, 0, ',', '.') }}</td>

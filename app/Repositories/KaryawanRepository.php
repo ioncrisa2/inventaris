@@ -9,12 +9,13 @@ use Illuminate\Support\Collection;
 class KaryawanRepository
 {
     /**
-     * @param  array{search?: ?string, unit_kerja_id?: ?string, status_karyawan?: ?string, kelengkapan?: ?string}  $filters
+     * @param  array{search?: ?string, koperasi_id?: ?int, unit_kerja_id?: ?string, status_karyawan?: ?string, kelengkapan?: ?string}  $filters
      */
     public function paginate(array $filters, int $perPage = 10): LengthAwarePaginator
     {
         return Karyawan::query()
-            ->with('unitKerja:id,nama_unit')
+            ->with(['koperasi:id,nama', 'unitKerja:id,nama_unit'])
+            ->when($filters['koperasi_id'] ?? null, fn ($query, $koperasiId) => $query->where('koperasi_id', $koperasiId))
             ->when($filters['search'] ?? null, function ($query, $search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('nik', 'like', "%{$search}%")
@@ -44,9 +45,13 @@ class KaryawanRepository
             ->withQueryString();
     }
 
-    public function orderedList(): Collection
+    public function orderedList(?int $koperasiId = null): Collection
     {
-        return Karyawan::with('unitKerja:id,nama_unit')->orderBy('nama_lengkap')->get();
+        return Karyawan::query()
+            ->with(['koperasi:id,nama', 'unitKerja:id,nama_unit'])
+            ->when($koperasiId, fn ($query) => $query->where('koperasi_id', $koperasiId))
+            ->orderBy('nama_lengkap')
+            ->get();
     }
 
     public function activeOrderedList(): Collection
@@ -106,10 +111,11 @@ class KaryawanRepository
         return Karyawan::find($id);
     }
 
-    public function searchOrderedByName(?string $search, int $perPage = 10): LengthAwarePaginator
+    public function searchOrderedByName(?string $search, int $perPage = 10, ?int $koperasiId = null): LengthAwarePaginator
     {
         return Karyawan::query()
-            ->with('unitKerja:id,nama_unit')
+            ->with(['koperasi:id,nama', 'unitKerja:id,nama_unit'])
+            ->when($koperasiId, fn ($query) => $query->where('koperasi_id', $koperasiId))
             ->when($search, function ($query, $search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('nik', 'like', "%{$search}%")

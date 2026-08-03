@@ -5,7 +5,9 @@
 @section('content')
 <x-app-page>
         @php
-            $absensiActiveFilterCount = (filled($selectedKaryawanId) ? 1 : 0)
+            $showTenant = auth()->user()->isSuperAdmin();
+            $absensiActiveFilterCount = ($selectedKoperasiId ? 1 : 0)
+                + (filled($selectedKaryawanId) ? 1 : 0)
                 + ((int) $bulan !== now()->month ? 1 : 0)
                 + ((int) $tahun !== now()->year ? 1 : 0);
 
@@ -14,6 +16,9 @@
                 : 'Semua pegawai';
 
             $absensiPeriod = \Illuminate\Support\Carbon::createFromDate(2000, $bulan, 1)->translatedFormat('F').' '.$tahun;
+            $absensiSelectedTenant = $selectedKoperasiId
+                ? ($koperasis->firstWhere('id', $selectedKoperasiId)?->nama ?? 'Koperasi tidak tersedia')
+                : 'Seluruh koperasi';
         @endphp
 
         <x-page-header title="Laporan Absensi" subtitle="Kehadiran per pegawai dalam rentang yang dipilih.">
@@ -41,6 +46,7 @@
 
         <x-report-filter-summary
             :items="[
+                ['label' => 'Koperasi', 'value' => $showTenant ? $absensiSelectedTenant : auth()->user()->koperasi?->nama],
                 ['label' => 'Pegawai', 'value' => $absensiSelectedEmployee],
                 ['label' => 'Periode', 'value' => $absensiPeriod],
             ]"
@@ -54,13 +60,25 @@
             :has-filters="$absensiActiveFilterCount > 0"
             :has-errors="$errors->any()"
         >
+            @if($showTenant)
+                <div class="col-md-6">
+                    <label class="form-label" for="absensi_laporan_koperasi_id">Koperasi</label>
+                    <select class="form-select @error('koperasi_id') is-invalid @enderror" id="absensi_laporan_koperasi_id" name="koperasi_id">
+                        <option value="">Seluruh koperasi</option>
+                        @foreach($koperasis as $koperasi)
+                            <option value="{{ $koperasi->id }}" @selected((string) old('koperasi_id', $selectedKoperasiId) === (string) $koperasi->id)>{{ $koperasi->nama }}</option>
+                        @endforeach
+                    </select>
+                    @error('koperasi_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
+            @endif
             <div class="col-12">
                 <label class="form-label" for="absensi_karyawan_id">Pegawai</label>
                 <select class="form-select @error('karyawan_id') is-invalid @enderror" id="absensi_karyawan_id" name="karyawan_id">
                     <option value="">Semua pegawai</option>
                     @foreach($karyawans as $karyawan)
                         <option value="{{ $karyawan->id }}" @selected((string) old('karyawan_id', $selectedKaryawanId) === (string) $karyawan->id)>
-                            {{ $karyawan->nama_lengkap }}
+                            {{ $showTenant ? (($karyawan->koperasi?->nama ?? 'Tanpa koperasi').' — '.$karyawan->nama_lengkap) : $karyawan->nama_lengkap }}
                         </option>
                     @endforeach
                 </select>
@@ -132,6 +150,9 @@
                         <tr>
                             <th>Tanggal</th>
                             <th>Pegawai</th>
+                            @if($showTenant)
+                                <th>Koperasi</th>
+                            @endif
                             <th>Status</th>
                             <th>Catatan</th>
                         </tr>
@@ -141,11 +162,14 @@
                             <tr>
                                 <td>{{ $absensi->tanggal->translatedFormat('d F Y') }}</td>
                                 <td>{{ $absensi->karyawan->nama_lengkap ?? '-' }}</td>
+                                @if($showTenant)
+                                    <td>{{ $absensi->koperasi?->nama ?? 'Tanpa koperasi' }}</td>
+                                @endif
                                 <td><x-badge :color="\App\Models\Absensi::STATUS_COLORS[$absensi->status] ?? 'bg-secondary'">{{ $absensi->status }}</x-badge></td>
                                 <td>{{ $absensi->catatan ?? '-' }}</td>
                             </tr>
                         @empty
-                            <x-empty-row :colspan="4">Belum ada data absensi untuk periode ini.</x-empty-row>
+                            <x-empty-row :colspan="$showTenant ? 5 : 4">Belum ada data absensi untuk periode ini.</x-empty-row>
                         @endforelse
                     </tbody>
                 </table>

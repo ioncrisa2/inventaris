@@ -5,7 +5,9 @@
 @section('content')
 <x-app-page>
         @php
-            $penggajianActiveFilterCount = (request()->filled('unit_kerja_id') ? 1 : 0)
+            $showTenant = auth()->user()->isSuperAdmin();
+            $penggajianActiveFilterCount = ($selectedKoperasiId ? 1 : 0)
+                + (request()->filled('unit_kerja_id') ? 1 : 0)
                 + ((int) $bulan !== now()->month ? 1 : 0)
                 + ((int) $tahun !== now()->year ? 1 : 0);
 
@@ -14,6 +16,9 @@
                 : 'Semua unit kerja';
 
             $penggajianPeriod = \Illuminate\Support\Carbon::createFromDate(2000, $bulan, 1)->translatedFormat('F').' '.$tahun;
+            $penggajianSelectedTenant = $selectedKoperasiId
+                ? ($koperasis->firstWhere('id', $selectedKoperasiId)?->nama ?? 'Koperasi tidak tersedia')
+                : 'Seluruh koperasi';
         @endphp
 
         <x-page-header title="Laporan Penggajian" subtitle="Pembayaran gaji per periode dan unit kerja.">
@@ -41,6 +46,7 @@
 
         <x-report-filter-summary
             :items="[
+                ['label' => 'Koperasi', 'value' => $showTenant ? $penggajianSelectedTenant : auth()->user()->koperasi?->nama],
                 ['label' => 'Periode', 'value' => $penggajianPeriod],
                 ['label' => 'Unit', 'value' => $penggajianSelectedUnit],
             ]"
@@ -54,13 +60,25 @@
             :has-filters="$penggajianActiveFilterCount > 0"
             :has-errors="$errors->any()"
         >
+            @if($showTenant)
+                <div class="col-md-6">
+                    <label class="form-label" for="penggajian_koperasi_id">Koperasi</label>
+                    <select class="form-select @error('koperasi_id') is-invalid @enderror" id="penggajian_koperasi_id" name="koperasi_id">
+                        <option value="">Seluruh koperasi</option>
+                        @foreach($koperasis as $koperasi)
+                            <option value="{{ $koperasi->id }}" @selected((string) old('koperasi_id', $selectedKoperasiId) === (string) $koperasi->id)>{{ $koperasi->nama }}</option>
+                        @endforeach
+                    </select>
+                    @error('koperasi_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
+            @endif
             <div class="col-12">
                 <label class="form-label" for="penggajian_unit_kerja_id">Unit Kerja</label>
                 <select class="form-select @error('unit_kerja_id') is-invalid @enderror" id="penggajian_unit_kerja_id" name="unit_kerja_id">
                     <option value="">Semua unit kerja</option>
                     @foreach($unitKerjas as $unit)
                         <option value="{{ $unit->id }}" @selected((string) old('unit_kerja_id', request('unit_kerja_id')) === (string) $unit->id)>
-                            {{ $unit->nama_unit }}
+                            {{ $showTenant ? (($unit->koperasi?->nama ?? 'Tanpa koperasi').' — '.$unit->nama_unit) : $unit->nama_unit }}
                         </option>
                     @endforeach
                 </select>
@@ -142,7 +160,7 @@
                     <tbody>
                         @forelse($rekapUnitKerja as $rekap)
                             <tr>
-                                <td>{{ $rekap->nama_unit }}</td>
+                                <td>{{ $showTenant ? (($rekap->nama_koperasi ?? 'Tanpa koperasi').' — '.$rekap->nama_unit) : $rekap->nama_unit }}</td>
                                 <td class="text-end">{{ number_format($rekap->total_transaksi, 0, ',', '.') }}</td>
                                 <td class="text-end">Rp {{ number_format($rekap->total_gaji_bersih, 0, ',', '.') }}</td>
                             </tr>
@@ -171,6 +189,9 @@
                     <thead class="table-light">
                         <tr>
                             <th>Karyawan</th>
+                            @if($showTenant)
+                                <th>Koperasi</th>
+                            @endif
                             <th>Unit Kerja</th>
                             <th class="text-end">Gaji Pokok</th>
                             <th class="text-end">Gaji Bersih</th>
@@ -183,6 +204,9 @@
                         @forelse($transaksiGaji as $transaksi)
                             <tr>
                                 <td>{{ $transaksi->karyawan?->nama_lengkap ?? '—' }}</td>
+                                @if($showTenant)
+                                    <td>{{ $transaksi->koperasi?->nama ?? 'Tanpa koperasi' }}</td>
+                                @endif
                                 <td>{{ $transaksi->karyawan?->unitKerja?->nama_unit ?? '—' }}</td>
                                 <td class="text-end">Rp {{ number_format($transaksi->gaji_pokok, 0, ',', '.') }}</td>
                                 <td class="text-end">Rp {{ number_format($transaksi->gaji_bersih, 0, ',', '.') }}</td>
@@ -195,7 +219,7 @@
                                 @endcan
                             </tr>
                         @empty
-                            <x-empty-row :colspan="auth()->user()->can('transaksi-gaji.view') ? 5 : 4">Tidak ada transaksi gaji yang cocok dengan filter.</x-empty-row>
+                            <x-empty-row :colspan="(auth()->user()->can('transaksi-gaji.view') ? 5 : 4) + ($showTenant ? 1 : 0)">Tidak ada transaksi gaji yang cocok dengan filter.</x-empty-row>
                         @endforelse
                     </tbody>
                 </table>

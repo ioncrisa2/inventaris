@@ -28,10 +28,12 @@
                         Cetak Slip Gaji
                     </button>
                     @endcan
-                    <a class="btn btn-primary" href="{{ route('transaksi-gaji.edit', $transaksiGaji) }}">
-                        <i class="bi bi-pencil"></i>
-                        Edit
-                    </a>
+                    @can('update', $transaksiGaji)
+                        <a class="btn btn-primary" href="{{ route('transaksi-gaji.edit', $transaksiGaji) }}">
+                            <i class="bi bi-pencil"></i>
+                            Edit
+                        </a>
+                    @endcan
                     <a class="btn btn-light" href="{{ route('transaksi-gaji.index') }}">Kembali</a>
                 </div>
             </x-slot:actions>
@@ -47,6 +49,11 @@
                 <dl class="row mb-0 g-3">
                     <dt class="col-sm-4 text-muted">Unit Kerja</dt>
                     <dd class="col-sm-8">{{ $transaksiGaji->karyawan->unitKerja?->nama_unit ?? '-' }}</dd>
+
+                    @if(auth()->user()->isSuperAdmin())
+                        <dt class="col-sm-4 text-muted">Koperasi</dt>
+                        <dd class="col-sm-8">{{ $transaksiGaji->koperasi?->nama ?? 'Tanpa koperasi' }}</dd>
+                    @endif
 
                     <dt class="col-sm-4 text-muted">Periode</dt>
                     <dd class="col-sm-8">{{ $namaBulan[$transaksiGaji->bulan] }} {{ $transaksiGaji->tahun }}</dd>

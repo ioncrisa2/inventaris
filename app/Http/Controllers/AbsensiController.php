@@ -7,6 +7,7 @@ use App\Http\Requests\Absensi\StoreAbsensiRequest;
 use App\Models\Karyawan;
 use App\Services\AbsensiService;
 use App\Support\PerPage;
+use App\Support\TenantContext;
 use Illuminate\Http\Request;
 
 class AbsensiController extends Controller
@@ -19,13 +20,18 @@ class AbsensiController extends Controller
     public function index(Request $request)
     {
         $this->authorize('absensi.view');
+        $selectedKoperasiId = TenantContext::selectedKoperasiId($request);
 
-        $karyawans = $this->absensiService->daftarKaryawan(
-            $request->string('search')->trim()->value() ?: null,
-            PerPage::resolve($request),
-        );
+        $search = $request->string('search')->trim()->value() ?: null;
+        $perPage = PerPage::resolve($request);
+        $karyawans = $selectedKoperasiId
+            ? $this->absensiService->daftarKaryawan($search, $perPage, $selectedKoperasiId)
+            : $this->absensiService->daftarKaryawan($search, $perPage);
 
-        return view('absensi.index', compact('karyawans'));
+        return view('absensi.index', [
+            'karyawans' => $karyawans,
+            ...TenantContext::filterViewData($request, $selectedKoperasiId),
+        ]);
     }
 
     /**
@@ -33,7 +39,7 @@ class AbsensiController extends Controller
      */
     public function show(AbsensiCalendarRequest $request, Karyawan $karyawan)
     {
-        $karyawan->load('unitKerja:id,nama_unit');
+        $karyawan->load('koperasi:id,nama', 'unitKerja:id,nama_unit');
         $bulan = (int) $request->input('bulan', now()->month);
         $tahun = (int) $request->input('tahun', now()->year);
 

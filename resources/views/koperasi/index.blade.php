@@ -44,6 +44,10 @@
                         @forelse($koperasis as $koperasi)
                             @php
                                 $expired = $koperasi->expires_at && $koperasi->expires_at->isPast();
+                                $adminPrimerFilters = array_filter([
+                                    'koperasi_id' => $koperasi->id,
+                                    'role_id' => $koperasi->adminPrimerRole?->id,
+                                ]);
                             @endphp
                             <tr>
                                 <td><strong>{{ $koperasi->nama }}</strong></td>
@@ -62,6 +66,14 @@
                                     <div class="table-actions">
                                         <a
                                             class="btn btn-sm btn-action btn-action-neutral"
+                                            href="{{ route('pengguna.index', $adminPrimerFilters) }}"
+                                            aria-label="Kelola Admin Primer {{ $koperasi->nama }}"
+                                            title="Kelola Admin Primer"
+                                        >
+                                            <i class="bi bi-person-gear" aria-hidden="true"></i>
+                                        </a>
+                                        <a
+                                            class="btn btn-sm btn-action btn-action-neutral"
                                             href="{{ route('koperasi.edit', $koperasi) }}"
                                             aria-label="Edit {{ $koperasi->nama }}"
                                             title="Edit"
@@ -72,7 +84,14 @@
                                 </td>
                             </tr>
                         @empty
-                            <x-empty-row :colspan="5">Belum ada koperasi terdaftar.</x-empty-row>
+                            <x-empty-row :colspan="5">
+                                @if(request()->filled('search'))
+                                    Tidak ada koperasi yang cocok dengan pencarian.
+                                    <a href="{{ route('koperasi.index') }}">Hapus filter</a>.
+                                @else
+                                    Belum ada koperasi terdaftar.
+                                @endif
+                            </x-empty-row>
                         @endforelse
                     </tbody>
                 </table>

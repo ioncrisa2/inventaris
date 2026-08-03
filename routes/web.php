@@ -8,6 +8,7 @@ use App\Http\Controllers\DokumenBarangController;
 use App\Http\Controllers\DokumenKaryawanController;
 use App\Http\Controllers\FotoBarangController;
 use App\Http\Controllers\HariLiburController;
+use App\Http\Controllers\HariLiburSinkronisasiController;
 use App\Http\Controllers\KaryawanController;
 use App\Http\Controllers\KomponenGajiController;
 use App\Http\Controllers\KoperasiController;
@@ -59,9 +60,20 @@ Route::middleware(['auth', 'koperasi.active'])->group(function () {
         Route::post('/{karyawan}', [AbsensiController::class, 'store'])->name('store');
     });
 
+    Route::middleware(['super_admin', 'throttle:10,1'])->group(function () {
+        Route::get('hari-libur/sinkronisasi', [HariLiburSinkronisasiController::class, 'create'])
+            ->name('hari-libur.sinkronisasi.create');
+        Route::post('hari-libur/sinkronisasi', [HariLiburSinkronisasiController::class, 'store'])
+            ->name('hari-libur.sinkronisasi.store');
+    });
+
     Route::delete('hari-libur/bulk', [HariLiburController::class, 'bulkDestroy'])->name('hari-libur.bulk-destroy');
     Route::get('hari-libur/template', [HariLiburController::class, 'template'])->name('hari-libur.template');
     Route::post('hari-libur/import', [HariLiburController::class, 'import'])->name('hari-libur.import');
+    Route::get('hari-libur/{tahun}/koperasi/{koperasi}', [HariLiburController::class, 'koperasi'])
+        ->middleware('super_admin')
+        ->whereNumber(['tahun', 'koperasi'])
+        ->name('hari-libur.koperasi');
     Route::get('hari-libur/{tahun}', [HariLiburController::class, 'tahun'])->whereNumber('tahun')->name('hari-libur.tahun');
     Route::resource('hari-libur', HariLiburController::class)->except(['show', 'create', 'edit']);
 

@@ -22,10 +22,12 @@ $kondisi = $barang->kondisiTerakhir?->kondisi ?? 'Belum diperiksa';
                         <i class="bi bi-qr-code"></i>
                         Cetak QR Code
                     </a>
-                    <a class="btn btn-primary" href="{{ route('barang.edit', $barang) }}">
-                        <i class="bi bi-pencil"></i>
-                        Edit Data
-                    </a>
+                    @can('update', $barang)
+                        <a class="btn btn-primary" href="{{ route('barang.edit', $barang) }}">
+                            <i class="bi bi-pencil"></i>
+                            Edit Data
+                        </a>
+                    @endcan
                     <a class="btn btn-light" href="{{ route('barang.index') }}">Kembali</a>
                 </div>
             </x-slot:actions>
@@ -50,6 +52,9 @@ $kondisi = $barang->kondisiTerakhir?->kondisi ?? 'Belum diperiksa';
                         <x-detail-item label="Kode Barang" :value="$barang->kode_barang" emphasis />
                         <x-detail-item label="Nama Barang" :value="$barang->nama_barang" />
                         <x-detail-item label="Jenis Barang" :value="$barang->jenis_barang ?? 'Belum diklasifikasikan'" />
+                        @if(auth()->user()->isSuperAdmin())
+                            <x-detail-item label="Koperasi" :value="$barang->koperasi?->nama ?? 'Tanpa koperasi'" />
+                        @endif
                         <x-detail-item label="Golongan" :value="$barang->kategori" />
                         <x-detail-item label="Unit Kerja" :value="$barang->unitKerja?->nama_unit ?? 'Belum ditentukan'" />
                         <x-detail-item label="Tanggal Perolehan" :value="$barang->tanggal_perolehan->translatedFormat('d F Y')" />

@@ -3,11 +3,19 @@
 @section('title', 'Manajemen Pengguna - Sistem Inventaris & Kepegawaian')
 
 @section('content')
+@php
+    $showTenant = auth()->user()->isSuperAdmin();
+    $canDelete = auth()->user()->can('pengguna.delete');
+    $columnCount = 5 + ($showTenant ? 1 : 0) + ($canDelete ? 1 : 0);
+@endphp
 <x-app-page>
-        <x-page-header title="Manajemen Pengguna">
+        <x-page-header
+            title="Manajemen Pengguna"
+            :subtitle="$showTenant ? 'Kelola akun lintas koperasi dengan konteks tenant yang eksplisit.' : null"
+        >
             <x-slot:actions>
                 @can('pengguna.create')
-                <a class="btn btn-primary" href="{{ route('pengguna.create') }}">
+                <a class="btn btn-primary" href="{{ route('pengguna.create', request()->only(['koperasi_id', 'role_id'])) }}">
                     <i class="bi bi-person-plus"></i>
                     Tambah Pengguna
                 </a>
@@ -22,7 +30,7 @@
                 <x-filter-form
                     :action="route('pengguna.index')"
                     :reset-route="route('pengguna.index')"
-                    :has-filters="request()->hasAny(['search', 'role_id'])"
+                    :has-filters="request()->hasAny(['search', 'role_id', 'koperasi_id'])"
                 >
                     <div class="col-12 col-lg-auto">
                         <label class="visually-hidden" for="search">Cari pengguna</label>
@@ -35,6 +43,7 @@
                             placeholder="Cari nama atau email…"
                         >
                     </div>
+                    <x-tenant-filter :koperasis="$koperasis" :selected="request('koperasi_id')" id="pengguna_koperasi_id" />
                     <div class="col-12 col-sm-6 col-lg-auto">
                         <label class="visually-hidden" for="role_id">Role</label>
                         <select class="form-select" id="role_id" name="role_id">
@@ -68,6 +77,9 @@
                             </th>
                             @endcan
                             <th>Nama</th>
+                            @if($showTenant)
+                                <th>Koperasi</th>
+                            @endif
                             <th>Email</th>
                             <th>Unit Kerja</th>
                             <th class="table-col-width-120">Role</th>
@@ -76,17 +88,31 @@
                     </thead>
                     <tbody>
                         @forelse($users as $data)
+                            @php
+                                $isProtectedAdminPrimer = $data->isAdminPrimer()
+                                    && (int) ($data->koperasi?->admin_primer_users_count ?? 0) <= 1;
+                                $canDeleteData = auth()->user()->can('delete', $data)
+                                    && ! $isProtectedAdminPrimer
+                                    && ! $data->is(auth()->user());
+                            @endphp
                             <tr>
                                 @can('pengguna.delete')
                                 <td class="selection-column">
-                                    @if(! $data->is(auth()->user()) && auth()->user()->can('delete', $data))
+                                    @if($canDeleteData)
                                         <x-table-checkbox group="pengguna" :value="$data->id" :label="'Pilih '.$data->name" />
                                     @else
-                                        <i class="bi bi-lock text-body-tertiary" aria-label="Akun ini tidak dapat dipilih"></i>
+                                        <i
+                                            class="bi bi-lock text-body-tertiary"
+                                            aria-label="{{ $isProtectedAdminPrimer ? 'Admin primer terakhir tidak dapat dihapus' : 'Akun ini tidak dapat dipilih' }}"
+                                            title="{{ $isProtectedAdminPrimer ? 'Tambahkan admin primer pengganti sebelum menghapus akun ini.' : 'Akun ini tidak dapat dipilih' }}"
+                                        ></i>
                                     @endif
                                 </td>
                                 @endcan
                                 <td><strong>{{ $data->name }}</strong></td>
+                                @if($showTenant)
+                                    <td>{{ $data->koperasi?->nama ?? 'Global' }}</td>
+                                @endif
                                 <td>{{ $data->email }}</td>
                                 <td>{{ $data->unitKerja?->nama_unit ?? '-' }}</td>
                                 <td>
@@ -101,28 +127,34 @@
                                         @can('update', $data)
                                         <a
                                             class="btn btn-sm btn-action btn-action-neutral"
-                                            href="{{ route('pengguna.edit', $data) }}"
+                                            href="{{ route('pengguna.edit', ['pengguna' => $data] + request()->only(['koperasi_id', 'role_id'])) }}"
                                             aria-label="Edit {{ $data->name }}"
                                             title="Edit"
                                         >
                                             <i class="bi bi-pencil"></i>
                                         </a>
                                         @endcan
-                                        @can('delete', $data)
-                                        @unless($data->is(auth()->user()))
+                                        @if($canDeleteData)
                                         <x-delete-button
                                             :url="route('pengguna.destroy', $data)"
                                             :message="'Yakin ingin menghapus pengguna &quot;'.$data->name.'&quot;?'"
                                             :label="'Hapus '.$data->name"
                                         />
-                                        @endunless
-                                        @endcan
+                                        @elseif($isProtectedAdminPrimer && auth()->user()->can('pengguna.delete'))
+                                            <span
+                                                class="btn btn-sm btn-action text-body-tertiary"
+                                                aria-label="Admin primer terakhir dilindungi"
+                                                title="Tambahkan admin primer pengganti sebelum menghapus akun ini."
+                                            >
+                                                <i class="bi bi-shield-lock" aria-hidden="true"></i>
+                                            </span>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>
                         @empty
-                            <x-empty-row :colspan="auth()->user()->can('pengguna.delete') ? 6 : 5">
-                                @if(request()->hasAny(['search', 'role_id']))
+                            <x-empty-row :colspan="$columnCount">
+                                @if(request()->hasAny(['search', 'role_id', 'koperasi_id']))
                                     Tidak ada pengguna yang cocok dengan filter.
                                     <a href="{{ route('pengguna.index') }}">Hapus filter</a>.
                                 @else

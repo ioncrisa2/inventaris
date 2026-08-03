@@ -9,12 +9,13 @@ use Illuminate\Support\Collection;
 class BarangRepository
 {
     /**
-     * @param  array{search?: ?string, unit_kerja_id?: ?string, kategori?: ?string, kondisi?: ?string, kelengkapan?: ?string}  $filters
+     * @param  array{search?: ?string, koperasi_id?: ?int, unit_kerja_id?: ?string, kategori?: ?string, kondisi?: ?string, kelengkapan?: ?string}  $filters
      */
     public function paginate(array $filters, int $perPage = 10): LengthAwarePaginator
     {
         return Barang::query()
             ->with([
+                'koperasi:id,nama',
                 'unitKerja:id,nama_unit',
                 'kondisiTerakhir' => fn ($query) => $query->select([
                     'riwayat_kondisi_barang.id',
@@ -23,6 +24,7 @@ class BarangRepository
                     'riwayat_kondisi_barang.kondisi',
                 ]),
             ])
+            ->when($filters['koperasi_id'] ?? null, fn ($query, $koperasiId) => $query->where('koperasi_id', $koperasiId))
             ->when($filters['search'] ?? null, function ($query, $search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('kode_barang', 'like', "%{$search}%")

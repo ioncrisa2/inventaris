@@ -8,8 +8,10 @@ use App\Http\Requests\HariLibur\ImportHariLiburRequest;
 use App\Http\Requests\HariLibur\StoreHariLiburRequest;
 use App\Http\Requests\HariLibur\UpdateHariLiburRequest;
 use App\Models\HariLibur;
+use App\Models\Koperasi;
 use App\Services\HariLiburService;
 use App\Support\PerPage;
+use App\Support\TenantContext;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -25,9 +27,9 @@ class HariLiburController extends Controller
      */
     public function index()
     {
-        $tahunList = $this->hariLiburService->tahunList();
-
-        return view('hari-libur.index', compact('tahunList'));
+        return view('hari-libur.index', [
+            'tahunList' => $this->hariLiburService->tahunList(),
+        ]);
     }
 
     /**
@@ -37,13 +39,50 @@ class HariLiburController extends Controller
     {
         $this->authorize('viewAny', HariLibur::class);
 
-        $hariLibur = $this->hariLiburService->listForTahun(
-            $tahun,
-            $request->string('search')->trim()->value() ?: null,
-            PerPage::resolve($request),
-        );
+        if ($request->user()->isSuperAdmin()) {
+            $legacyKoperasiId = TenantContext::selectedKoperasiId($request);
 
-        return view('hari-libur.tahun', compact('hariLibur', 'tahun'));
+            if ($legacyKoperasiId !== null) {
+                return redirect()->route('hari-libur.koperasi', [
+                    'tahun' => $tahun,
+                    'koperasi' => $legacyKoperasiId,
+                ]);
+            }
+
+            return view('hari-libur.tahun-koperasi', [
+                'tahun' => $tahun,
+                'koperasis' => $this->hariLiburService->koperasiListUntukTahun($tahun),
+            ]);
+        }
+
+        $search = $request->string('search')->trim()->value() ?: null;
+        $perPage = PerPage::resolve($request);
+
+        return view('hari-libur.tahun', [
+            'hariLibur' => $this->hariLiburService->listForTahun($tahun, $search, $perPage),
+            'tahun' => $tahun,
+            'koperasi' => $request->user()->koperasi,
+        ]);
+    }
+
+    public function koperasi(Request $request, int $tahun, Koperasi $koperasi)
+    {
+        $this->authorize('viewAny', HariLibur::class);
+        abort_unless($request->user()->isSuperAdmin(), 403);
+
+        $search = $request->string('search')->trim()->value() ?: null;
+        $perPage = PerPage::resolve($request);
+
+        return view('hari-libur.tahun', [
+            'hariLibur' => $this->hariLiburService->listForTahun(
+                $tahun,
+                $search,
+                $perPage,
+                $koperasi->id,
+            ),
+            'tahun' => $tahun,
+            'koperasi' => $koperasi,
+        ]);
     }
 
     /**

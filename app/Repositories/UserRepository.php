@@ -9,12 +9,20 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 class UserRepository
 {
     /**
-     * @param  array{search?: ?string, role_id?: ?string}  $filters
+     * @param  array{search?: ?string, role_id?: ?string, koperasi_id?: ?int}  $filters
      */
     public function paginate(array $filters, int $perPage = 10): LengthAwarePaginator
     {
         return CurrentTenant::scopeQuery(User::query())
-            ->with('roles')
+            ->with([
+                'koperasi' => fn ($query) => $query
+                    ->select('id', 'nama')
+                    ->withCount('adminPrimerUsers'),
+                'roles',
+            ])
+            ->when($filters['koperasi_id'] ?? null, function ($query, $koperasiId) {
+                $query->where('koperasi_id', (int) $koperasiId);
+            })
             ->when($filters['search'] ?? null, function ($query, $search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('name', 'like', "%{$search}%")

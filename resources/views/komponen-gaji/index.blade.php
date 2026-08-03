@@ -8,16 +8,22 @@
     $editOld = fn ($field, $default = null) => $modal === 'editKomponenGajiModal' ? old($field, $default) : $default;
     $createErr = fn ($field) => $modal === 'createKomponenGajiModal' && $errors->has($field);
     $editErr = fn ($field) => $modal === 'editKomponenGajiModal' && $errors->has($field);
+    $showTenant = auth()->user()->isSuperAdmin();
+    $canUpdate = auth()->user()->can('komponen-gaji.update');
+    $canDelete = auth()->user()->can('komponen-gaji.delete');
+    $showActions = $canUpdate || $canDelete;
 @endphp
 
 @section('content')
 <x-app-page long-footer>
         <x-page-header title="Komponen Gaji" subtitle="Aturan tunjangan dan potongan untuk perhitungan gaji.">
             <x-slot:actions>
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createKomponenGajiModal">
-                    <i class="bi bi-plus-circle"></i>
-                    Tambah Komponen Gaji
-                </button>
+                @can('komponen-gaji.create')
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createKomponenGajiModal">
+                        <i class="bi bi-plus-circle"></i>
+                        Tambah Komponen Gaji
+                    </button>
+                @endcan
             </x-slot:actions>
         </x-page-header>
 
@@ -28,7 +34,7 @@
                 <x-filter-form
                     :action="route('komponen-gaji.index')"
                     :reset-route="route('komponen-gaji.index')"
-                    :has-filters="request()->hasAny(['jenis', 'search'])"
+                    :has-filters="request()->hasAny(['jenis', 'search', 'koperasi_id'])"
                 >
                     <div class="col-12 col-sm-auto">
                     <select name="jenis" class="form-select" data-submit-on-change>
@@ -38,6 +44,7 @@
                         @endforeach
                     </select>
                     </div>
+                    <x-tenant-filter :koperasis="$koperasis" :selected="$selectedKoperasiId" id="komponen_gaji_koperasi_id" />
                     <div class="col-12 col-sm-auto filter-form__search">
                     <input
                         type="text"
@@ -68,10 +75,15 @@
                             </th>
                             @endcan
                             <th>Nama Komponen</th>
+                            @if($showTenant)
+                                <th>Koperasi</th>
+                            @endif
                             <th class="table-col-width-120">Jenis</th>
                             <th>Metode Perhitungan</th>
                             <th class="text-end table-col-width-150">Nilai Default</th>
-                            <th class="table-col-width-100">Aksi</th>
+                            @if($showActions)
+                                <th class="table-col-width-100">Aksi</th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody>
@@ -83,6 +95,9 @@
                             </td>
                             @endcan
                             <td><strong>{{ $data->nama_komponen }}</strong></td>
+                            @if($showTenant)
+                                <td>{{ $data->koperasi?->nama ?? 'Tanpa koperasi' }}</td>
+                            @endif
                             <td>
                                 <x-badge :color="$data->jenis === 'Tunjangan' ? 'text-bg-success' : 'text-bg-secondary'">{{ $data->jenis }}</x-badge>
                             </td>
@@ -107,8 +122,10 @@
                                     Rp {{ number_format($data->nilai_default, 0, ',', '.') }}
                                 @endif
                             </td>
+                            @if($showActions)
                             <td>
                                 <div class="table-actions">
+                                    @can('update', $data)
                                     <button
                                         type="button"
                                         class="btn btn-sm btn-action btn-action-neutral"
@@ -124,17 +141,28 @@
                                         data-nilai-default="{{ $data->nilai_default }}">
                                         <i class="bi bi-pencil"></i>
                                     </button>
+                                    @endcan
 
+                                    @can('delete', $data)
                                     <x-delete-button
                                         :url="route('komponen-gaji.destroy', $data->id)"
                                         :message="'Hapus komponen gaji &quot;'.$data->nama_komponen.'&quot;? Penghapusan akan ditolak jika komponen sudah dipakai pada transaksi gaji.'"
                                         :label="'Hapus '.$data->nama_komponen"
                                     />
+                                    @endcan
                                 </div>
                             </td>
+                            @endif
                         </tr>
                         @empty
-                        <x-empty-row :colspan="auth()->user()->can('komponen-gaji.delete') ? 6 : 5">Data komponen gaji belum tersedia.</x-empty-row>
+                        <x-empty-row :colspan="4 + ($showTenant ? 1 : 0) + ($canDelete ? 1 : 0) + ($showActions ? 1 : 0)">
+                            @if(request()->hasAny(['jenis', 'search', 'koperasi_id']))
+                                Tidak ada komponen gaji yang cocok dengan filter.
+                                <a href="{{ route('komponen-gaji.index') }}">Hapus filter</a>.
+                            @else
+                                Data komponen gaji belum tersedia.
+                            @endif
+                        </x-empty-row>
                         @endforelse
                     </tbody>
                 </table>
@@ -142,6 +170,7 @@
 </x-app-page>
 
 @foreach(['create' => 'createKomponenGajiModal', 'edit' => 'editKomponenGajiModal'] as $mode => $modalId)
+@if(($mode === 'create' && auth()->user()->can('komponen-gaji.create')) || ($mode === 'edit' && $canUpdate))
 <x-modal-form
     :id="$modalId"
     :data-auto-show-modal="$errors->any() && $modal === $modalId"
@@ -230,5 +259,6 @@
                         </div>
                     </div>
 </x-modal-form>
+@endif
 @endforeach
 @endsection

@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Koperasi extends Model
 {
@@ -18,6 +20,21 @@ class Koperasi extends Model
     public function users()
     {
         return $this->hasMany(User::class);
+    }
+
+    public function adminPrimerRole(): HasOne
+    {
+        return $this->hasOne(Role::class)
+            ->where('name', 'admin_primer')
+            ->where('guard_name', 'web');
+    }
+
+    public function adminPrimerUsers(): HasMany
+    {
+        return $this->hasMany(User::class)
+            ->whereHas('roles', fn ($query) => $query
+                ->where('roles.name', 'admin_primer')
+                ->where('roles.guard_name', 'web'));
     }
 
     public function unitKerja()

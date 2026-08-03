@@ -34,34 +34,34 @@ document.addEventListener('DOMContentLoaded', () => {
         group.addEventListener('hidden.bs.collapse', () => localStorage.setItem(storageKey, 'collapsed'));
     });
 
-    const layoutRadios = document.querySelectorAll('input[name="app-layout"]');
+    const appLayoutButtons = document.querySelectorAll('[data-app-layout-option]');
 
-    if (layoutRadios.length) {
-        const currentLayout = document.documentElement.dataset.layout || 'sidebar';
-        const syncSelectedCard = () => {
-            layoutRadios.forEach((radio) => {
-                radio.closest('.layout-option')?.classList.toggle('is-selected', radio.checked);
+    if (appLayoutButtons.length) {
+        const getCurrentLayout = () => document.documentElement.dataset.layout || 'sidebar';
+        const syncLayoutButtons = () => {
+            const current = getCurrentLayout();
+            appLayoutButtons.forEach((button) => {
+                button.classList.toggle('is-active', button.dataset.appLayoutOption === current);
             });
         };
 
-        layoutRadios.forEach((radio) => {
-            radio.checked = radio.value === currentLayout;
-            radio.addEventListener('change', () => {
-                if (!radio.checked) return;
+        appLayoutButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                const layout = button.dataset.appLayoutOption;
 
-                document.documentElement.dataset.layout = radio.value;
-                localStorage.setItem('app-layout', radio.value);
-                syncSelectedCard();
+                document.documentElement.dataset.layout = layout;
+                localStorage.setItem('app-layout', layout);
+                syncLayoutButtons();
                 showSettingsSaveToast();
             });
         });
 
-        syncSelectedCard();
+        syncLayoutButtons();
     }
 
-    const colorModeRadios = document.querySelectorAll('input[name="color-mode"]');
+    const colorModeButtons = document.querySelectorAll('[data-color-mode-option]');
 
-    if (colorModeRadios.length) {
+    if (colorModeButtons.length) {
         const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)');
         const getStoredColorMode = () => localStorage.getItem('color-mode') || 'auto';
         const resolveColorMode = (mode) => mode === 'auto'
@@ -70,17 +70,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const applyColorMode = (mode) => {
             document.documentElement.dataset.bsTheme = resolveColorMode(mode);
         };
+        const syncColorModeButtons = () => {
+            const current = getStoredColorMode();
+            colorModeButtons.forEach((button) => {
+                button.classList.toggle('is-active', button.dataset.colorModeOption === current);
+            });
+        };
 
-        colorModeRadios.forEach((radio) => {
-            radio.checked = radio.value === getStoredColorMode();
-            radio.addEventListener('change', () => {
-                if (!radio.checked) return;
+        colorModeButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                const mode = button.dataset.colorModeOption;
 
-                localStorage.setItem('color-mode', radio.value);
-                applyColorMode(radio.value);
+                localStorage.setItem('color-mode', mode);
+                applyColorMode(mode);
+                syncColorModeButtons();
                 showSettingsSaveToast();
             });
         });
+
+        syncColorModeButtons();
 
         systemPrefersDark.addEventListener('change', () => {
             if (getStoredColorMode() === 'auto') applyColorMode('auto');

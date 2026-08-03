@@ -13,7 +13,7 @@ class KomponenGajiService
     public function __construct(private KomponenGajiRepository $komponenGajiRepository) {}
 
     /**
-     * @param  array{search?: ?string, jenis?: ?string}  $filters
+     * @param  array{search?: ?string, jenis?: ?string, koperasi_id?: ?int}  $filters
      */
     public function list(array $filters, int $perPage = PerPage::DEFAULT): LengthAwarePaginator
     {

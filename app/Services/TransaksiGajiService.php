@@ -30,9 +30,11 @@ class TransaksiGajiService
         private GajiKaryawanResolver $gajiKaryawanResolver,
     ) {}
 
-    public function karyawanList(?string $search, int $perPage = PerPage::DEFAULT): LengthAwarePaginator
+    public function karyawanList(?string $search, int $perPage = PerPage::DEFAULT, ?int $koperasiId = null): LengthAwarePaginator
     {
-        return $this->transaksiGajiRepository->karyawanList($search, $perPage);
+        return $koperasiId
+            ? $this->transaksiGajiRepository->karyawanList($search, $perPage, $koperasiId)
+            : $this->transaksiGajiRepository->karyawanList($search, $perPage);
     }
 
     /**

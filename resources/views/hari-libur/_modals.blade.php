@@ -3,6 +3,7 @@
     $editHasError = old('_modal') === 'editHariLiburModal' && ($errors->has('tanggal') || $errors->has('keterangan'));
 @endphp
 
+@can('hari-libur.create')
 <x-modal-form id="createHariLiburModal" title="Tambah Hari Libur" :action="route('hari-libur.store')"
     :data-auto-show-modal="$errors->any() && old('_modal') === 'createHariLiburModal'">
     <input type="hidden" name="_modal" value="createHariLiburModal">
@@ -42,7 +43,9 @@
 
     <x-form.file name="file" label="File Excel/CSV" accept=".xlsx,.xls,.csv" required help="Format .xlsx, .xls, atau .csv, maks. 5MB." />
 </x-modal-form>
+@endcan
 
+@can('hari-libur.update')
 <x-modal-form id="editHariLiburModal" title="Edit Hari Libur" form-id="editHariLiburForm" method="PUT"
     :data-auto-show-modal="$errors->any() && old('_modal') === 'editHariLiburModal'"
     submit-label="Simpan Perubahan" :action="old('_modal') === 'editHariLiburModal' && old('_hari_libur_id') ? route('hari-libur.update', old('_hari_libur_id')) : '#'">
@@ -68,3 +71,4 @@
         @endif
     </div>
 </x-modal-form>
+@endcan

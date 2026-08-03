@@ -8,6 +8,7 @@ use App\Http\Requests\UnitKerja\UpdateUnitKerjaRequest;
 use App\Models\UnitKerja;
 use App\Services\UnitKerjaService;
 use App\Support\PerPage;
+use App\Support\TenantContext;
 use Illuminate\Http\Request;
 
 class UnitKerjaController extends Controller
@@ -22,12 +23,17 @@ class UnitKerjaController extends Controller
      */
     public function index(Request $request)
     {
-        $unitKerja = $this->unitKerjaService->list(
-            $request->string('search')->trim()->value() ?: null,
-            PerPage::resolve($request),
-        );
+        $selectedKoperasiId = TenantContext::selectedKoperasiId($request);
+        $search = $request->string('search')->trim()->value() ?: null;
+        $perPage = PerPage::resolve($request);
+        $unitKerja = $selectedKoperasiId
+            ? $this->unitKerjaService->list($search, $perPage, $selectedKoperasiId)
+            : $this->unitKerjaService->list($search, $perPage);
 
-        return view('unit-kerja.index', compact('unitKerja'));
+        return view('unit-kerja.index', [
+            'unitKerja' => $unitKerja,
+            ...TenantContext::filterViewData($request, $selectedKoperasiId),
+        ]);
     }
 
     /**

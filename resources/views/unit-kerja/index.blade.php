@@ -7,16 +7,22 @@
     $editHasError = old('_modal') === 'editUnitKerjaModal' && $errors->has('nama_unit');
     $createKodeHasError = old('_modal') === 'createUnitKerjaModal' && $errors->has('kode');
     $editKodeHasError = old('_modal') === 'editUnitKerjaModal' && $errors->has('kode');
+    $showTenant = auth()->user()->isSuperAdmin();
+    $canUpdate = auth()->user()->can('unit-kerja.update');
+    $canDelete = auth()->user()->can('unit-kerja.delete');
+    $showActions = $canUpdate || $canDelete;
 @endphp
 
 @section('content')
     <x-app-page long-footer>
         <x-page-header title="Unit Kerja">
             <x-slot:actions>
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUnitKerjaModal">
-                    <i class="bi bi-plus-circle"></i>
-                    Tambah Unit Kerja
-                </button>
+                @can('unit-kerja.create')
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUnitKerjaModal">
+                        <i class="bi bi-plus-circle"></i>
+                        Tambah Unit Kerja
+                    </button>
+                @endcan
             </x-slot:actions>
         </x-page-header>
 
@@ -24,12 +30,13 @@
 
         <x-data-table :paginator="$unitKerja">
             <x-slot:toolbar>
-                <x-filter-form :action="route('unit-kerja.index')" :reset-route="route('unit-kerja.index')" :has-filters="request()->hasAny(['search'])" submit-label="Cari"
+                <x-filter-form :action="route('unit-kerja.index')" :reset-route="route('unit-kerja.index')" :has-filters="request()->hasAny(['search', 'koperasi_id'])" submit-label="Cari"
                     submit-icon="bi-search">
                     <div class="col-12 col-sm-auto">
                         <input type="text" name="search" class="form-control" value="{{ request('search') }}"
                             placeholder="Cari unit kerja...">
                     </div>
+                    <x-tenant-filter :koperasis="$koperasis" :selected="$selectedKoperasiId" id="unit_kerja_koperasi_id" />
                 </x-filter-form>
             </x-slot:toolbar>
 
@@ -49,10 +56,15 @@
                             </th>
                         @endcan
                         <th>Nama Unit Kerja</th>
+                        @if($showTenant)
+                            <th>Koperasi</th>
+                        @endif
                         <th class="table-col-width-100">Kode</th>
                         <th class="text-end table-col-width-120">Jumlah Karyawan</th>
                         <th class="text-end table-col-width-120">Jumlah Barang</th>
-                        <th class="table-col-width-100">Aksi</th>
+                        @if($showActions)
+                            <th class="table-col-width-100">Aksi</th>
+                        @endif
                     </tr>
                 </thead>
                 <tbody>
@@ -75,11 +87,16 @@
                                 </td>
                             @endcan
                             <td><strong>{{ $data->nama_unit }}</strong></td>
+                            @if($showTenant)
+                                <td>{{ $data->koperasi?->nama ?? 'Tanpa koperasi' }}</td>
+                            @endif
                             <td>{{ $data->kode ?: '—' }}</td>
                             <td class="text-end">{{ $data->karyawan_count }}</td>
                             <td class="text-end">{{ $data->barang_count }}</td>
+                            @if($showActions)
                             <td>
                                 <div class="table-actions">
+                                    @can('update', $data)
                                     <button type="button" class="btn btn-sm btn-action btn-action-neutral" title="Edit"
                                         aria-label="Edit {{ $data->nama_unit }}"
                                         data-bs-toggle="modal" data-bs-target="#editUnitKerjaModal"
@@ -88,21 +105,33 @@
                                         data-kode="{{ $data->kode }}">
                                         <i class="bi bi-pencil"></i>
                                     </button>
+                                    @endcan
 
+                                    @can('delete', $data)
                                     <x-delete-button :url="route('unit-kerja.destroy', $data->id)"
                                         :message="'Hapus unit kerja &quot;' . $data->nama_unit . '&quot;? Tindakan ini tidak dapat dibatalkan.'"
                                         :blocked-message="$blockedMessage" :label="'Hapus ' . $data->nama_unit" />
+                                    @endcan
                                 </div>
                             </td>
+                            @endif
                         </tr>
                     @empty
-                        <x-empty-row :colspan="auth()->user()->can('unit-kerja.delete') ? 6 : 5">Data unit kerja belum tersedia.</x-empty-row>
+                        <x-empty-row :colspan="4 + ($showTenant ? 1 : 0) + ($canDelete ? 1 : 0) + ($showActions ? 1 : 0)">
+                            @if(request()->hasAny(['search', 'koperasi_id']))
+                                Tidak ada unit kerja yang cocok dengan filter.
+                                <a href="{{ route('unit-kerja.index') }}">Hapus filter</a>.
+                            @else
+                                Data unit kerja belum tersedia.
+                            @endif
+                        </x-empty-row>
                     @endforelse
                 </tbody>
             </table>
         </x-data-table>
     </x-app-page>
 
+    @can('unit-kerja.create')
     <x-modal-form id="createUnitKerjaModal" title="Tambah Unit Kerja" :action="route('unit-kerja.store')"
         :data-auto-show-modal="$errors->any() && old('_modal') === 'createUnitKerjaModal'">
         <input type="hidden" name="_modal" value="createUnitKerjaModal">
@@ -130,7 +159,9 @@
                 Aplikasi).</div>
         </div>
     </x-modal-form>
+    @endcan
 
+    @can('unit-kerja.update')
     <x-modal-form id="editUnitKerjaModal" title="Edit Unit Kerja" form-id="editUnitKerjaForm" method="PUT"
         :data-auto-show-modal="$errors->any() && old('_modal') === 'editUnitKerjaModal'"
         submit-label="Simpan Perubahan" :action="old('_modal') === 'editUnitKerjaModal' && old('_unit_kerja_id') ? route('unit-kerja.update', old('_unit_kerja_id')) : '#'">
@@ -158,4 +189,5 @@
                 Aplikasi).</div>
         </div>
     </x-modal-form>
+    @endcan
 @endsection

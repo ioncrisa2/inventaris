@@ -21,9 +21,11 @@ class AbsensiService
         private HariOperasionalService $hariOperasionalService,
     ) {}
 
-    public function daftarKaryawan(?string $search, int $perPage = PerPage::DEFAULT): LengthAwarePaginator
+    public function daftarKaryawan(?string $search, int $perPage = PerPage::DEFAULT, ?int $koperasiId = null): LengthAwarePaginator
     {
-        return $this->karyawanRepository->searchOrderedByName($search, $perPage);
+        return $koperasiId
+            ? $this->karyawanRepository->searchOrderedByName($search, $perPage, $koperasiId)
+            : $this->karyawanRepository->searchOrderedByName($search, $perPage);
     }
 
     /**

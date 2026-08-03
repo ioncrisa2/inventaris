@@ -5,7 +5,9 @@
 @section('content')
 <x-app-page>
         @php
+            $showTenant = auth()->user()->isSuperAdmin();
             $inventarisActiveFilterCount = collect(request()->only([
+                'koperasi_id',
                 'unit_kerja_id',
                 'kategori',
                 'tanggal_awal',
@@ -15,6 +17,9 @@
             $inventarisSelectedUnit = request()->filled('unit_kerja_id')
                 ? ($unitKerjas->firstWhere('id', (int) request('unit_kerja_id'))?->nama_unit ?? 'Unit tidak tersedia')
                 : 'Semua unit kerja';
+            $inventarisSelectedTenant = $selectedKoperasiId
+                ? ($koperasis->firstWhere('id', $selectedKoperasiId)?->nama ?? 'Koperasi tidak tersedia')
+                : 'Seluruh koperasi';
 
             $inventarisPeriod = match (true) {
                 request()->filled('tanggal_awal') && request()->filled('tanggal_akhir') => \Illuminate\Support\Carbon::parse(request('tanggal_awal'))->format('d/m/Y').' s.d. '.\Illuminate\Support\Carbon::parse(request('tanggal_akhir'))->format('d/m/Y'),
@@ -49,6 +54,7 @@
 
         <x-report-filter-summary
             :items="[
+                ['label' => 'Koperasi', 'value' => $showTenant ? $inventarisSelectedTenant : auth()->user()->koperasi?->nama],
                 ['label' => 'Unit', 'value' => $inventarisSelectedUnit],
                 ['label' => 'Golongan', 'value' => request('kategori') ?: 'Semua golongan'],
                 ['label' => 'Periode', 'value' => $inventarisPeriod],
@@ -63,13 +69,25 @@
             :has-filters="$inventarisActiveFilterCount > 0"
             :has-errors="$errors->any()"
         >
+            @if($showTenant)
+                <div class="col-md-6">
+                    <label class="form-label" for="inventaris_koperasi_id">Koperasi</label>
+                    <select class="form-select @error('koperasi_id') is-invalid @enderror" id="inventaris_koperasi_id" name="koperasi_id">
+                        <option value="">Seluruh koperasi</option>
+                        @foreach($koperasis as $koperasi)
+                            <option value="{{ $koperasi->id }}" @selected((string) old('koperasi_id', $selectedKoperasiId) === (string) $koperasi->id)>{{ $koperasi->nama }}</option>
+                        @endforeach
+                    </select>
+                    @error('koperasi_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
+            @endif
             <div class="col-md-6">
                 <label class="form-label" for="inventaris_unit_kerja_id">Unit Kerja</label>
                 <select class="form-select @error('unit_kerja_id') is-invalid @enderror" id="inventaris_unit_kerja_id" name="unit_kerja_id">
                     <option value="">Semua unit kerja</option>
                     @foreach($unitKerjas as $unit)
                         <option value="{{ $unit->id }}" @selected((string) old('unit_kerja_id', request('unit_kerja_id')) === (string) $unit->id)>
-                            {{ $unit->nama_unit }}
+                            {{ $showTenant ? (($unit->koperasi?->nama ?? 'Tanpa koperasi').' — '.$unit->nama_unit) : $unit->nama_unit }}
                         </option>
                     @endforeach
                 </select>
@@ -180,6 +198,9 @@
                         <tr>
                             <th>Kode</th>
                             <th>Nama Barang</th>
+                            @if($showTenant)
+                                <th>Koperasi</th>
+                            @endif
                             <th>Jenis Barang</th>
                             <th>Golongan</th>
                             <th>Unit Kerja</th>
@@ -196,6 +217,9 @@
                         <tr>
                             <td><strong>{{ $barang->kode_barang }}</strong></td>
                             <td>{{ $barang->nama_barang }}</td>
+                            @if($showTenant)
+                                <td>{{ $barang->koperasi?->nama ?? 'Tanpa koperasi' }}</td>
+                            @endif
                             <td>{{ $barang->jenis_barang ?? '—' }}</td>
                             <td>{{ $barang->kategori }}</td>
                             <td>{{ $barang->unitKerja?->nama_unit ?? '—' }}</td>
@@ -204,7 +228,7 @@
                             <td class="text-end">Rp {{ number_format($barang->harga_perolehan, 0, ',', '.') }}</td>
                         </tr>
                         @empty
-                        <x-empty-row :colspan="8">Tidak ada inventaris yang cocok dengan filter.</x-empty-row>
+                        <x-empty-row :colspan="$showTenant ? 9 : 8">Tidak ada inventaris yang cocok dengan filter.</x-empty-row>
                         @endforelse
                     </tbody>
                 </table>

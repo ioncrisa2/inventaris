@@ -15,12 +15,13 @@ use Illuminate\Support\Facades\DB;
 class LaporanRepository
 {
     /**
-     * @param  array{unit_kerja_id?: ?string, kategori?: ?string, tanggal_awal?: ?string, tanggal_akhir?: ?string}  $filters
+     * @param  array{koperasi_id?: ?int, unit_kerja_id?: ?string, kategori?: ?string, tanggal_awal?: ?string, tanggal_akhir?: ?string}  $filters
      */
     public function inventarisQuery(array $filters): Builder
     {
         return Barang::query()
             ->with([
+                'koperasi:id,nama',
                 'unitKerja:id,nama_unit',
                 'kondisiTerakhir' => fn ($query) => $query->select([
                     'riwayat_kondisi_barang.id',
@@ -29,6 +30,7 @@ class LaporanRepository
                     'riwayat_kondisi_barang.kondisi',
                 ]),
             ])
+            ->when($filters['koperasi_id'] ?? null, fn ($query, $koperasiId) => $query->where('koperasi_id', $koperasiId))
             ->when($filters['unit_kerja_id'] ?? null, function ($query, $unitKerjaId) {
                 $query->where('unit_kerja_id', $unitKerjaId);
             })
@@ -77,15 +79,16 @@ class LaporanRepository
     }
 
     /**
-     * @param  array{unit_kerja_id?: ?string, kategori?: ?string}  $filters
+     * @param  array{koperasi_id?: ?int, unit_kerja_id?: ?string, kategori?: ?string}  $filters
      */
     public function penyusutanQuery(array $filters, int $tahun): Builder
     {
         $akhirTahun = CarbonImmutable::create($tahun, 12, 31)->toDateString();
 
         return Barang::query()
-            ->with('unitKerja:id,nama_unit')
+            ->with(['koperasi:id,nama', 'unitKerja:id,koperasi_id,nama_unit', 'unitKerja.koperasi:id,nama'])
             ->where('tanggal_perolehan', '<=', $akhirTahun)
+            ->when($filters['koperasi_id'] ?? null, fn ($query, $koperasiId) => $query->where('koperasi_id', $koperasiId))
             ->when($filters['unit_kerja_id'] ?? null, function ($query, $unitKerjaId) {
                 $query->where('unit_kerja_id', $unitKerjaId);
             })
@@ -95,7 +98,7 @@ class LaporanRepository
     }
 
     /**
-     * @param  array{karyawan_id?: ?string}  $filters
+     * @param  array{koperasi_id?: ?int, karyawan_id?: ?string}  $filters
      */
     public function absensiQuery(array $filters, int $bulan, int $tahun): Builder
     {
@@ -103,9 +106,10 @@ class LaporanRepository
         $selesaiEksklusif = $mulai->addMonthNoOverflow();
 
         return Absensi::query()
-            ->with('karyawan.unitKerja:id,nama_unit')
+            ->with(['koperasi:id,nama', 'karyawan.unitKerja:id,nama_unit'])
             ->where('tanggal', '>=', $mulai->toDateString())
             ->where('tanggal', '<', $selesaiEksklusif->toDateString())
+            ->when($filters['koperasi_id'] ?? null, fn ($query, $koperasiId) => $query->where('koperasi_id', $koperasiId))
             ->when($filters['karyawan_id'] ?? null, function ($query, $karyawanId) {
                 $query->where('karyawan_id', $karyawanId);
             });
@@ -134,12 +138,13 @@ class LaporanRepository
     }
 
     /**
-     * @param  array{unit_kerja_id?: ?string, status_karyawan?: ?string}  $filters
+     * @param  array{koperasi_id?: ?int, unit_kerja_id?: ?string, status_karyawan?: ?string}  $filters
      */
     public function kepegawaianQuery(array $filters): Builder
     {
         return Karyawan::query()
-            ->with('unitKerja:id,nama_unit')
+            ->with(['koperasi:id,nama', 'unitKerja:id,koperasi_id,nama_unit', 'unitKerja.koperasi:id,nama'])
+            ->when($filters['koperasi_id'] ?? null, fn ($query, $koperasiId) => $query->where('koperasi_id', $koperasiId))
             ->when($filters['unit_kerja_id'] ?? null, function ($query, $unitKerjaId) {
                 $query->where('unit_kerja_id', $unitKerjaId);
             })
@@ -186,14 +191,15 @@ class LaporanRepository
     }
 
     /**
-     * @param  array{unit_kerja_id?: ?string}  $filters
+     * @param  array{koperasi_id?: ?int, unit_kerja_id?: ?string}  $filters
      */
     public function penggajianQuery(array $filters, int $bulan, int $tahun): Builder
     {
         return TransaksiGaji::query()
-            ->with('karyawan.unitKerja:id,nama_unit')
+            ->with(['koperasi:id,nama', 'karyawan.unitKerja:id,nama_unit'])
             ->where('bulan', $bulan)
             ->where('tahun', $tahun)
+            ->when($filters['koperasi_id'] ?? null, fn ($query, $koperasiId) => $query->where('koperasi_id', $koperasiId))
             ->when($filters['unit_kerja_id'] ?? null, function ($query, $unitKerjaId) {
                 $query->whereHas('karyawan', function ($query) use ($unitKerjaId) {
                     $query->where('unit_kerja_id', $unitKerjaId);
@@ -246,11 +252,13 @@ class LaporanRepository
         return DB::table('transaksi_gaji')
             ->join('karyawan', 'karyawan.id', '=', 'transaksi_gaji.karyawan_id')
             ->join('unit_kerja', 'unit_kerja.id', '=', 'karyawan.unit_kerja_id')
+            ->join('koperasi', 'koperasi.id', '=', 'unit_kerja.koperasi_id')
             ->whereIn('transaksi_gaji.id', $transaksiGajiIds)
-            ->select('unit_kerja.id AS unit_kerja_id', 'unit_kerja.nama_unit')
+            ->select('unit_kerja.id AS unit_kerja_id', 'unit_kerja.nama_unit', 'koperasi.nama AS nama_koperasi')
             ->selectRaw('COUNT(*) AS total_transaksi')
             ->selectRaw('COALESCE(SUM(transaksi_gaji.gaji_bersih), 0) AS total_gaji_bersih')
-            ->groupBy('unit_kerja.id', 'unit_kerja.nama_unit')
+            ->groupBy('unit_kerja.id', 'unit_kerja.nama_unit', 'koperasi.nama')
+            ->orderBy('koperasi.nama')
             ->orderBy('unit_kerja.nama_unit')
             ->get();
     }

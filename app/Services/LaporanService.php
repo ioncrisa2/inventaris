@@ -32,7 +32,9 @@ class LaporanService
             'totalNilai' => $ringkasan['totalNilai'],
             'barangPerluPerbaikan' => $this->laporanRepository->barangPerluPerbaikan($query),
             'rekapKategori' => $this->laporanRepository->rekapKategoriInventaris($query),
-            'unitKerjas' => $this->unitKerjaRepository->orderedList(),
+            'unitKerjas' => isset($filters['koperasi_id'])
+                ? $this->unitKerjaRepository->orderedList((int) $filters['koperasi_id'])
+                : $this->unitKerjaRepository->orderedList(),
         ];
     }
 
@@ -63,7 +65,9 @@ class LaporanService
 
         return [
             'absensis' => (clone $query)->orderBy('tanggal')->paginate($perPage)->withQueryString(),
-            'karyawans' => $this->karyawanRepository->orderedList(),
+            'karyawans' => isset($filters['koperasi_id'])
+                ? $this->karyawanRepository->orderedList((int) $filters['koperasi_id'])
+                : $this->karyawanRepository->orderedList(),
             'selectedKaryawanId' => $filters['karyawan_id'] ?? null,
             'selectedKaryawan' => $this->selectedKaryawan($filters['karyawan_id'] ?? null),
             ...$this->laporanRepository->totalPerStatusAbsensi($query),
@@ -103,7 +107,9 @@ class LaporanService
             'totalGajiAktif' => $ringkasan['totalGajiAktif'],
             'rekapStatus' => $this->laporanRepository->rekapStatusKepegawaian($query),
             'rekapUnitKerja' => $this->laporanRepository->rekapUnitKerjaKepegawaian($query),
-            'unitKerjas' => $this->unitKerjaRepository->orderedList(),
+            'unitKerjas' => isset($filters['koperasi_id'])
+                ? $this->unitKerjaRepository->orderedList((int) $filters['koperasi_id'])
+                : $this->unitKerjaRepository->orderedList(),
         ];
     }
 
@@ -142,7 +148,9 @@ class LaporanService
             'totalPotongan' => $totalPotongan,
             'totalGajiBersih' => $ringkasan['totalGajiBersih'],
             'rekapUnitKerja' => $this->laporanRepository->rekapUnitKerjaPenggajian($query),
-            'unitKerjas' => $this->unitKerjaRepository->orderedList(),
+            'unitKerjas' => isset($filters['koperasi_id'])
+                ? $this->unitKerjaRepository->orderedList((int) $filters['koperasi_id'])
+                : $this->unitKerjaRepository->orderedList(),
         ];
     }
 
@@ -179,7 +187,9 @@ class LaporanService
         return [
             'barangs' => $barangs,
             'rincian' => $rincian,
-            'unitKerjas' => $this->unitKerjaRepository->orderedList(),
+            'unitKerjas' => isset($filters['koperasi_id'])
+                ? $this->unitKerjaRepository->orderedList((int) $filters['koperasi_id'])
+                : $this->unitKerjaRepository->orderedList(),
             ...$this->ringkasanPenyusutan($barangs->getCollection(), $rincian),
         ];
     }

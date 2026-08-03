@@ -102,13 +102,38 @@ test('halaman daftar tidak mengulang eyebrow dan judul card tabel', function () 
         ->assertDontSee('Daftar Unit Kerja');
 });
 
-test('filter daftar bekerja otomatis dan menampilkan chip filter aktif', function () {
+test('filter daftar memakai aksi eksplisit dan menampilkan chip filter aktif', function () {
     $this->get(route('unit-kerja.index', ['search' => 'Teknologi']))
         ->assertOk()
         ->assertSee('data-filter-form', false)
+        ->assertSee('data-filter-submit', false)
+        ->assertSee('data-filter-status', false)
         ->assertSee('data-active-filter-list', false)
+        ->assertSee('Cari')
         ->assertSee('Reset semua')
         ->assertDontSee('btn btn-outline-primary', false);
+});
+
+test('tabel daftar menyiapkan kartu mobile dan empty state filter yang kontekstual', function () {
+    $this->get(route('unit-kerja.index', ['search' => 'Tidak ditemukan']))
+        ->assertOk()
+        ->assertSee('data-mobile-table', false)
+        ->assertSee('mobile-table-shell', false)
+        ->assertSee('Tidak ada unit kerja yang cocok dengan filter.')
+        ->assertSee('Hapus filter');
+});
+
+test('pagination menyediakan navigasi ringkas untuk mobile', function () {
+    foreach (range(1, 10) as $index) {
+        UnitKerja::create(['nama_unit' => 'Unit '.$index]);
+    }
+
+    $this->get(route('unit-kerja.index', ['per_page' => 10]))
+        ->assertOk()
+        ->assertSee('pagination-footer__desktop', false)
+        ->assertSee('pagination-footer__mobile', false)
+        ->assertSee('1 / 2')
+        ->assertSee('Berikutnya');
 });
 
 test('unit yang masih dipakai menjelaskan dependensi sebelum penghapusan', function () {
@@ -158,6 +183,7 @@ test('halaman form tidak lagi menampilkan label formulir data', function () {
         ->assertOk()
         ->assertSee('<h1>Tambah Barang</h1>', false)
         ->assertSee('Data Inventaris')
+        ->assertSee('form-card__actions', false)
         ->assertDontSee('Formulir Data')
         ->assertDontSee('page-header__eyebrow', false);
 });

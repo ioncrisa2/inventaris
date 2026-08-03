@@ -11,6 +11,7 @@ use App\Repositories\UnitKerjaRepository;
 use App\Services\UserService;
 use App\Support\CurrentTenant;
 use App\Support\PerPage;
+use App\Support\TenantContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -28,13 +29,17 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
+        $filters = $request->only(['search', 'role_id']);
+        $filters['koperasi_id'] = TenantContext::selectedKoperasiId($request);
+
         $users = $this->userService->list(
-            $request->only(['search', 'role_id']),
+            $filters,
             PerPage::resolve($request),
         );
-        $roles = $this->selectableRoles($request->user());
+        $roles = $this->selectableRoles($request->user(), $filters['koperasi_id']);
+        $koperasis = TenantContext::koperasiOptions($request);
 
-        return view('pengguna.index', compact('users', 'roles'));
+        return view('pengguna.index', compact('users', 'roles', 'koperasis'));
     }
 
     /**
@@ -43,8 +48,9 @@ class UserController extends Controller
     public function create(Request $request)
     {
         $user = new User;
-        $unitKerjas = $this->unitKerjaRepository->orderedList();
-        $roles = $this->selectableRoles($request->user());
+        $koperasiId = TenantContext::selectedKoperasiId($request);
+        $unitKerjas = $this->unitKerjaRepository->orderedList($koperasiId);
+        $roles = $this->selectableRoles($request->user(), $koperasiId);
 
         return view('pengguna.form', compact('user', 'unitKerjas', 'roles'));
     }
@@ -73,8 +79,9 @@ class UserController extends Controller
     public function edit(Request $request, User $pengguna)
     {
         $user = $pengguna;
-        $user->loadMissing('roles');
-        $unitKerjas = $this->unitKerjaRepository->orderedList();
+        $user->loadMissing(['koperasi:id,nama', 'roles']);
+        $user->koperasi?->loadCount('adminPrimerUsers');
+        $unitKerjas = $this->unitKerjaRepository->orderedList($user->koperasi_id ?? -1);
         $roles = $this->selectableRoles($request->user());
 
         return view('pengguna.form', compact('user', 'unitKerjas', 'roles'));
@@ -133,7 +140,7 @@ class UserController extends Controller
      * UserService juga menolaknya di layer service, ini cuma supaya
      * pilihan yang pasti ditolak tidak muncul di dropdown.
      */
-    private function selectableRoles(User $actor)
+    private function selectableRoles(User $actor, ?int $koperasiId = null)
     {
         return CurrentTenant::scopeQuery(Role::query())
             ->with('koperasi:id,nama')
@@ -150,6 +157,10 @@ class UserController extends Controller
             ->when(
                 ! $actor->isSuperAdmin(),
                 fn ($query) => $query->whereNotIn('name', ['super_admin', 'admin_primer']),
+            )
+            ->when(
+                $actor->isSuperAdmin() && $koperasiId !== null,
+                fn ($query) => $query->where('koperasi_id', $koperasiId),
             )
             ->orderBy('name')
             ->get();

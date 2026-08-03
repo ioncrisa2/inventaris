@@ -3,13 +3,18 @@
 @section('title', 'Barang - Sistem Inventaris & Kepegawaian')
 
 @section('content')
+@php
+    $showTenant = auth()->user()->isSuperAdmin();
+@endphp
 <x-app-page>
         <x-page-header title="Inventaris Barang" subtitle="Kondisi terakhir dan nilai aset pada setiap unit.">
             <x-slot:actions>
-                <a class="btn btn-primary" href="{{ route('barang.create') }}">
-                    <i class="bi bi-plus-circle"></i>
-                    Tambah Barang
-                </a>
+                @can('barang.create')
+                    <a class="btn btn-primary" href="{{ route('barang.create') }}">
+                        <i class="bi bi-plus-circle"></i>
+                        Tambah Barang
+                    </a>
+                @endcan
             </x-slot:actions>
         </x-page-header>
 
@@ -20,7 +25,7 @@
                 <x-filter-form
                     :action="route('barang.index')"
                     :reset-route="route('barang.index')"
-                    :has-filters="request()->hasAny(['search', 'unit_kerja_id', 'kategori', 'kondisi', 'kelengkapan'])"
+                    :has-filters="request()->hasAny(['search', 'koperasi_id', 'unit_kerja_id', 'kategori', 'kondisi', 'kelengkapan'])"
                 >
                     <div class="col-12 col-lg-auto">
                         <label class="visually-hidden" for="search">Cari barang</label>
@@ -32,13 +37,14 @@
                             value="{{ request('search') }}"
                             placeholder="Cari kode, nama, jenis, kategori…">
                     </div>
+                    <x-tenant-filter :koperasis="$koperasis" :selected="$selectedKoperasiId" id="barang_koperasi_id" />
                     <div class="col-12 col-sm-6 col-lg-auto">
                         <label class="visually-hidden" for="unit_kerja_id">Unit kerja</label>
                         <select class="form-select" id="unit_kerja_id" name="unit_kerja_id">
                             <option value="">Semua unit kerja</option>
                             @foreach($unitKerjas as $unit)
                             <option value="{{ $unit->id }}" @selected((string) request('unit_kerja_id')===(string) $unit->id)>
-                                {{ $unit->nama_unit }}
+                                {{ $showTenant ? (($unit->koperasi?->nama ?? 'Tanpa koperasi').' — '.$unit->nama_unit) : $unit->nama_unit }}
                             </option>
                             @endforeach
                         </select>
@@ -107,6 +113,9 @@
                             </th>
                             <th class="table-col-width-100">Kode</th>
                             <th>Nama Barang</th>
+                            @if($showTenant)
+                                <th>Koperasi</th>
+                            @endif
                             <th class="table-col-width-100">Golongan</th>
                             <th>Unit Kerja</th>
                             <th class="table-col-width-120">Tanggal Perolehan</th>
@@ -131,6 +140,9 @@
                                 <div class="small text-body-secondary">{{ $barang->jenis_barang }}</div>
                                 @endif
                             </td>
+                            @if($showTenant)
+                                <td>{{ $barang->koperasi?->nama ?? 'Tanpa koperasi' }}</td>
+                            @endif
                             <td title="{{ $barang->kategori }}">{{ config('inventaris.kategori_label_singkat')[$barang->kategori] ?? $barang->kategori }}</td>
                             <td>{{ $barang->unitKerja?->nama_unit ?? 'Belum ditentukan' }}</td>
                             <td>{{ $barang->tanggal_perolehan->format('d/m/Y') }}</td>
@@ -145,29 +157,35 @@
                                         title="Detail">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    <a
-                                        class="btn btn-sm btn-action btn-action-neutral"
-                                        href="{{ route('barang.edit', $barang) }}"
-                                        aria-label="Edit {{ $barang->nama_barang }}"
-                                        title="Edit">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
-                                    <x-delete-button
-                                        :url="route('barang.destroy', $barang)"
-                                        :message="'Hapus barang &quot;'.$barang->nama_barang.'&quot;? Penghapusan akan ditolak jika masih memiliki riwayat kondisi, foto pendukung, atau dokumen.'"
-                                        :label="'Hapus '.$barang->nama_barang"
-                                    />
+                                    @can('update', $barang)
+                                        <a
+                                            class="btn btn-sm btn-action btn-action-neutral"
+                                            href="{{ route('barang.edit', $barang) }}"
+                                            aria-label="Edit {{ $barang->nama_barang }}"
+                                            title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                    @endcan
+                                    @can('delete', $barang)
+                                        <x-delete-button
+                                            :url="route('barang.destroy', $barang)"
+                                            :message="'Hapus barang &quot;'.$barang->nama_barang.'&quot;? Penghapusan akan ditolak jika masih memiliki riwayat kondisi, foto pendukung, atau dokumen.'"
+                                            :label="'Hapus '.$barang->nama_barang"
+                                        />
+                                    @endcan
                                 </div>
                             </td>
                         </tr>
                         @empty
-                        <x-empty-row :colspan="9">
-                            @if(request()->hasAny(['search', 'unit_kerja_id', 'kategori', 'kondisi', 'kelengkapan']))
+                        <x-empty-row :colspan="$showTenant ? 10 : 9">
+                            @if(request()->hasAny(['search', 'koperasi_id', 'unit_kerja_id', 'kategori', 'kondisi', 'kelengkapan']))
                             Tidak ada barang yang cocok dengan filter.
                             <a href="{{ route('barang.index') }}">Hapus filter</a>.
                             @else
                             Data barang belum tersedia.
-                            <a href="{{ route('barang.create') }}">Tambah barang pertama</a>.
+                            @can('barang.create')
+                                <a href="{{ route('barang.create') }}">Tambah barang pertama</a>.
+                            @endcan
                             @endif
                         </x-empty-row>
                         @endforelse

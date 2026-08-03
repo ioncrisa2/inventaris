@@ -4,6 +4,7 @@ import './components/date-range-picker';
 import './components/dokumen-repeater';
 import './components/filter-form';
 import './components/localized-inputs';
+import './components/mobile-tables';
 import './components/modals';
 import './pages/absensi';
 import './pages/barang';

@@ -9,11 +9,13 @@ use Illuminate\Support\Collection;
 class KomponenGajiRepository
 {
     /**
-     * @param  array{search?: ?string, jenis?: ?string}  $filters
+     * @param  array{search?: ?string, jenis?: ?string, koperasi_id?: ?int}  $filters
      */
     public function paginate(array $filters, int $perPage = 10): LengthAwarePaginator
     {
         return KomponenGaji::query()
+            ->with('koperasi:id,nama')
+            ->when($filters['koperasi_id'] ?? null, fn ($query, $koperasiId) => $query->where('koperasi_id', $koperasiId))
             ->when($filters['search'] ?? null, function ($query, $search) {
                 $query->where('nama_komponen', 'like', '%'.$search.'%');
             })

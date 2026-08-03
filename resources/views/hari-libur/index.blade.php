@@ -2,20 +2,38 @@
 
 @section('title', 'Hari Libur')
 
+@php($isSuperAdmin = auth()->user()->isSuperAdmin())
+
 @section('content')
     <x-app-page long-footer>
-        <x-page-header title="Hari Libur" subtitle="Tanggal libur nasional — dasar hitung Uang Makan &amp; kalender Absensi.">
+        <x-page-header
+            title="Hari Libur"
+            :subtitle="$isSuperAdmin
+                ? 'Pilih tahun, lalu koperasi primer untuk melihat rincian hari libur.'
+                : 'Tanggal libur nasional — dasar hitung Uang Makan &amp; kalender Absensi.'"
+        >
             <x-slot:actions>
+                @if($isSuperAdmin)
+                    <a
+                        href="{{ route('hari-libur.sinkronisasi.create') }}"
+                        class="btn btn-primary"
+                    >
+                        <i class="bi bi-cloud-download"></i>
+                        Sinkronkan API
+                    </a>
+                @endif
                 @can('hari-libur.create')
                     <button type="button" class="btn btn-light" data-bs-toggle="modal" data-bs-target="#importHariLiburModal">
                         <i class="bi bi-file-earmark-excel"></i>
                         Import Excel
                     </button>
                 @endcan
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createHariLiburModal">
-                    <i class="bi bi-plus-circle"></i>
-                    Tambah Hari Libur
-                </button>
+                @can('hari-libur.create')
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createHariLiburModal">
+                        <i class="bi bi-plus-circle"></i>
+                        Tambah Hari Libur
+                    </button>
+                @endcan
             </x-slot:actions>
         </x-page-header>
 
@@ -26,7 +44,7 @@
                 <thead>
                     <tr>
                         <th class="table-col-width-150">Tahun</th>
-                        <th>Jumlah Hari Libur</th>
+                        <th>{{ $isSuperAdmin ? 'Total Entri Hari Libur' : 'Jumlah Hari Libur' }}</th>
                         <th class="table-col-width-150">Aksi</th>
                     </tr>
                 </thead>
@@ -34,7 +52,7 @@
                     @forelse($tahunList as $data)
                         <tr>
                             <td><strong>{{ $data['tahun'] }}</strong></td>
-                            <td>{{ $data['jumlah'] }} hari libur</td>
+                            <td>{{ $data['jumlah'] }} {{ $isSuperAdmin ? 'entri hari libur' : 'hari libur' }}</td>
                             <td>
                                 <a
                                     href="{{ route('hari-libur.tahun', ['tahun' => $data['tahun']]) }}"
@@ -48,13 +66,26 @@
                         </tr>
                     @empty
                         <x-empty-row :colspan="3">
-                            Belum ada data hari libur. Tambah manual atau import dari file Excel.
-                            <x-slot:action>
-                                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createHariLiburModal">
-                                    <i class="bi bi-plus-circle"></i>
-                                    Tambah Hari Libur
-                                </button>
-                            </x-slot:action>
+                            Belum ada data hari libur.
+                            @if($isSuperAdmin)
+                                Ambil data publik untuk koperasi primer yang dipilih.
+                                <x-slot:action>
+                                    <a href="{{ route('hari-libur.sinkronisasi.create') }}" class="btn btn-primary btn-sm">
+                                        <i class="bi bi-cloud-download"></i>
+                                        Sinkronkan API
+                                    </a>
+                                </x-slot:action>
+                            @else
+                                @can('hari-libur.create')
+                                    Tambah manual atau import dari file Excel.
+                                    <x-slot:action>
+                                        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createHariLiburModal">
+                                            <i class="bi bi-plus-circle"></i>
+                                            Tambah Hari Libur
+                                        </button>
+                                    </x-slot:action>
+                                @endcan
+                            @endif
                         </x-empty-row>
                     @endforelse
                 </tbody>

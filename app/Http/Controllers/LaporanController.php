@@ -14,6 +14,9 @@ use App\Http\Requests\Laporan\PenggajianLaporanRequest;
 use App\Http\Requests\Laporan\PenyusutanLaporanRequest;
 use App\Services\LaporanService;
 use App\Support\PerPage;
+use App\Support\TenantContext;
+use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Facades\Excel;
 
 class LaporanController extends Controller
@@ -24,7 +27,10 @@ class LaporanController extends Controller
 
     public function inventaris(InventarisLaporanRequest $request)
     {
-        return view('laporan.inventaris', $this->laporanService->inventaris($request->validated(), PerPage::resolve($request)));
+        return view('laporan.inventaris', [
+            ...$this->laporanService->inventaris($request->validated(), PerPage::resolve($request)),
+            ...$this->tenantFilterData($request),
+        ]);
     }
 
     public function cetakInventaris(InventarisLaporanRequest $request)
@@ -48,6 +54,7 @@ class LaporanController extends Controller
             ...$this->laporanService->absensi($request->validated(), $bulan, $tahun, PerPage::resolve($request)),
             'bulan' => $bulan,
             'tahun' => $tahun,
+            ...$this->tenantFilterData($request),
         ]);
     }
 
@@ -72,7 +79,10 @@ class LaporanController extends Controller
 
     public function kepegawaian(KepegawaianLaporanRequest $request)
     {
-        return view('laporan.kepegawaian', $this->laporanService->kepegawaian($request->validated(), PerPage::resolve($request)));
+        return view('laporan.kepegawaian', [
+            ...$this->laporanService->kepegawaian($request->validated(), PerPage::resolve($request)),
+            ...$this->tenantFilterData($request),
+        ]);
     }
 
     public function cetakKepegawaian(KepegawaianLaporanRequest $request)
@@ -96,6 +106,7 @@ class LaporanController extends Controller
             ...$this->laporanService->penggajian($request->validated(), $bulan, $tahun, PerPage::resolve($request)),
             'bulan' => $bulan,
             'tahun' => $tahun,
+            ...$this->tenantFilterData($request),
         ]);
     }
 
@@ -125,6 +136,7 @@ class LaporanController extends Controller
         return view('laporan.penyusutan', [
             ...$this->laporanService->penyusutan($request->validated(), $tahun, PerPage::resolve($request)),
             'tahun' => $tahun,
+            ...$this->tenantFilterData($request),
         ]);
     }
 
@@ -138,5 +150,16 @@ class LaporanController extends Controller
         $rows = $this->laporanService->penyusutanExportRows($request->validated(), $request->tahun());
 
         return Excel::download(new PenyusutanExport($rows), 'laporan-penyusutan.xlsx');
+    }
+
+    /** @return array{koperasis: Collection, selectedKoperasiId: ?int} */
+    private function tenantFilterData(Request $request): array
+    {
+        $koperasiId = $request->validated('koperasi_id');
+
+        return TenantContext::filterViewData(
+            $request,
+            $koperasiId === null ? null : (int) $koperasiId,
+        );
     }
 }

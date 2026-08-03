@@ -13,12 +13,13 @@ class TransaksiGajiRepository
      * Daftar karyawan yang punya minimal satu transaksi gaji, beserta
      * jumlahnya — dipakai halaman index (cluster per karyawan).
      */
-    public function karyawanList(?string $search, int $perPage = 10): LengthAwarePaginator
+    public function karyawanList(?string $search, int $perPage = 10, ?int $koperasiId = null): LengthAwarePaginator
     {
         return Karyawan::query()
             ->whereHas('transaksiGaji')
             ->withCount('transaksiGaji')
-            ->with('unitKerja:id,nama_unit')
+            ->with(['koperasi:id,nama', 'unitKerja:id,nama_unit'])
+            ->when($koperasiId, fn ($query) => $query->where('koperasi_id', $koperasiId))
             ->when($search, function ($query, $search) {
                 $query->where('nama_lengkap', 'like', "%{$search}%");
             })

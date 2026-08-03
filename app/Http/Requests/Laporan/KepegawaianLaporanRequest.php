@@ -21,6 +21,7 @@ class KepegawaianLaporanRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'koperasi_id' => ['nullable', 'integer', Rule::exists('koperasi', 'id'), Rule::prohibitedIf(! $this->user()->isSuperAdmin())],
             'unit_kerja_id' => ['nullable', TenantRule::exists('unit_kerja')],
             'status_karyawan' => ['nullable', Rule::in(Karyawan::STATUSES)],
         ];

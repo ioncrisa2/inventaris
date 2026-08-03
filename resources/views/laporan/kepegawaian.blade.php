@@ -5,7 +5,9 @@
 @section('content')
 <x-app-page>
         @php
+            $showTenant = auth()->user()->isSuperAdmin();
             $kepegawaianActiveFilterCount = collect(request()->only([
+                'koperasi_id',
                 'unit_kerja_id',
                 'status_karyawan',
             ]))->filter(fn ($value) => filled($value))->count();
@@ -13,6 +15,9 @@
             $kepegawaianSelectedUnit = request()->filled('unit_kerja_id')
                 ? ($unitKerjas->firstWhere('id', (int) request('unit_kerja_id'))?->nama_unit ?? 'Unit tidak tersedia')
                 : 'Semua unit kerja';
+            $kepegawaianSelectedTenant = $selectedKoperasiId
+                ? ($koperasis->firstWhere('id', $selectedKoperasiId)?->nama ?? 'Koperasi tidak tersedia')
+                : 'Seluruh koperasi';
         @endphp
 
         <x-page-header title="Laporan Kepegawaian" subtitle="Sebaran tenaga kerja, status, dan gaji pokok.">
@@ -40,6 +45,7 @@
 
         <x-report-filter-summary
             :items="[
+                ['label' => 'Koperasi', 'value' => $showTenant ? $kepegawaianSelectedTenant : auth()->user()->koperasi?->nama],
                 ['label' => 'Unit', 'value' => $kepegawaianSelectedUnit],
                 ['label' => 'Status', 'value' => request('status_karyawan') ?: 'Semua status'],
             ]"
@@ -53,13 +59,25 @@
             :has-filters="$kepegawaianActiveFilterCount > 0"
             :has-errors="$errors->any()"
         >
+            @if($showTenant)
+                <div class="col-md-6">
+                    <label class="form-label" for="kepegawaian_koperasi_id">Koperasi</label>
+                    <select class="form-select @error('koperasi_id') is-invalid @enderror" id="kepegawaian_koperasi_id" name="koperasi_id">
+                        <option value="">Seluruh koperasi</option>
+                        @foreach($koperasis as $koperasi)
+                            <option value="{{ $koperasi->id }}" @selected((string) old('koperasi_id', $selectedKoperasiId) === (string) $koperasi->id)>{{ $koperasi->nama }}</option>
+                        @endforeach
+                    </select>
+                    @error('koperasi_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
+            @endif
             <div class="col-md-6">
                 <label class="form-label" for="kepegawaian_unit_kerja_id">Unit Kerja</label>
                 <select class="form-select @error('unit_kerja_id') is-invalid @enderror" id="kepegawaian_unit_kerja_id" name="unit_kerja_id">
                     <option value="">Semua unit kerja</option>
                     @foreach($unitKerjas as $unit)
                         <option value="{{ $unit->id }}" @selected((string) old('unit_kerja_id', request('unit_kerja_id')) === (string) $unit->id)>
-                            {{ $unit->nama_unit }}
+                            {{ $showTenant ? (($unit->koperasi?->nama ?? 'Tanpa koperasi').' — '.$unit->nama_unit) : $unit->nama_unit }}
                         </option>
                     @endforeach
                 </select>
@@ -158,7 +176,7 @@
                             <tbody>
                                 @forelse($rekapUnitKerja as $rekap)
                                     <tr>
-                                        <td>{{ $rekap->unitKerja?->nama_unit ?? 'Tanpa unit kerja' }}</td>
+                                        <td>{{ $showTenant ? (($rekap->unitKerja?->koperasi?->nama ?? 'Tanpa koperasi').' — '.($rekap->unitKerja?->nama_unit ?? 'Tanpa unit kerja')) : ($rekap->unitKerja?->nama_unit ?? 'Tanpa unit kerja') }}</td>
                                         <td class="text-end">{{ number_format($rekap->total_karyawan, 0, ',', '.') }}</td>
                                     </tr>
                                 @empty
@@ -180,6 +198,9 @@
                         <tr>
                             <th>NIK</th>
                             <th>Nama Lengkap</th>
+                            @if($showTenant)
+                                <th>Koperasi</th>
+                            @endif
                             <th>Unit Kerja</th>
                             <th>Jabatan</th>
                             <th>Status</th>
@@ -191,13 +212,16 @@
                             <tr>
                                 <td><strong>{{ $karyawan->nik }}</strong></td>
                                 <td>{{ $karyawan->nama_lengkap }}</td>
+                                @if($showTenant)
+                                    <td>{{ $karyawan->koperasi?->nama ?? 'Tanpa koperasi' }}</td>
+                                @endif
                                 <td>{{ $karyawan->unitKerja?->nama_unit ?? '—' }}</td>
                                 <td>{{ $karyawan->jabatan }}</td>
                                 <td><x-badge :color="\App\Models\Karyawan::STATUS_COLORS[$karyawan->status_karyawan] ?? 'bg-secondary'">{{ $karyawan->status_karyawan }}</x-badge></td>
                                 <td class="text-end">Rp {{ number_format($karyawan->gaji_pokok, 0, ',', '.') }}</td>
                             </tr>
                         @empty
-                            <x-empty-row :colspan="6">Tidak ada karyawan yang cocok dengan filter.</x-empty-row>
+                            <x-empty-row :colspan="$showTenant ? 7 : 6">Tidak ada karyawan yang cocok dengan filter.</x-empty-row>
                         @endforelse
                     </tbody>
                 </table>

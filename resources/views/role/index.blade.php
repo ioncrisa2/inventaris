@@ -4,7 +4,10 @@
 
 @section('content')
 <x-app-page>
-        <x-page-header title="Role & Hak Akses">
+        <x-page-header
+            title="Role & Hak Akses"
+            subtitle="Atur role tambahan per koperasi dan lihat akun yang menggunakan setiap role."
+        >
             <x-slot:actions>
                 @if(auth()->user()->isSuperAdmin())
                 <a class="btn btn-primary" href="{{ route('role.create') }}">
@@ -16,6 +19,15 @@
         </x-page-header>
 
         <x-flash-alert />
+
+        <div class="alert alert-info app-alert" role="note">
+            <i class="bi bi-lock" aria-hidden="true"></i>
+            <div>
+                <strong>Role sistem dilindungi.</strong>
+                Super Admin dan Admin Primer menjadi jangkar identitas sehingga tidak dapat diubah atau dihapus dari halaman ini.
+                Klik jumlah pengguna untuk mengelola akun pemegang role tersebut.
+            </div>
+        </div>
 
         <x-data-table :paginator="$roles">
                 <table class="table table-hover align-middle mb-0">
@@ -33,12 +45,42 @@
                     <tbody>
                         @forelse($roles as $role)
                             <tr>
-                                <td><strong>{{ $role->displayName() }}</strong></td>
+                                <td>
+                                    <div class="d-flex flex-wrap align-items-center gap-2">
+                                        <strong>{{ $role->displayName() }}</strong>
+                                        @if($role->isSystem())
+                                            <x-badge
+                                                color="bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle"
+                                                title="Role sistem dikelola oleh aplikasi"
+                                            >
+                                                <i class="bi bi-lock-fill" aria-hidden="true"></i>
+                                                Role Sistem
+                                            </x-badge>
+                                        @endif
+                                    </div>
+                                </td>
                                 @if(auth()->user()->isSuperAdmin())
                                 <td>{{ $role->koperasi?->nama ?? 'Global' }}</td>
                                 @endif
                                 <td class="text-end">{{ $role->permissions_count }}</td>
-                                <td class="text-end">{{ $role->users_count }}</td>
+                                <td class="text-end">
+                                    @can('pengguna.view')
+                                        <a
+                                            class="btn btn-sm btn-link p-0 fw-semibold text-decoration-none"
+                                            href="{{ route('pengguna.index', array_filter([
+                                                'role_id' => $role->id,
+                                                'koperasi_id' => $role->koperasi_id,
+                                            ])) }}"
+                                            aria-label="Lihat {{ $role->users_count }} pengguna dengan role {{ $role->displayName() }}"
+                                            title="Lihat pengguna"
+                                        >
+                                            {{ $role->users_count }}
+                                            <i class="bi bi-arrow-up-right-square ms-1" aria-hidden="true"></i>
+                                        </a>
+                                    @else
+                                        {{ $role->users_count }}
+                                    @endcan
+                                </td>
                                 <td class="text-nowrap">
                                     <div class="table-actions">
                                         @if(auth()->user()->can('role.update') && ! $role->isSystem())

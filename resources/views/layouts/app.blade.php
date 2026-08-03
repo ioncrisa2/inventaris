@@ -35,7 +35,10 @@
             </button>
             <div class="collapse navbar-collapse" id="topbarNavCollapse">
                 @include('partials.topbar-menu')
-                @include('partials.user-dropdown', ['class' => 'mt-3 mt-lg-0'])
+                <div class="app-topbar-account mt-3 mt-lg-0">
+                    <x-tenant-context />
+                    @include('partials.user-dropdown')
+                </div>
             </div>
         </div>
     </nav>
@@ -55,7 +58,10 @@
                     <i class="bi bi-list"></i>
                 </button>
 
-                @include('partials.user-dropdown', ['class' => 'ms-auto'])
+                <div class="app-topbar-account ms-auto">
+                    <x-tenant-context />
+                    @include('partials.user-dropdown')
+                </div>
             </header>
 
             <div class="app-main-content">
@@ -114,6 +120,11 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <div class="settings-save-toast" data-settings-save-toast role="status" aria-live="polite" hidden>
+        <i class="bi bi-check-circle" aria-hidden="true"></i>
+        Perubahan tampilan disimpan.
     </div>
     @vite('resources/js/app.js')
 </body>

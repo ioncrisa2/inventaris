@@ -2,6 +2,7 @@
     'title' => null,
     'subtitle' => null,
     'paginator' => null,
+    'mobileCards' => true,
 ])
 
 <x-section-card :title="$title" :subtitle="$subtitle" flush {{ $attributes->class(['data-table-section']) }}>
@@ -15,7 +16,10 @@
         </div>
     @endisset
 
-    <div class="table-responsive">
+    <div @class([
+        'table-responsive',
+        'mobile-table-shell' => $mobileCards,
+    ]) @if($mobileCards) data-mobile-table @endif>
         {{ $slot }}
     </div>
 

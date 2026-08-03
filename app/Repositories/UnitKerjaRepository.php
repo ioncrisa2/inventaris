@@ -8,9 +8,13 @@ use Illuminate\Support\Collection;
 
 class UnitKerjaRepository
 {
-    public function orderedList(): Collection
+    public function orderedList(?int $koperasiId = null): Collection
     {
-        return UnitKerja::orderBy('nama_unit')->get();
+        return UnitKerja::query()
+            ->with('koperasi:id,nama')
+            ->when($koperasiId, fn ($query) => $query->where('koperasi_id', $koperasiId))
+            ->orderBy('nama_unit')
+            ->get();
     }
 
     public function find(int $id): ?UnitKerja
@@ -28,10 +32,12 @@ class UnitKerjaRepository
             ->get();
     }
 
-    public function paginate(?string $search, int $perPage = 10): LengthAwarePaginator
+    public function paginate(?string $search, int $perPage = 10, ?int $koperasiId = null): LengthAwarePaginator
     {
         return UnitKerja::query()
+            ->with('koperasi:id,nama')
             ->withCount(['karyawan', 'barang', 'user'])
+            ->when($koperasiId, fn ($query) => $query->where('koperasi_id', $koperasiId))
             ->when($search, function ($query, $search) {
                 $query->where('nama_unit', 'like', '%'.$search.'%');
             })

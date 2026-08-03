@@ -7,6 +7,7 @@ use App\Http\Requests\KomponenGaji\KomponenGajiRequest;
 use App\Models\KomponenGaji;
 use App\Services\KomponenGajiService;
 use App\Support\PerPage;
+use App\Support\TenantContext;
 use Illuminate\Http\Request;
 
 class KomponenGajiController extends Controller
@@ -21,12 +22,20 @@ class KomponenGajiController extends Controller
      */
     public function index(Request $request)
     {
+        $selectedKoperasiId = TenantContext::selectedKoperasiId($request);
+        $filters = $request->only(['search', 'jenis']);
+        if ($selectedKoperasiId) {
+            $filters['koperasi_id'] = $selectedKoperasiId;
+        }
         $komponenGaji = $this->komponenGajiService->list(
-            $request->only(['search', 'jenis']),
+            $filters,
             PerPage::resolve($request),
         );
 
-        return view('komponen-gaji.index', compact('komponenGaji'));
+        return view('komponen-gaji.index', [
+            'komponenGaji' => $komponenGaji,
+            ...TenantContext::filterViewData($request, $selectedKoperasiId),
+        ]);
     }
 
     /**

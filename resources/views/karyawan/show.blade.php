@@ -6,7 +6,7 @@
 <x-app-page>
         <x-page-header
             title="{{ $karyawan->nama_lengkap }}"
-            subtitle="{{ $karyawan->nik }} — {{ $karyawan->jabatan }} — {{ $karyawan->unitKerja?->nama_unit ?? 'Belum ditentukan' }}"
+            subtitle="{{ $karyawan->nik }} — {{ $karyawan->jabatan }} — {{ $karyawan->unitKerja?->nama_unit ?? 'Belum ditentukan' }}{{ auth()->user()->isSuperAdmin() ? ' — '.($karyawan->koperasi?->nama ?? 'Tanpa koperasi') : '' }}"
         >
             <x-slot:actions>
                 <div class="d-flex flex-wrap gap-2">

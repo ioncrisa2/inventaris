@@ -5,9 +5,11 @@
 @php
     $dapatMelihatGaji = auth()->user()->can('karyawan.gaji.view')
         || auth()->user()->can('karyawan.gaji.update');
+    $showTenant = auth()->user()->isSuperAdmin();
     $jumlahKolom = 6
         + (auth()->user()->can('karyawan.delete') ? 1 : 0)
-        + ($dapatMelihatGaji ? 1 : 0);
+        + ($dapatMelihatGaji ? 1 : 0)
+        + ($showTenant ? 1 : 0);
 @endphp
 
 @section('content')
@@ -30,7 +32,7 @@
                 <x-filter-form
                     :action="route('karyawan.index')"
                     :reset-route="route('karyawan.index')"
-                    :has-filters="request()->hasAny(['search', 'unit_kerja_id', 'status_karyawan', 'kelengkapan'])"
+                    :has-filters="request()->hasAny(['search', 'koperasi_id', 'unit_kerja_id', 'status_karyawan', 'kelengkapan'])"
                 >
                     <div class="col-12 col-lg-auto">
                         <label class="visually-hidden" for="search">Cari karyawan</label>
@@ -43,13 +45,14 @@
                             placeholder="Cari NIK, nama, jabatan…"
                         >
                     </div>
+                    <x-tenant-filter :koperasis="$koperasis" :selected="$selectedKoperasiId" id="karyawan_koperasi_id" />
                     <div class="col-12 col-sm-6 col-lg-auto">
                         <label class="visually-hidden" for="unit_kerja_id">Unit kerja</label>
                         <select class="form-select" id="unit_kerja_id" name="unit_kerja_id">
                             <option value="">Semua unit kerja</option>
                             @foreach($unitKerjas as $unit)
                                 <option value="{{ $unit->id }}" @selected((string) request('unit_kerja_id') === (string) $unit->id)>
-                                    {{ $unit->nama_unit }}
+                                    {{ $showTenant ? (($unit->koperasi?->nama ?? 'Tanpa koperasi').' — '.$unit->nama_unit) : $unit->nama_unit }}
                                 </option>
                             @endforeach
                         </select>
@@ -93,6 +96,9 @@
                             @endcan
                             <th class="table-col-width-120">NIK</th>
                             <th>Nama Lengkap</th>
+                            @if($showTenant)
+                                <th>Koperasi</th>
+                            @endif
                             <th>Unit Kerja</th>
                             <th>Jabatan</th>
                             <th class="table-col-width-120">Status</th>
@@ -112,6 +118,9 @@
                                 @endcan
                                 <td><strong>{{ $data->nik }}</strong></td>
                                 <td>{{ $data->nama_lengkap }}</td>
+                                @if($showTenant)
+                                    <td>{{ $data->koperasi?->nama ?? 'Tanpa koperasi' }}</td>
+                                @endif
                                 <td>{{ $data->unitKerja?->nama_unit ?? 'Belum ditentukan' }}</td>
                                 <td>{{ $data->jabatan }}</td>
                                 <td><x-badge :color="\App\Models\Karyawan::STATUS_COLORS[$data->status_karyawan] ?? 'bg-secondary'">{{ $data->status_karyawan }}</x-badge></td>
@@ -140,12 +149,14 @@
                             </tr>
                         @empty
                             <x-empty-row :colspan="$jumlahKolom">
-                                @if(request()->hasAny(['search', 'unit_kerja_id', 'status_karyawan', 'kelengkapan']))
+                                @if(request()->hasAny(['search', 'koperasi_id', 'unit_kerja_id', 'status_karyawan', 'kelengkapan']))
                                     Tidak ada karyawan yang cocok dengan filter.
                                     <a href="{{ route('karyawan.index') }}">Hapus filter</a>.
                                 @else
                                     Data karyawan belum tersedia.
-                                    <a href="{{ route('karyawan.create') }}">Tambah karyawan pertama</a>.
+                                    @can('karyawan.create')
+                                        <a href="{{ route('karyawan.create') }}">Tambah karyawan pertama</a>.
+                                    @endcan
                                 @endif
                             </x-empty-row>
                         @endforelse

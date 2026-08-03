@@ -24,9 +24,18 @@ document.addEventListener('DOMContentLoaded', () => {
             && !['hidden', 'submit', 'button'].includes(element.type)
         ));
         const chipList = form.querySelector('[data-active-filter-list]');
-        let searchTimer;
+        const submitButton = form.querySelector('[data-filter-submit]');
+        const status = form.querySelector('[data-filter-status]');
+        let isNavigating = false;
 
         const navigate = () => {
+            if (isNavigating) return;
+
+            isNavigating = true;
+            form.setAttribute('aria-busy', 'true');
+            submitButton?.setAttribute('disabled', 'disabled');
+            if (status) status.textContent = 'Memuat hasil filter.';
+
             const url = new URL(form.action, window.location.href);
             const query = new URLSearchParams();
 
@@ -39,25 +48,10 @@ document.addEventListener('DOMContentLoaded', () => {
             url.search = query.toString();
             window.location.assign(url);
         };
-        const submit = () => form.requestSubmit();
 
         form.addEventListener('submit', (event) => {
             event.preventDefault();
             navigate();
-        });
-
-        controls.forEach((control) => {
-            if (control instanceof HTMLSelectElement) {
-                control.addEventListener('change', submit);
-                return;
-            }
-
-            if (['search', 'text'].includes(control.type)) {
-                control.addEventListener('input', () => {
-                    window.clearTimeout(searchTimer);
-                    searchTimer = window.setTimeout(submit, 450);
-                });
-            }
         });
 
         if (!chipList) return;
@@ -79,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             chip.addEventListener('click', () => {
                 control.value = '';
-                submit();
+                navigate();
             });
             chipList.append(chip);
         });

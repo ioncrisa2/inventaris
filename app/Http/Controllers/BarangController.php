@@ -12,6 +12,7 @@ use App\Repositories\UnitKerjaRepository;
 use App\Services\BarangService;
 use App\Support\PenyusutanCalculator;
 use App\Support\PerPage;
+use App\Support\TenantContext;
 use Illuminate\Http\Request;
 
 class BarangController extends Controller
@@ -29,13 +30,24 @@ class BarangController extends Controller
      */
     public function index(Request $request)
     {
+        $selectedKoperasiId = TenantContext::selectedKoperasiId($request);
+        $filters = $request->only(['search', 'unit_kerja_id', 'kategori', 'kondisi', 'kelengkapan']);
+        if ($selectedKoperasiId) {
+            $filters['koperasi_id'] = $selectedKoperasiId;
+        }
         $barangs = $this->barangService->list(
-            $request->only(['search', 'unit_kerja_id', 'kategori', 'kondisi', 'kelengkapan']),
+            $filters,
             PerPage::resolve($request),
         );
-        $unitKerjas = $this->unitKerjaRepository->orderedList();
+        $unitKerjas = $selectedKoperasiId
+            ? $this->unitKerjaRepository->orderedList($selectedKoperasiId)
+            : $this->unitKerjaRepository->orderedList();
 
-        return view('barang.index', compact('barangs', 'unitKerjas'));
+        return view('barang.index', [
+            'barangs' => $barangs,
+            'unitKerjas' => $unitKerjas,
+            ...TenantContext::filterViewData($request, $selectedKoperasiId),
+        ]);
     }
 
     /**
@@ -66,7 +78,7 @@ class BarangController extends Controller
      */
     public function show(Barang $barang)
     {
-        $barang->load('unitKerja', 'kondisiTerakhir', 'fotoPendukung', 'dokumen');
+        $barang->load('koperasi:id,nama', 'unitKerja', 'kondisiTerakhir', 'fotoPendukung', 'dokumen');
         $riwayatKondisi = $this->riwayatKondisiBarangRepository->terbaruUntuk($barang);
         $jadwalPenyusutan = PenyusutanCalculator::jadwalTahunan(
             $barang->kategori,

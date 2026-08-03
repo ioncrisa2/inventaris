@@ -12,9 +12,11 @@ class UnitKerjaService
 {
     public function __construct(private UnitKerjaRepository $unitKerjaRepository) {}
 
-    public function list(?string $search, int $perPage = PerPage::DEFAULT): LengthAwarePaginator
+    public function list(?string $search, int $perPage = PerPage::DEFAULT, ?int $koperasiId = null): LengthAwarePaginator
     {
-        return $this->unitKerjaRepository->paginate($search, $perPage);
+        return $koperasiId
+            ? $this->unitKerjaRepository->paginate($search, $perPage, $koperasiId)
+            : $this->unitKerjaRepository->paginate($search, $perPage);
     }
 
     public function store(array $data): UnitKerja

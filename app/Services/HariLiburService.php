@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Imports\HariLiburImport;
 use App\Models\HariLibur;
+use App\Models\Koperasi;
 use App\Repositories\HariLiburRepository;
 use App\Support\PerPage;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -35,14 +36,24 @@ class HariLiburService
     /**
      * @return Collection<int, array{tahun: int, jumlah: int}>
      */
-    public function tahunList(): Collection
+    public function tahunList(?int $koperasiId = null): Collection
     {
-        return $this->hariLiburRepository->tahunList();
+        return $koperasiId
+            ? $this->hariLiburRepository->tahunList($koperasiId)
+            : $this->hariLiburRepository->tahunList();
     }
 
-    public function listForTahun(int $tahun, ?string $search, int $perPage = PerPage::DEFAULT): LengthAwarePaginator
+    /** @return Collection<int, Koperasi> */
+    public function koperasiListUntukTahun(int $tahun): Collection
     {
-        return $this->hariLiburRepository->paginateForTahun($tahun, $search, $perPage);
+        return $this->hariLiburRepository->koperasiListUntukTahun($tahun);
+    }
+
+    public function listForTahun(int $tahun, ?string $search, int $perPage = PerPage::DEFAULT, ?int $koperasiId = null): LengthAwarePaginator
+    {
+        return $koperasiId
+            ? $this->hariLiburRepository->paginateForTahun($tahun, $search, $perPage, $koperasiId)
+            : $this->hariLiburRepository->paginateForTahun($tahun, $search, $perPage);
     }
 
     public function store(array $data): HariLibur

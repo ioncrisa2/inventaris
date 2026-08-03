@@ -14,6 +14,7 @@ use App\Services\SlipGajiTemplateService;
 use App\Services\TransaksiGajiService;
 use App\Support\PerPage;
 use App\Support\SlipGajiPaperLayout;
+use App\Support\TenantContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -33,20 +34,23 @@ class TransaksiGajiController extends Controller
      */
     public function index(Request $request)
     {
-        $karyawanList = $this->transaksiGajiService->karyawanList(
-            $request->string('search')->trim()->value() ?: null,
-            PerPage::resolve($request),
-        );
+        $selectedKoperasiId = TenantContext::selectedKoperasiId($request);
+        $search = $request->string('search')->trim()->value() ?: null;
+        $perPage = PerPage::resolve($request);
+        $karyawanList = $selectedKoperasiId
+            ? $this->transaksiGajiService->karyawanList($search, $perPage, $selectedKoperasiId)
+            : $this->transaksiGajiService->karyawanList($search, $perPage);
         $karyawanCetak = $this->karyawanRepository->withSalaryTransactionsOrderedList();
         $penandaTangan = $this->karyawanRepository->activeOrderedList();
         $paperLayoutDefault = $this->slipGajiTemplateService->publishedPaperLayout();
 
-        return view('transaksi-gaji.index', compact(
-            'karyawanList',
-            'karyawanCetak',
-            'penandaTangan',
-            'paperLayoutDefault',
-        ));
+        return view('transaksi-gaji.index', [
+            'karyawanList' => $karyawanList,
+            'karyawanCetak' => $karyawanCetak,
+            'penandaTangan' => $penandaTangan,
+            'paperLayoutDefault' => $paperLayoutDefault,
+            ...TenantContext::filterViewData($request, $selectedKoperasiId),
+        ]);
     }
 
     /**
@@ -99,7 +103,7 @@ class TransaksiGajiController extends Controller
      */
     public function show(TransaksiGaji $transaksiGaji)
     {
-        $transaksiGaji->load('karyawan.unitKerja', 'details');
+        $transaksiGaji->load('koperasi:id,nama', 'karyawan.unitKerja', 'details');
 
         $totalTunjangan = $this->transaksiGajiService->totalPerJenis($transaksiGaji, 'Tunjangan');
         $totalPotongan = $this->transaksiGajiService->totalPerJenis($transaksiGaji, 'Potongan');

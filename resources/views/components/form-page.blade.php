@@ -14,7 +14,7 @@
         @endisset
 
         <div class="card form-card">
-            <form method="POST" action="{{ $action }}" enctype="multipart/form-data">
+            <form class="form-card__form" method="POST" action="{{ $action }}" enctype="multipart/form-data">
                 @csrf
                 @unless (strtoupper($method) === 'POST')
                     @method($method)
@@ -24,10 +24,10 @@
                     {{ $slot }}
                 </div>
 
-                <div class="card-footer d-flex justify-content-end gap-2 bg-body-tertiary">
+                <div class="card-footer form-card__actions d-flex justify-content-end gap-2 bg-body-tertiary">
                     <a href="{{ $cancelRoute }}" class="btn btn-light">Batal</a>
                     <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-save"></i>
+                        <i class="bi bi-save" aria-hidden="true"></i>
                         {{ $submitLabel }}
                     </button>
                 </div>

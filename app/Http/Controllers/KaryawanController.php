@@ -10,6 +10,7 @@ use App\Repositories\UnitKerjaRepository;
 use App\Services\KaryawanService;
 use App\Support\KaryawanPerubahanSchema;
 use App\Support\PerPage;
+use App\Support\TenantContext;
 use Illuminate\Http\Request;
 
 class KaryawanController extends Controller
@@ -27,13 +28,24 @@ class KaryawanController extends Controller
      */
     public function index(Request $request)
     {
+        $selectedKoperasiId = TenantContext::selectedKoperasiId($request);
+        $filters = $request->only(['search', 'unit_kerja_id', 'status_karyawan', 'kelengkapan']);
+        if ($selectedKoperasiId) {
+            $filters['koperasi_id'] = $selectedKoperasiId;
+        }
         $karyawan = $this->karyawanService->list(
-            $request->only(['search', 'unit_kerja_id', 'status_karyawan', 'kelengkapan']),
+            $filters,
             PerPage::resolve($request),
         );
-        $unitKerjas = $this->unitKerjaRepository->orderedList();
+        $unitKerjas = $selectedKoperasiId
+            ? $this->unitKerjaRepository->orderedList($selectedKoperasiId)
+            : $this->unitKerjaRepository->orderedList();
 
-        return view('karyawan.index', compact('karyawan', 'unitKerjas'));
+        return view('karyawan.index', [
+            'karyawan' => $karyawan,
+            'unitKerjas' => $unitKerjas,
+            ...TenantContext::filterViewData($request, $selectedKoperasiId),
+        ]);
     }
 
     /**
@@ -63,7 +75,7 @@ class KaryawanController extends Controller
      */
     public function show(Request $request, Karyawan $karyawan)
     {
-        $karyawan->load('unitKerja', 'dokumen', 'atasanLangsung');
+        $karyawan->load('koperasi:id,nama', 'unitKerja', 'dokumen', 'atasanLangsung');
         if ($request->user()->can('karyawan.riwayat.view')) {
             $karyawan->load([
                 'riwayatPerubahan' => fn ($query) => $query

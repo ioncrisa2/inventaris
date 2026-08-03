@@ -10,6 +10,7 @@ class KoperasiRepository
     public function paginate(?string $search, int $perPage = 10): LengthAwarePaginator
     {
         return Koperasi::query()
+            ->with('adminPrimerRole:id,koperasi_id')
             ->withCount('users')
             ->when($search, fn ($query, $search) => $query->where('nama', 'like', "%{$search}%"))
             ->orderBy('nama')

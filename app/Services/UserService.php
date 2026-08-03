@@ -18,7 +18,7 @@ class UserService
     public function __construct(private UserRepository $userRepository) {}
 
     /**
-     * @param  array{search?: ?string, role_id?: ?string}  $filters
+     * @param  array{search?: ?string, role_id?: ?string, koperasi_id?: ?int}  $filters
      */
     public function list(array $filters, int $perPage = PerPage::DEFAULT): LengthAwarePaginator
     {
@@ -62,6 +62,8 @@ class UserService
         $this->ensureUnitBelongsToTenant($data['unit_kerja_id'] ?? null, $role->koperasi_id);
 
         return DB::transaction(function () use ($user, $data, $role) {
+            $this->ensureTenantKeepsAdminPrimer($user, $role);
+
             $this->userRepository->update($user, [
                 'name' => $data['name'],
                 'email' => $data['email'],
@@ -88,7 +90,10 @@ class UserService
 
         $this->ensureCanManage($actor, $target);
 
-        $this->userRepository->delete($target);
+        DB::transaction(function () use ($target) {
+            $this->ensureTenantKeepsAdminPrimer($target);
+            $this->userRepository->delete($target);
+        }, 3);
     }
 
     /**
@@ -112,6 +117,47 @@ class UserService
 
         if ($target->koperasi_id !== $actor->koperasi_id) {
             throw new \DomainException('Anda tidak memiliki izin untuk mengelola akun ini.');
+        }
+    }
+
+    /**
+     * Menjaga setiap koperasi tetap memiliki minimal satu admin primer.
+     * Query seluruh akun admin primer dikunci agar dua request paralel tidak
+     * sama-sama melihat "masih ada satu admin lain" lalu menghapus keduanya.
+     *
+     * Saat update, replacementRole menunjukkan role yang akan dipasang. Tidak
+     * perlu melakukan guard bila akun tetap menjadi admin primer di koperasi
+     * yang sama.
+     *
+     * @throws \DomainException
+     */
+    private function ensureTenantKeepsAdminPrimer(User $target, ?Role $replacementRole = null): void
+    {
+        if (! $target->isAdminPrimer()) {
+            return;
+        }
+
+        $remainsAdminPrimer = $replacementRole?->isAdminPrimerRole()
+            && (int) $replacementRole->koperasi_id === (int) $target->koperasi_id;
+
+        if ($remainsAdminPrimer) {
+            return;
+        }
+
+        $koperasiId = (int) $target->koperasi_id;
+        $adminPrimerIds = User::query()
+            ->where('koperasi_id', $koperasiId)
+            ->whereHas('roles', fn ($query) => $query
+                ->where('roles.name', 'admin_primer')
+                ->where('roles.koperasi_id', $koperasiId))
+            ->orderBy('users.id')
+            ->lockForUpdate()
+            ->pluck('users.id');
+
+        if ($adminPrimerIds->count() <= 1) {
+            throw new \DomainException(
+                'Akun ini adalah admin primer terakhir. Tambahkan admin primer pengganti sebelum mengubah role atau menghapus akun ini.'
+            );
         }
     }
 

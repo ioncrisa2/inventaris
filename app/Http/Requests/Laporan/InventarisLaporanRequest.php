@@ -20,6 +20,7 @@ class InventarisLaporanRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'koperasi_id' => ['nullable', 'integer', Rule::exists('koperasi', 'id'), Rule::prohibitedIf(! $this->user()->isSuperAdmin())],
             'unit_kerja_id' => ['nullable', TenantRule::exists('unit_kerja')],
             'kategori' => ['nullable', Rule::in(config('inventaris.kategori'))],
             'tanggal_awal' => ['nullable', 'date'],

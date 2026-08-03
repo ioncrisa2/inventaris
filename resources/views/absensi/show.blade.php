@@ -9,12 +9,13 @@
     $tahunBerikutnya = $bulan === 12 ? $tahun + 1 : $tahun;
 
     $namaHariSingkat = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+    $canManageAbsensi = auth()->user()->can('absensi.create');
 @endphp
 
 @section('content')
     <x-app-page>
         <x-page-header
-            subtitle="NIK {{ $karyawan->nik }} · {{ $karyawan->jabatan }} · {{ $karyawan->unitKerja?->nama_unit ?? 'Belum ditentukan' }}">
+            subtitle="NIK {{ $karyawan->nik }} · {{ $karyawan->jabatan }} · {{ $karyawan->unitKerja?->nama_unit ?? 'Belum ditentukan' }}{{ auth()->user()->isSuperAdmin() ? ' · '.($karyawan->koperasi?->nama ?? 'Tanpa koperasi') : '' }}">
             <x-slot:title>
                 {{ $karyawan->nama_lengkap }}
                 <x-badge class="align-middle" :color="\App\Models\Karyawan::STATUS_COLORS[$karyawan->status_karyawan] ?? 'bg-secondary'">{{ $karyawan->status_karyawan }}</x-badge>
@@ -90,7 +91,7 @@
                     @foreach ($mingguKalender as $minggu)
                         @foreach ($minggu as $cell)
                             @php
-                                $bisaDiklik = !$cell['di_luar_bulan'] && !$cell['masa_depan'];
+                                $bisaDiklik = $canManageAbsensi && ! $cell['di_luar_bulan'] && ! $cell['masa_depan'];
                                 $kondisiKelas = collect([
                                     'calendar-cell',
                                     $cell['di_luar_bulan'] ? 'is-outside' : null,
@@ -149,6 +150,7 @@
 
     </x-app-page>
 
+    @can('absensi.create')
     <x-modal-form id="modalAbsensi" :data-auto-show-modal="$errors->any()" :data-libur-allowed-statuses="json_encode(\App\Models\Absensi::LIBUR_ALLOWED_STATUSES)" dialog-class="modal-dialog-centered"
         :action="route('absensi.store', $karyawan)" submit-label="Simpan Absensi" submit-variant="success">
         <x-slot:header>
@@ -176,4 +178,5 @@
             @enderror
         </div>
     </x-modal-form>
+    @endcan
 @endsection

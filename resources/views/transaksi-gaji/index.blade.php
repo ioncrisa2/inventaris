@@ -3,6 +3,9 @@
 @section('title', 'Transaksi Gaji')
 
 @section('content')
+@php
+    $showTenant = auth()->user()->isSuperAdmin();
+@endphp
 <x-app-page long-footer>
         <x-page-header title="Transaksi Gaji" subtitle="Riwayat pembayaran per karyawan.">
             <x-slot:actions>
@@ -33,7 +36,7 @@
                 <x-filter-form
                     :action="route('transaksi-gaji.index')"
                     :reset-route="route('transaksi-gaji.index')"
-                    :has-filters="request()->hasAny(['search'])"
+                    :has-filters="request()->hasAny(['search', 'koperasi_id'])"
                     submit-label="Cari"
                     submit-icon="bi-search"
                 >
@@ -45,6 +48,7 @@
                             value="{{ request('search') }}"
                             placeholder="Cari nama karyawan...">
                     </div>
+                    <x-tenant-filter :koperasis="$koperasis" :selected="$selectedKoperasiId" id="transaksi_gaji_koperasi_id" />
                 </x-filter-form>
             </x-slot:toolbar>
 
@@ -52,6 +56,9 @@
                 <thead>
                     <tr>
                         <th>Karyawan</th>
+                        @if($showTenant)
+                            <th>Koperasi</th>
+                        @endif
                         <th>Unit Kerja</th>
                         <th class="text-end table-col-width-170">Jumlah Transaksi</th>
                         <th class="text-end table-col-width-150">Aksi</th>
@@ -61,6 +68,9 @@
                     @forelse($karyawanList as $karyawan)
                     <tr>
                         <td><strong>{{ $karyawan->nama_lengkap }}</strong></td>
+                        @if($showTenant)
+                            <td>{{ $karyawan->koperasi?->nama ?? 'Tanpa koperasi' }}</td>
+                        @endif
                         <td>{{ $karyawan->unitKerja?->nama_unit ?? '—' }}</td>
                         <td class="text-end">{{ $karyawan->transaksi_gaji_count }}</td>
                         <td class="text-end">
@@ -75,7 +85,14 @@
                         </td>
                     </tr>
                     @empty
-                    <x-empty-row :colspan="4">Belum ada transaksi gaji.</x-empty-row>
+                    <x-empty-row :colspan="$showTenant ? 5 : 4">
+                        @if(request()->hasAny(['search', 'koperasi_id']))
+                            Tidak ada karyawan yang cocok dengan filter.
+                            <a href="{{ route('transaksi-gaji.index') }}">Hapus filter</a>.
+                        @else
+                            Belum ada transaksi gaji.
+                        @endif
+                    </x-empty-row>
                     @endforelse
                 </tbody>
             </table>

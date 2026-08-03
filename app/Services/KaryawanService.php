@@ -21,7 +21,7 @@ class KaryawanService
     ) {}
 
     /**
-     * @param  array{search?: ?string, unit_kerja_id?: ?string, status_karyawan?: ?string, kelengkapan?: ?string}  $filters
+     * @param  array{search?: ?string, koperasi_id?: ?int, unit_kerja_id?: ?string, status_karyawan?: ?string, kelengkapan?: ?string}  $filters
      */
     public function list(array $filters, int $perPage = PerPage::DEFAULT): LengthAwarePaginator
     {
