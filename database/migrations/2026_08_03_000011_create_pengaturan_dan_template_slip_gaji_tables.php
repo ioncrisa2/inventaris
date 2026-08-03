@@ -8,8 +8,19 @@ return new class extends Migration
 {
     public function up(): void
     {
+        Schema::create('pengaturan', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('koperasi_id')->nullable()->constrained('koperasi')->restrictOnDelete();
+            $table->string('key');
+            $table->text('value')->nullable();
+            $table->timestamps();
+
+            $table->unique(['koperasi_id', 'key']);
+        });
+
         Schema::create('template_slip_gaji', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('koperasi_id')->nullable()->constrained('koperasi')->restrictOnDelete();
             $table->string('nama')->default('Template Slip Gaji');
             $table->json('konfigurasi_draf');
             $table->json('konfigurasi_terbit')->nullable();
@@ -25,5 +36,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('template_slip_gaji');
+        Schema::dropIfExists('pengaturan');
     }
 };

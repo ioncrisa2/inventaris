@@ -6,24 +6,20 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
+    // Clean-install baseline; do not apply to an already-migrated database.
     public function up(): void
     {
-        Schema::create('pengaturan', function (Blueprint $table) {
+        Schema::create('koperasi', function (Blueprint $table) {
             $table->id();
-            $table->string('key')->unique();
-            $table->text('value')->nullable();
+            $table->string('nama');
+            $table->timestamp('expires_at')->nullable();
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('pengaturan');
+        Schema::dropIfExists('koperasi');
     }
 };

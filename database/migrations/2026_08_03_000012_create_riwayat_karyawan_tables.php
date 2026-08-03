@@ -8,6 +8,17 @@ return new class extends Migration
 {
     public function up(): void
     {
+        Schema::create('dokumen_karyawan', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('karyawan_id')->constrained('karyawan')->cascadeOnDelete();
+            $table->string('jenis_dokumen');
+            $table->string('nama_asli');
+            $table->string('path');
+            $table->timestamps();
+
+            $table->index(['karyawan_id', 'jenis_dokumen'], 'dokumen_karyawan_jenis_index');
+        });
+
         Schema::create('riwayat_karyawan', function (Blueprint $table) {
             $table->id();
             $table->foreignId('karyawan_id')->constrained('karyawan')->restrictOnDelete();
@@ -55,5 +66,6 @@ return new class extends Migration
         Schema::dropIfExists('dokumen_riwayat_karyawan');
         Schema::dropIfExists('riwayat_karyawan_perubahan');
         Schema::dropIfExists('riwayat_karyawan');
+        Schema::dropIfExists('dokumen_karyawan');
     }
 };
