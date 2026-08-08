@@ -3776,3 +3776,127 @@ a.data-quality-item:focus-visible {
     color: var(--bs-body-color);
     fill: var(--bs-body-color);
 }
+
+/* Shepherd.js onboarding tour overrides — match app theme (light + dark) */
+
+.shepherd-element {
+    max-width: min(360px, calc(100vw - 2rem));
+    border-radius: var(--app-radius);
+    border: var(--bs-border-width) solid var(--bs-border-color);
+    background: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    box-shadow: var(--app-shadow-md);
+}
+
+.shepherd-header {
+    border-radius: var(--app-radius) var(--app-radius) 0 0;
+    padding: .75rem .75rem 0;
+}
+
+.shepherd-has-title .shepherd-content .shepherd-header {
+    background: var(--bs-tertiary-bg);
+}
+
+.shepherd-title {
+    color: var(--bs-emphasis-color);
+    font-weight: 700;
+}
+
+.shepherd-text {
+    color: var(--bs-body-color);
+    font-size: .875rem;
+    line-height: 1.6;
+}
+
+.shepherd-text p:last-child {
+    margin-bottom: 0;
+}
+
+.shepherd-button {
+    border-radius: var(--app-radius-sm);
+    font-weight: 600;
+    padding: .45rem 1.2rem;
+    min-height: 38px;
+    min-width: 38px;
+    font-size: .84rem;
+    transition: background var(--app-transition), color var(--app-transition);
+}
+
+.shepherd-button:not(:disabled):hover {
+    background: var(--bs-primary-text-emphasis);
+}
+
+.shepherd-button.shepherd-button-secondary {
+    background: var(--bs-tertiary-bg);
+    color: var(--bs-body-color);
+}
+
+.shepherd-button.shepherd-button-secondary:not(:disabled):hover {
+    background: var(--bs-secondary-bg);
+}
+
+.shepherd-cancel-icon {
+    color: var(--bs-secondary-color);
+    min-height: 38px;
+    min-width: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.shepherd-cancel-icon:hover {
+    color: var(--bs-body-color);
+}
+
+.shepherd-has-title .shepherd-content .shepherd-cancel-icon {
+    color: var(--bs-secondary-color);
+}
+
+.shepherd-has-title .shepherd-content .shepherd-cancel-icon:hover {
+    color: var(--bs-body-color);
+}
+
+/* Dark mode overrides */
+[data-bs-theme=dark] .shepherd-element {
+    background: var(--bs-body-bg);
+    border-color: var(--bs-border-color);
+    box-shadow: 0 .5rem 1.5rem rgba(0, 0, 0, .35);
+}
+
+[data-bs-theme=dark] .shepherd-has-title .shepherd-content .shepherd-header {
+    background: var(--bs-tertiary-bg);
+}
+
+[data-bs-theme=dark] .shepherd-arrow:before {
+    background: var(--bs-body-bg);
+}
+
+[data-bs-theme=dark] .shepherd-element.shepherd-has-title[data-popper-placement^=bottom]>.shepherd-arrow:before {
+    background-color: var(--bs-tertiary-bg);
+}
+
+[data-bs-theme=dark] .shepherd-button.shepherd-button-secondary {
+    background: var(--bs-tertiary-bg);
+    color: var(--bs-body-color);
+}
+
+[data-bs-theme=dark] .shepherd-button.shepherd-button-secondary:not(:disabled):hover {
+    background: var(--bs-secondary-bg);
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+    .shepherd-element,
+    .shepherd-modal-overlay-container,
+    .shepherd-button {
+        transition: none !important;
+    }
+}
+
+/* Print: hide tour UI entirely */
+@media print {
+    .shepherd-element,
+    .shepherd-modal-overlay-container {
+        display: none !important;
+    }
+}

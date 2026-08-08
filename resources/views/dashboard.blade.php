@@ -20,6 +20,15 @@
 
         <x-dashboard-welcome-banner :user="$user" />
 
+        @if ($user->isTenantUser())
+            <div data-onboarding-tour
+                 data-onboarding-url="{{ route('onboarding.tour.finish') }}"
+                 data-csrf="{{ csrf_token() }}"
+                 data-onboarding-auto-start="{{ is_null($user->onboarding_tour_finished_at) ? '1' : '0' }}"
+                 hidden></div>
+            <div data-onboarding-save-error role="status" aria-live="polite" class="visually-hidden"></div>
+        @endif
+
         @unless ($hasAnyWidget)
             <div class="card">
                 <div class="card-body text-center text-body-secondary py-5">

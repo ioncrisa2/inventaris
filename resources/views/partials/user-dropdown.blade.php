@@ -1,14 +1,17 @@
+@php
+    $user = auth()->user();
+@endphp
 <div class="dropdown {{ $class ?? '' }}">
     <button type="button" class="app-topbar-user dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
-        <span class="app-topbar-avatar">{{ auth()->user()->initials() }}</span>
-        <span class="app-topbar-username">{{ auth()->user()->name }}</span>
+        <span class="app-topbar-avatar">{{ $user->initials() }}</span>
+        <span class="app-topbar-username">{{ $user->name }}</span>
     </button>
     <div class="dropdown-menu dropdown-menu-end user-menu-panel">
         <div class="user-menu-header">
-            <span class="app-topbar-avatar">{{ auth()->user()->initials() }}</span>
+            <span class="app-topbar-avatar">{{ $user->initials() }}</span>
             <div class="user-menu-header__body">
-                <strong>{{ auth()->user()->name }}</strong>
-                <small>{{ auth()->user()->email }}</small>
+                <strong>{{ $user->name }}</strong>
+                <small>{{ $user->email }}</small>
             </div>
         </div>
 
@@ -43,6 +46,12 @@
         <a class="dropdown-item" href="{{ route('pengaturan.edit') }}">
             <i class="bi bi-gear me-2"></i>Pengaturan Aplikasi
         </a>
+
+        @if ($user->isTenantUser())
+            <a class="dropdown-item" href="{{ route('dashboard') }}#onboarding-tour" data-onboarding-restart>
+                <i class="bi bi-signpost-split me-2" aria-hidden="true"></i>Ulangi tur aplikasi
+            </a>
+        @endif
 
         <hr class="dropdown-divider">
 

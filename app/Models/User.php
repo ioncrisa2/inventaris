@@ -58,6 +58,7 @@ class User extends Authenticatable
         return [
             'dashboard_banner_dismissed_at' => 'datetime',
             'email_verified_at' => 'datetime',
+            'onboarding_tour_finished_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
@@ -113,5 +114,15 @@ class User extends Authenticatable
             ->implode('');
 
         return $inisial !== '' ? $inisial : '?';
+    }
+
+    /**
+     * Check if the user belongs to a tenant (has a valid koperasi_id).
+     * Used for onboarding tour eligibility: includes admin_primer and all
+     * tenant roles, excludes super_admin and tenantless accounts.
+     */
+    public function isTenantUser(): bool
+    {
+        return $this->koperasi_id !== null;
     }
 }
