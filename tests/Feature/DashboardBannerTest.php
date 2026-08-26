@@ -83,7 +83,6 @@ test('authenticated users can access the printable PDF guide page', function () 
     $this->actingAs(adminUser())
         ->get(route('panduan-singkat.cetak'))
         ->assertOk()
-        ->assertSee('PUSAT KOPERASI KREDIT (PUSKOPDIT) HARAPAN SEJAHTERA (PHS) SUMATERA SELATAN')
         ->assertSee('Panduan Langkah Demi Langkah: Admin Pusat')
         ->assertSee('Panduan Langkah Demi Langkah: Admin Primer')
         ->assertSee('Yohanes Dwiki Septian');

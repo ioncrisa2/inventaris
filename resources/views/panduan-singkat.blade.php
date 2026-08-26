@@ -27,7 +27,7 @@
             {{-- Kop Dokumen --}}
             <div class="text-center pb-3 mb-4 border-bottom" style="border-color: #1e3a8a !important; border-bottom-width: 2px !important;">
                 <div class="fw-bold tracking-wide text-uppercase" style="color: #1e3a8a; font-size: 1.1rem; letter-spacing: 0.5px;">
-                    Pusat Koperasi Kredit (Puskopdit) Harapan Sejahtera (PHS) Sumatera Selatan
+                    Puskosipa Puskopdit Handriya Sanggraha Sumatera Selatan
                 </div>
                 <div class="fw-semibold text-secondary" style="font-size: 0.95rem;">
                     Sistem Informasi Manajemen Inventaris & Kepegawaian (Multi-Koperasi)
@@ -52,7 +52,7 @@
             </div>
 
             <p class="text-body leading-relaxed mb-4">
-                Dokumen ini merupakan panduan operasional resmi untuk seluruh pengelola sistem di lingkungan Puskopdit Harapan Sejahtera (PHS) Sumatera Selatan beserta seluruh koperasi primer anggota/mitra. Sistem beroperasi di bawah model *multi-tenancy*, di mana data tiap koperasi terisolasi penuh pada level basis data.
+                Dokumen ini merupakan panduan operasional resmi untuk seluruh pengelola sistem di lingkungan Puskopdit Handriya Sanggraha (PHS) Sumatera Selatan beserta seluruh koperasi primer anggota/mitra. Sistem beroperasi di bawah model *multi-tenancy*, di mana data tiap koperasi terisolasi penuh pada level basis data.
             </p>
 
             {{-- BAB 1: MATRIKS PERAN & WEWENANG --}}
@@ -236,7 +236,7 @@
 
             {{-- Lembar Pengesahan Footer --}}
             <div class="pt-4 mt-5 border-top small text-muted d-flex flex-wrap justify-content-between align-items-center gap-2">
-                <div>Ditetapkan di Palembang &middot; Pusat Koperasi Kredit Harapan Sejahtera (PHS) Sumsel</div>
+                <div>Ditetapkan di Palembang &middot; Pusat Koperasi Kredit Handriya Sanggraha (PHS) Sumsel</div>
                 <div class="text-md-end">Created By : Yohanes Dwiki Septian</div>
             </div>
         </div>

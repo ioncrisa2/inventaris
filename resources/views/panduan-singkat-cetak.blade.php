@@ -130,7 +130,7 @@
 
 <div class="guide-doc">
     <div class="guide-header">
-        <div class="guide-org-title">PUSAT KOPERASI KREDIT (PUSKOPDIT) HARAPAN SEJAHTERA (PHS) SUMATERA SELATAN</div>
+        <div class="guide-org-title">Puskosipa Puskopdit Handriya Sanggraha Sumatera Selatan</div>
         <div class="guide-system-title">SISTEM INFORMASI MANAJEMEN INVENTARIS & KEPEGAWAIAN (SAAS MULTI-KOPERASI)</div>
         <div class="guide-doc-title">BUKU PANDUAN OPERASIONAL & STANDAR PROSEDUR SISTEM (SOP)</div>
     </div>
