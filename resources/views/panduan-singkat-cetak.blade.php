@@ -288,21 +288,6 @@
             <br>&bull; <strong>Laporan Penggajian:</strong> Rekap total pembayaran gaji dan rincian komponen gaji siap cetak atau ekspor Excel.
         </p>
     </div>
-
-    <div class="signature-section">
-        <div class="signature-box">
-            <div>Disetujui Oleh,</div>
-            <div><strong>Pengurus Puskopdit PHS Sumsel</strong></div>
-            <div class="signature-line"></div>
-            <div>Ketua / Pengurus Pusat</div>
-        </div>
-        <div class="signature-box">
-            <div>Dibuat Oleh,</div>
-            <div><strong>Tim Pengembang Sistem</strong></div>
-            <div class="signature-line"></div>
-            <div>Yohanes Dwiki Septian</div>
-        </div>
-    </div>
 </div>
 @endsection
 
