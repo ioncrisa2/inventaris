@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Barang;
+use App\Models\Koperasi;
 use App\Models\UnitKerja;
 use App\Services\IdentitasAplikasiService;
 use App\Services\KodeBarangGenerator;
@@ -67,27 +68,17 @@ test('admin can view and update pengaturan', function () {
     ]);
 });
 
-test('staff can access appearance settings but cannot manage inventory numbering', function () {
+test('staff cannot manage inventory numbering', function () {
     $this->actingAs(staffUser());
 
     $this->get(route('pengaturan.edit'))
         ->assertOk()
-        ->assertSee('Tampilan Aplikasi')
         ->assertDontSee('Format Penomoran Inventaris');
 
     $this->put(route('pengaturan.update'), [
         'format_kode_barang' => 'INV-{URUT}',
         'digit_nomor_urut' => 4,
     ])->assertForbidden();
-});
-
-test('appearance settings use a transient toast instead of a permanent success callout', function () {
-    $this->actingAs(adminUser())
-        ->get(route('pengaturan.edit'))
-        ->assertOk()
-        ->assertSee('data-settings-save-toast', false)
-        ->assertSee('Perubahan tampilan disimpan.')
-        ->assertDontSee('Perubahan tampilan diterapkan dan disimpan otomatis.');
 });
 
 test('pengaturan rejects unknown tokens', function () {
@@ -315,4 +306,27 @@ test('login page always shows the default app identity, never a tenant\'s brandi
         ->assertOk()
         ->assertSee(config('app.name'))
         ->assertDontSee('Koperasi Terlihat Di Login');
+});
+
+test('tenant user dynamically sees their own koperasi name without manual configuration', function () {
+    $koperasi = Koperasi::create(['nama' => 'Koperasi Mandiri Sejahtera']);
+    $admin = adminPrimerUser($koperasi);
+
+    $this->actingAs($admin);
+
+    expect(app(IdentitasAplikasiService::class)->nama())->toBe('Koperasi Mandiri Sejahtera');
+
+    $this->get(route('dashboard'))
+        ->assertOk()
+        ->assertSee('Koperasi Mandiri Sejahtera');
+});
+
+test('super_admin dynamically sees default Puskopdit PHS app name', function () {
+    $this->actingAs(superAdminUser());
+
+    expect(app(IdentitasAplikasiService::class)->nama())->toBe('Puskopdit PHS');
+
+    $this->get(route('dashboard'))
+        ->assertOk()
+        ->assertSee('Puskopdit PHS');
 });

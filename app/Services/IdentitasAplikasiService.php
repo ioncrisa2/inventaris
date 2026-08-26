@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Pengaturan;
 use App\Support\CurrentTenant;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
@@ -19,11 +20,9 @@ class IdentitasAplikasiService
     public function __construct(private TransactionalFileStorage $fileStorage) {}
 
     /**
-     * Identitas ini murni milik satu koperasi — tidak ada "identitas
-     * super_admin". Tanpa sesi tenant yang jelas (halaman login sebelum
-     * login, atau super_admin yang tidak terikat koperasi manapun), kembali
-     * ke default aplikasi alih-alih membaca baris koperasi lain secara acak
-     * (lihat CurrentTenant::hasTenant()).
+     * Nama aplikasi bersifat dinamis:
+     * - Ketika super_admin login atau pada halaman publik (tanpa tenant), menggunakan default "Puskopdit PHS" (config('app.name')).
+     * - Ketika admin primer / staf koperasi login, otomatis menampilkan nama koperasi miliknya ($user->koperasi->nama), kecuali jika dikustomisasi di pengaturan.
      */
     public function nama(): string
     {
@@ -31,7 +30,17 @@ class IdentitasAplikasiService
             return config('app.name');
         }
 
-        return Pengaturan::get(self::KEY_NAMA) ?? config('app.name');
+        $customNama = Pengaturan::get(self::KEY_NAMA);
+        if (filled($customNama)) {
+            return $customNama;
+        }
+
+        $koperasiNama = Auth::user()?->koperasi?->nama;
+        if (filled($koperasiNama)) {
+            return $koperasiNama;
+        }
+
+        return config('app.name');
     }
 
     public function alamat(): ?string

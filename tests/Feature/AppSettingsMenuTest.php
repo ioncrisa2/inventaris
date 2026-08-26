@@ -15,27 +15,25 @@ test('user dropdown links to the dedicated app settings page', function () {
     $response->assertDontSee('id="appSettingsModal"', false);
 });
 
-test('app settings page offers sidebar and topbar layout options', function () {
+test('app header offers sidebar and topbar layout options in user menu', function () {
     $this->actingAs(adminUser());
 
-    $response = $this->get(route('pengaturan.edit'));
+    $response = $this->get(route('dashboard'));
 
     $response->assertOk();
-    $response->assertSee('Tampilan Aplikasi');
-    $response->assertSee('value="sidebar"', false);
-    $response->assertSee('value="topbar"', false);
+    $response->assertSee('data-app-layout-option="sidebar"', false);
+    $response->assertSee('data-app-layout-option="topbar"', false);
 });
 
-test('app settings page offers system, light, and dark color modes', function () {
+test('app header offers system, light, and dark color modes in user menu', function () {
     $this->actingAs(adminUser());
 
-    $response = $this->get(route('pengaturan.edit'));
+    $response = $this->get(route('dashboard'));
 
     $response->assertOk();
-    $response->assertSee('name="color-mode"', false);
-    $response->assertSee('value="auto"', false);
-    $response->assertSee('value="light"', false);
-    $response->assertSee('value="dark"', false);
+    $response->assertSee('data-color-mode-option="auto"', false);
+    $response->assertSee('data-color-mode-option="light"', false);
+    $response->assertSee('data-color-mode-option="dark"', false);
 });
 
 test('topbar navigation mirrors the same permission-gated menu as the sidebar', function () {

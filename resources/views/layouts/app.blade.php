@@ -19,8 +19,8 @@
     <nav class="app-topbar-nav navbar navbar-expand-lg">
         <div class="container-fluid px-0">
             <a class="navbar-brand app-topbar-nav-brand" href="{{ route('dashboard') }}">
-                <img src="{{ asset('assets/img/logo-koperasi.png') }}" alt="Logo" class="sidebar-logo">
-                <span>{{ config('app.name') }}</span>
+                <img src="{{ app(\App\Services\IdentitasAplikasiService::class)->logoUrl() ?? asset('assets/img/logo-koperasi.png') }}" alt="Logo" class="sidebar-logo">
+                <span>{{ app(\App\Services\IdentitasAplikasiService::class)->nama() }}</span>
             </a>
             <button
                 class="navbar-toggler"

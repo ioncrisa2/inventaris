@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
+    'name' => env('APP_NAME', 'Puskopdit PHS'),
 
     'version' => env('APP_VERSION', '1.0.0'),
 

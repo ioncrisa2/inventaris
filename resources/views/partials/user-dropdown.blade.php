@@ -47,7 +47,7 @@
             <i class="bi bi-gear me-2"></i>Pengaturan Aplikasi
         </a>
 
-        @if ($user->isTenantUser())
+        @if ($user->isAdminPrimer())
             <a class="dropdown-item" href="{{ route('dashboard') }}#onboarding-tour" data-onboarding-restart>
                 <i class="bi bi-signpost-split me-2" aria-hidden="true"></i>Ulangi tur aplikasi
             </a>
