@@ -56,11 +56,21 @@ composer test
 ### Docker (produksi)
 
 ```bash
-docker compose up -d --build
-docker compose exec app composer setup
+cp .env.example .env
+# Isi APP_KEY, APP_URL, DB_PASSWORD, dan DB_ROOT_PASSWORD sebelum melanjutkan.
+docker compose config --quiet
+docker compose up -d --build --wait
+docker compose exec app frankenphp php-cli artisan migrate --force
+docker compose exec app frankenphp php-cli artisan optimize
 ```
 
-Aplikasi tersedia di `http://localhost:8081`. Lihat [Dockerfile](Dockerfile), [docker-compose.yml](docker-compose.yml), dan [nginx/default.conf](nginx/default.conf). Deploy otomatis via [.github/workflows/deploy.yml](.github/workflows/deploy.yml) saat push ke `main`.
+Aplikasi tersedia di `http://localhost:8081` secara default. Port dapat diubah melalui `APP_PORT` di `.env`. Image produksi memakai FrankenPHP dalam classic mode, membangun aset Vite di build stage, dan menjalankan Laravel tanpa Nginx/PHP-FPM terpisah. Lihat [Dockerfile](Dockerfile), [docker-compose.yml](docker-compose.yml), dan [Caddyfile](Caddyfile). Deploy otomatis via [.github/workflows/deploy.yml](.github/workflows/deploy.yml) saat push ke `main`.
+
+Perintah Artisan di dalam container dijalankan melalui CLI SAPI FrankenPHP:
+
+```bash
+docker compose exec app frankenphp php-cli artisan about
+```
 
 ## Akun Demo
 
