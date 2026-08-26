@@ -6,6 +6,7 @@ import './components/filter-form';
 import './components/localized-inputs';
 import './components/mobile-tables';
 import './components/modals';
+import './components/password-peek';
 import './pages/absensi';
 import './pages/barang';
 import './pages/dashboard';

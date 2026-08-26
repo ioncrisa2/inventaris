@@ -23,9 +23,13 @@
                 </div>
 
                 <div class="mb-3">
-                    <label for="password" class="form-label">Password</label>
-                    <input type="password" name="password" id="password" class="form-control @error('password') is-invalid @enderror" autocomplete="current-password" required>
-                    @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    <x-form.input
+                        name="password"
+                        label="Password"
+                        type="password"
+                        autocomplete="current-password"
+                        required
+                    />
                 </div>
 
                 <div class="form-check mb-4">

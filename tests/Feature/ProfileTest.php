@@ -21,7 +21,16 @@ test('profile page displays authenticated user data', function () {
         ->assertOk()
         ->assertSee('Admin Inventaris')
         ->assertSee('admin@example.com')
-        ->assertSee('IT');
+        ->assertSee('IT')
+        ->assertSee('data-bs-target="#confirmProfileUpdateModal"', false)
+        ->assertSee('form="profileInformationForm"', false)
+        ->assertSee('Konfirmasi &amp; Simpan', false)
+        ->assertSeeInOrder([
+            'aria-controls="current_password"',
+            'aria-controls="password"',
+            'aria-controls="password_confirmation"',
+            'aria-controls="profile_current_password"',
+        ], false);
 });
 
 test('profile information can be updated', function () {
@@ -37,6 +46,7 @@ test('profile information can be updated', function () {
             'name' => 'Admin Baru',
             'email' => 'baru@example.com',
             'unit_kerja_id' => $unitKerja->id,
+            'current_password' => 'password',
         ])
         ->assertRedirect(route('profile.show'))
         ->assertSessionHas('profile_success');
@@ -59,9 +69,56 @@ test('profile email must remain unique', function () {
             'name' => $user->name,
             'email' => 'used@example.com',
             'unit_kerja_id' => null,
+            'current_password' => 'password',
         ])
         ->assertRedirect(route('profile.show'))
         ->assertSessionHasErrors('email', null, 'updateProfile');
+});
+
+test('profile information cannot be updated without the current password', function () {
+    $user = adminUser([
+        'name' => 'Admin Aman',
+        'email' => 'aman@example.com',
+        'password' => 'password',
+    ]);
+
+    $this->actingAs($user)
+        ->from(route('profile.show'))
+        ->put(route('profile.update'), [
+            'name' => 'Nama Disusupi',
+            'email' => 'disusupi@example.com',
+            'unit_kerja_id' => null,
+        ])
+        ->assertRedirect(route('profile.show'))
+        ->assertSessionHasErrors('current_password', null, 'updateProfile');
+
+    expect($user->fresh()->name)->toBe('Admin Aman')
+        ->and($user->fresh()->email)->toBe('aman@example.com');
+});
+
+test('profile information cannot be updated with an incorrect password', function () {
+    $user = adminUser([
+        'name' => 'Admin Aman',
+        'email' => 'aman@example.com',
+        'password' => 'password',
+    ]);
+
+    $this->actingAs($user)
+        ->followingRedirects()
+        ->from(route('profile.show'))
+        ->put(route('profile.update'), [
+            'name' => 'Nama Disusupi',
+            'email' => 'disusupi@example.com',
+            'unit_kerja_id' => null,
+            'current_password' => 'password-salah',
+        ])
+        ->assertOk()
+        ->assertSee('data-auto-show-modal', false)
+        ->assertSee('Password saat ini tidak sesuai.')
+        ->assertDontSee('value="password-salah"', false);
+
+    expect($user->fresh()->name)->toBe('Admin Aman')
+        ->and($user->fresh()->email)->toBe('aman@example.com');
 });
 
 test('password update requires the current password', function () {

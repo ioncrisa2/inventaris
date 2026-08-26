@@ -57,7 +57,7 @@
                     <div class="card-body">
                         <x-flash-alert success="profile_success" :error="null" />
 
-                        <form method="POST" action="{{ route('profile.update') }}">
+                        <form id="profileInformationForm" method="POST" action="{{ route('profile.update') }}">
                             @csrf
                             @method('PUT')
 
@@ -117,7 +117,12 @@
                             </div>
 
                             <div class="d-flex justify-content-end mt-4">
-                                <button class="btn btn-primary" type="submit">
+                                <button
+                                    class="btn btn-primary"
+                                    type="button"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#confirmProfileUpdateModal"
+                                >
                                     <i class="bi bi-save"></i>
                                     Simpan Informasi
                                 </button>
@@ -137,41 +142,35 @@
 
                             <div class="row g-3">
                                 <div class="col-12">
-                                    <label class="form-label" for="current_password">Password Saat Ini <span class="text-danger">*</span></label>
-                                    <input
-                                        class="form-control @error('current_password', 'updatePassword') is-invalid @enderror"
-                                        id="current_password"
+                                    <x-form.input
                                         name="current_password"
+                                        label="Password Saat Ini"
                                         type="password"
                                         autocomplete="current-password"
+                                        error-bag="updatePassword"
                                         required
-                                    >
-                                    @error('current_password', 'updatePassword') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                    />
                                 </div>
 
                                 <div class="col-md-6">
-                                    <label class="form-label" for="password">Password Baru <span class="text-danger">*</span></label>
-                                    <input
-                                        class="form-control @error('password', 'updatePassword') is-invalid @enderror"
-                                        id="password"
+                                    <x-form.input
                                         name="password"
+                                        label="Password Baru"
                                         type="password"
                                         autocomplete="new-password"
+                                        error-bag="updatePassword"
                                         required
-                                    >
-                                    @error('password', 'updatePassword') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                    />
                                 </div>
 
                                 <div class="col-md-6">
-                                    <label class="form-label" for="password_confirmation">Konfirmasi Password Baru <span class="text-danger">*</span></label>
-                                    <input
-                                        class="form-control"
-                                        id="password_confirmation"
+                                    <x-form.input
                                         name="password_confirmation"
+                                        label="Konfirmasi Password Baru"
                                         type="password"
                                         autocomplete="new-password"
                                         required
-                                    >
+                                    />
                                 </div>
                             </div>
 
@@ -188,4 +187,50 @@
         </div>
 
 </x-app-page>
+
+<div
+    class="modal fade"
+    id="confirmProfileUpdateModal"
+    tabindex="-1"
+    aria-labelledby="confirmProfileUpdateModalLabel"
+    aria-describedby="confirmProfileUpdateModalDescription"
+    aria-hidden="true"
+    data-profile-confirmation-modal
+    @if($errors->getBag('updateProfile')->has('current_password')) data-auto-show-modal @endif
+>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="confirmProfileUpdateModalLabel">
+                    <i class="bi bi-shield-lock me-1" aria-hidden="true"></i>
+                    Konfirmasi Perubahan Profil
+                </h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmProfileUpdateModalDescription" class="text-body-secondary mb-3">
+                    Masukkan password saat ini untuk memastikan perubahan dilakukan oleh Anda.
+                </p>
+
+                <x-form.input
+                    name="current_password"
+                    id="profile_current_password"
+                    label="Password Saat Ini"
+                    type="password"
+                    autocomplete="current-password"
+                    error-bag="updateProfile"
+                    form="profileInformationForm"
+                    required
+                />
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                <button type="submit" class="btn btn-primary" form="profileInformationForm">
+                    <i class="bi bi-check2-circle" aria-hidden="true"></i>
+                    Konfirmasi &amp; Simpan
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection

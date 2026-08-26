@@ -29,6 +29,30 @@ document.addEventListener('DOMContentLoaded', () => {
         deleteCancel.textContent = 'Batal';
     });
 
+    const profileConfirmationModal = document.querySelector('[data-profile-confirmation-modal]');
+
+    profileConfirmationModal?.addEventListener('show.bs.modal', (event) => {
+        const profileForm = document.getElementById('profileInformationForm');
+
+        if (event.relatedTarget && profileForm && !profileForm.checkValidity()) {
+            event.preventDefault();
+            profileForm.reportValidity();
+        }
+    });
+
+    profileConfirmationModal?.addEventListener('shown.bs.modal', () => {
+        profileConfirmationModal.querySelector('#profile_current_password')?.focus();
+    });
+
+    profileConfirmationModal?.addEventListener('hidden.bs.modal', () => {
+        const passwordInput = profileConfirmationModal.querySelector('#profile_current_password');
+
+        if (passwordInput) {
+            passwordInput.value = '';
+            passwordInput.type = 'password';
+        }
+    });
+
     document.querySelectorAll('[data-auto-show-modal]').forEach((modalElement) => {
         const modal = Modal.getOrCreateInstance(modalElement);
         modal.show();

@@ -8,6 +8,7 @@ export default defineConfig({
                 'resources/css/app.css',
                 'resources/css/print.css',
                 'resources/js/theme.js',
+                'resources/js/auth.js',
                 'resources/js/app.js',
                 'resources/js/print.js',
             ],

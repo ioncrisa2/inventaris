@@ -11,7 +11,11 @@ test('first application access redirects guests to login', function () {
 
     $this->get('/login')
         ->assertOk()
-        ->assertSee('Login Sistem');
+        ->assertSee('Login Sistem')
+        ->assertSee('data-password-input', false)
+        ->assertSee('data-password-peek', false)
+        ->assertSee('bi-eye-slash', false)
+        ->assertSee('Tekan dan tahan untuk melihat password');
 });
 
 test('guests are redirected to login from protected pages', function (string $path) {

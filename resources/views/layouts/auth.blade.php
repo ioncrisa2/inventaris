@@ -11,5 +11,6 @@
 </head>
 <body class="bg-body-tertiary">
     @yield('content')
+    @vite('resources/js/auth.js')
 </body>
 </html>

@@ -1,9 +1,21 @@
-@props(['name', 'label' => null, 'type' => 'text', 'value' => null, 'required' => false, 'help' => null, 'id' => null])
+@props([
+    'name',
+    'label' => null,
+    'type' => 'text',
+    'value' => null,
+    'required' => false,
+    'help' => null,
+    'id' => null,
+    'errorBag' => null,
+])
 
 @php
     $id ??= $name;
-    $resolvedValue = old($name, $value);
     $isDate = $type === 'date';
+    $isPassword = $type === 'password';
+    $resolvedValue = $isPassword ? '' : old($name, $value);
+    $fieldErrors = $errorBag ? $errors->getBag($errorBag) : $errors;
+    $hasError = $fieldErrors->has($name);
     $dateIsoValue = '';
     $dateDisplayValue = (string) $resolvedValue;
 
@@ -41,7 +53,7 @@
             lang="id-ID"
             data-local-date
             @if($required) required @endif
-            {{ $attributes->except(['min', 'max'])->merge(['class' => 'form-control'])->class(['is-invalid' => $errors->has($name)]) }}
+            {{ $attributes->except(['min', 'max'])->merge(['class' => 'form-control'])->class(['is-invalid' => $hasError]) }}
         >
         <button
             type="button"
@@ -61,6 +73,30 @@
             aria-label="Pemilih {{ strtolower($label ?? 'tanggal') }}"
             data-local-date-picker>
     </div>
+    @elseif($isPassword)
+    <div class="password-field" data-password-field>
+        <input
+            type="password"
+            name="{{ $name }}"
+            id="{{ $id }}"
+            value="{{ $resolvedValue }}"
+            data-password-input
+            @if($required) required @endif
+            {{ $attributes->merge(['class' => 'form-control'])->class(['is-invalid' => $hasError]) }}
+        >
+        <button
+            type="button"
+            class="password-field__peek"
+            data-password-peek
+            aria-controls="{{ $id }}"
+            aria-label="Tekan dan tahan untuk melihat {{ strtolower($label ?? 'password') }}"
+            aria-pressed="false"
+            title="Tekan dan tahan untuk melihat password"
+        >
+            <i class="bi bi-eye-slash" data-password-hidden-icon aria-hidden="true"></i>
+            <i class="bi bi-eye" data-password-visible-icon aria-hidden="true" hidden></i>
+        </button>
+    </div>
     @else
     <input
         type="{{ $type }}"
@@ -68,13 +104,13 @@
         id="{{ $id }}"
         value="{{ $resolvedValue }}"
         @if($required) required @endif
-        {{ $attributes->merge(['class' => 'form-control'])->class(['is-invalid' => $errors->has($name)]) }}
+        {{ $attributes->merge(['class' => 'form-control'])->class(['is-invalid' => $hasError]) }}
     >
     @endif
 
-    @error($name)
-    <div class="invalid-feedback {{ $isDate ? 'd-block' : '' }}">{{ $message }}</div>
-    @enderror
+    @if($hasError)
+    <div class="invalid-feedback {{ ($isDate || $isPassword) ? 'd-block' : '' }}">{{ $fieldErrors->first($name) }}</div>
+    @endif
 
     @if($help)
     <div class="form-text">{{ $help }}</div>

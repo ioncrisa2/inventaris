@@ -18,6 +18,7 @@ class UpdateProfileRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'current_password' => ['required', 'current_password'],
             'name' => ['required', 'string', 'max:255'],
             'email' => [
                 'required',
@@ -26,6 +27,14 @@ class UpdateProfileRequest extends FormRequest
                 Rule::unique('users', 'email')->ignore($this->user()->id),
             ],
             'unit_kerja_id' => ['nullable', TenantRule::exists('unit_kerja')],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'current_password.required' => 'Masukkan password saat ini untuk menyimpan perubahan profil.',
+            'current_password.current_password' => 'Password saat ini tidak sesuai.',
         ];
     }
 }
