@@ -40,7 +40,8 @@ WORKDIR /app
 COPY . .
 
 # Composer @php scripts are run explicitly through FrankenPHP's CLI SAPI.
-RUN composer install \
+RUN rm -f bootstrap/cache/*.php \
+    && composer install \
         --no-dev \
         --no-interaction \
         --no-progress \

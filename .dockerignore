@@ -7,6 +7,8 @@
 .vscode
 node_modules
 vendor
+bootstrap/cache/*
+!bootstrap/cache/.gitignore
 public/build
 public/hot
 public/storage
