@@ -72,8 +72,19 @@ test('authenticated users can open the quick guide as a separate page', function
         ->assertOk()
         ->assertSee('Panduan Singkat')
         ->assertSee('Kembali ke Dashboard')
+        ->assertSee('Cetak / Unduh PDF Panduan')
         ->assertSee('Proses penggajian dan laporan')
         ->assertSee('Created By : Yohanes Dwiki Septian')
         ->assertDontSee('welcomeModal', false)
         ->assertDontSee('dashboard-tip', false);
+});
+
+test('authenticated users can access the printable PDF guide page', function () {
+    $this->actingAs(adminUser())
+        ->get(route('panduan-singkat.cetak'))
+        ->assertOk()
+        ->assertSee('PUSAT KOPERASI KREDIT (PUSKOPDIT) HARAPAN SEJAHTERA (PHS) SUMATERA SELATAN')
+        ->assertSee('Panduan Langkah Demi Langkah: Admin Pusat')
+        ->assertSee('Panduan Langkah Demi Langkah: Admin Primer')
+        ->assertSee('Yohanes Dwiki Septian');
 });

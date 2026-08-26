@@ -40,6 +40,7 @@ Route::middleware(['auth', 'koperasi.active'])->group(function () {
     Route::patch('/dashboard/banner', DashboardBannerController::class)->name('dashboard.banner.dismiss');
     Route::patch('/onboarding/tour', OnboardingTourController::class)->name('onboarding.tour.finish');
     Route::view('/panduan-singkat', 'panduan-singkat')->name('panduan-singkat');
+    Route::view('/panduan-singkat/cetak', 'panduan-singkat-cetak')->name('panduan-singkat.cetak');
 
     Route::delete('unit-kerja/bulk', [UnitKerjaController::class, 'bulkDestroy'])->name('unit-kerja.bulk-destroy');
     Route::resource('unit-kerja', UnitKerjaController::class)->except(['show', 'create', 'edit']);
