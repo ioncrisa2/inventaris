@@ -1,0 +1,27 @@
+{
+	auto_https off
+	admin off
+}
+
+:80 {
+	root * /app/public
+	encode zstd br gzip
+
+	request_body {
+		max_size 100MB
+	}
+
+	header {
+		-Server
+		X-Frame-Options "SAMEORIGIN"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+
+	php_server
+
+	log {
+		output stdout
+		format json
+	}
+}
