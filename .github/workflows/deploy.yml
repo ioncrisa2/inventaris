@@ -41,11 +41,11 @@ jobs:
           npm ci --ignore-scripts
           npm run build
 
-      - name: Run tests
-        run: php artisan test
-
       - name: Build FrankenPHP production image
         run: docker build --tag inventaris-frankenphp:test .
+
+      - name: Run tests
+        run: php artisan test
 
   deploy:
     needs: test
