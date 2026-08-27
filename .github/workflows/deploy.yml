@@ -48,5 +48,9 @@ jobs:
           script: |
             cd /opt/inventaris
             git pull origin main
+            docker compose run --rm node
             docker compose build
+            docker compose run --rm --no-deps app composer install --no-dev --optimize-autoloader --no-interaction --no-progress
             docker compose up -d
+            docker compose exec -T app php artisan migrate --force
+            docker compose exec -T app php artisan optimize

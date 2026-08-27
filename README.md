@@ -56,9 +56,21 @@ composer test
 ### Docker (produksi)
 
 ```bash
+# Build asset frontend memakai container Node.js 22.
+docker compose run --rm node
+
+# Build ulang image dan jalankan seluruh service.
 docker compose up -d --build
-docker compose exec app composer setup
+
+# Sinkronkan dependency PHP ke bind mount aplikasi.
+docker compose exec app composer install --no-dev --optimize-autoloader --no-interaction --no-progress
+
+# Terapkan perubahan database dan cache konfigurasi produksi.
+docker compose exec app php artisan migrate --force
+docker compose exec app php artisan optimize
 ```
+
+Service `node` berjalan sekali lalu dihapus setelah build. Dependency Node Linux disimpan di volume Docker, sehingga tidak bercampur dengan folder `node_modules` milik host. Untuk build frontend berikutnya cukup jalankan kembali `docker compose run --rm node`.
 
 Aplikasi tersedia di `http://localhost:8081`. Lihat [Dockerfile](Dockerfile), [docker-compose.yml](docker-compose.yml), dan [nginx/default.conf](nginx/default.conf). Deploy otomatis via [.github/workflows/deploy.yml](.github/workflows/deploy.yml) saat push ke `main`.
 

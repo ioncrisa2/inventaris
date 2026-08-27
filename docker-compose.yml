@@ -20,6 +20,19 @@ services:
     networks:
       - inventaris_network
 
+  node:
+    image: node:22-alpine
+    profiles:
+      - tools
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+      - node_modules:/var/www/html/node_modules
+      - npm_cache:/root/.npm
+    command: sh -c "npm ci && npm run build"
+    networks:
+      - inventaris_network
+
   web:
     image: nginx:alpine
     container_name: inventaris_web
@@ -54,4 +67,8 @@ networks:
 
 volumes:
   dbdata:
+    driver: local
+  node_modules:
+    driver: local
+  npm_cache:
     driver: local
