@@ -23,7 +23,7 @@ class RoleController extends Controller
     {
         $this->authorize('role.view');
 
-        $roles = $this->roleService->list(PerPage::resolve($request));
+        $roles = $this->roleService->list($request->user(), PerPage::resolve($request));
 
         return view('role.index', compact('roles'));
     }
@@ -34,12 +34,15 @@ class RoleController extends Controller
     public function create()
     {
         $this->authorize('role.create');
-        abort_unless(auth()->user()->isSuperAdmin(), 403);
+        $user = auth()->user();
+        abort_unless($user->isSuperAdmin() || $user->isAdminPrimer(), 403);
 
         $role = new Role;
         $permissionGroups = PermissionCatalog::groups();
         $selectedPermissions = [];
-        $koperasis = Koperasi::orderBy('nama')->get();
+        $koperasis = $user->isSuperAdmin()
+            ? Koperasi::orderBy('nama')->get()
+            : collect();
 
         return view('role.form', compact('role', 'permissionGroups', 'selectedPermissions', 'koperasis'));
     }
@@ -129,6 +132,10 @@ class RoleController extends Controller
     {
         $user = auth()->user();
 
-        abort_if(! $user->isSuperAdmin() && $role->koperasi_id !== $user->koperasi_id, 404);
+        abort_if(
+            ! $user->isSuperAdmin()
+            && (int) $role->koperasi_id !== (int) $user->koperasi_id,
+            404,
+        );
     }
 }

@@ -9,7 +9,7 @@
             subtitle="Atur role tambahan per koperasi dan lihat akun yang menggunakan setiap role."
         >
             <x-slot:actions>
-                @if(auth()->user()->isSuperAdmin())
+                @if(auth()->user()->can('role.create') && (auth()->user()->isSuperAdmin() || auth()->user()->isAdminPrimer()))
                 <a class="btn btn-primary" href="{{ route('role.create') }}">
                     <i class="bi bi-shield-plus"></i>
                     Tambah Role
@@ -19,6 +19,17 @@
         </x-page-header>
 
         <x-flash-alert />
+
+        @unless(auth()->user()->isSuperAdmin())
+        <div class="alert alert-primary app-alert" role="note">
+            <i class="bi bi-building-lock" aria-hidden="true"></i>
+            <div>
+                <strong>Lingkup {{ auth()->user()->koperasi->nama }}.</strong>
+                Halaman ini hanya menampilkan role yang terikat ke koperasi Anda.
+                Role Admin Primer tetap ditampilkan sebagai role sistem, sedangkan role custom dapat Anda buat dan ubah.
+            </div>
+        </div>
+        @endunless
 
         <div class="alert alert-info app-alert" role="note">
             <i class="bi bi-lock" aria-hidden="true"></i>
@@ -83,7 +94,11 @@
                                 </td>
                                 <td class="text-nowrap">
                                     <div class="table-actions">
-                                        @if(auth()->user()->can('role.update') && ! $role->isSystem())
+                                        @if(
+                                            auth()->user()->can('role.update')
+                                            && ! $role->isSystem()
+                                            && (auth()->user()->isSuperAdmin() || (int) $role->koperasi_id === (int) auth()->user()->koperasi_id)
+                                        )
                                         <a
                                             class="btn btn-sm btn-action btn-action-neutral"
                                             href="{{ route('role.edit', $role) }}"

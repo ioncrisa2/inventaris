@@ -93,7 +93,19 @@ test('admin_primer cannot open another koperasi karyawan or transaksi gaji detai
 });
 
 test('admin_primer only sees their own koperasi users and roles in the pengguna module', function () {
-    ['adminA' => $adminA, 'adminB' => $adminB] = seedTwoTenants();
+    ['koperasiA' => $koperasiA, 'koperasiB' => $koperasiB, 'adminA' => $adminA, 'adminB' => $adminB] = seedTwoTenants();
+
+    $roleA = new Role(['name' => 'Operator Primer A', 'guard_name' => 'web']);
+    $roleA->koperasi_id = $koperasiA->id;
+    $roleA->save();
+
+    $roleB = new Role(['name' => 'Operator Primer B', 'guard_name' => 'web']);
+    $roleB->koperasi_id = $koperasiB->id;
+    $roleB->save();
+
+    $adminPrimerRoleA = Role::where('name', 'admin_primer')
+        ->where('koperasi_id', $koperasiA->id)
+        ->firstOrFail();
 
     $this->actingAs($adminA);
     $this->get(route('pengguna.index'))
@@ -103,7 +115,37 @@ test('admin_primer only sees their own koperasi users and roles in the pengguna 
 
     $this->get(route('role.index'))
         ->assertOk()
-        ->assertDontSee('admin_primer'); // hanya label ramah "Admin Primer" yang boleh muncul, bukan role milik tenant lain dengan nama lain
+        ->assertSee('Lingkup '.$koperasiA->nama)
+        ->assertSee('Admin Primer')
+        ->assertSee($roleA->name)
+        ->assertDontSee($roleB->name)
+        ->assertSee(route('role.edit', $roleA), false)
+        ->assertDontSee(route('role.edit', $adminPrimerRoleA), false)
+        ->assertDontSee(route('role.edit', $roleB), false)
+        ->assertViewHas('roles', function ($roles) use ($adminPrimerRoleA, $roleA) {
+            return $roles->getCollection()->pluck('id')->sort()->values()->all()
+                === collect([$adminPrimerRoleA->id, $roleA->id])->sort()->values()->all();
+        });
+
+    // Role sistem milik sendiri tetap terlihat tetapi terkunci.
+    $this->get(route('role.edit', $adminPrimerRoleA))->assertForbidden();
+
+    // Role custom tenant sendiri dapat diperbarui tanpa bisa dipindah tenant.
+    $this->put(route('role.update', $roleA), [
+        'name' => 'Operator A Diperbarui',
+        'koperasi_id' => $koperasiB->id,
+        'permissions' => ['barang.view'],
+    ])->assertRedirect(route('role.index'));
+    expect($roleA->fresh()->name)->toBe('Operator A Diperbarui')
+        ->and($roleA->fresh()->koperasi_id)->toBe($koperasiA->id);
+
+    // Role tenant lain tidak dapat dibuka atau diperbarui lewat URL langsung.
+    $this->get(route('role.edit', $roleB))->assertNotFound();
+    $this->put(route('role.update', $roleB), [
+        'name' => 'Percobaan Ambil Alih',
+        'permissions' => ['barang.view'],
+    ])->assertForbidden();
+    expect($roleB->fresh()->name)->toBe('Operator Primer B');
 });
 
 test('super_admin can see business data across every koperasi', function () {
@@ -128,15 +170,36 @@ test('super_admin can see business data across every koperasi', function () {
     $this->get(route('karyawan.show', $dataB['karyawan']))->assertOk();
 });
 
-test('admin_primer cannot create a new role, delete a role, or assign the super_admin/admin_primer role to any user', function () {
-    ['adminA' => $adminA] = seedTwoTenants();
+test('admin_primer creates roles only for their own koperasi but still cannot delete or assign system roles', function () {
+    ['koperasiA' => $koperasiA, 'koperasiB' => $koperasiB, 'adminA' => $adminA] = seedTwoTenants();
     $this->actingAs($adminA);
 
+    $this->get(route('role.index'))
+        ->assertOk()
+        ->assertSee('Tambah Role');
+    $this->get(route('role.create'))
+        ->assertOk()
+        ->assertSee($koperasiA->nama)
+        ->assertDontSee('name="koperasi_id"', false);
+
     $this->post(route('role.store'), [
-        'name' => 'Role Bayangan',
+        'name' => 'Petugas Primer A',
+        // Percobaan memalsukan tenant tujuan harus ditimpa oleh server.
+        'koperasi_id' => $koperasiB->id,
         'permissions' => ['barang.view'],
-    ])->assertForbidden();
-    $this->assertDatabaseMissing('roles', ['name' => 'Role Bayangan']);
+    ])->assertRedirect(route('role.index'));
+
+    $this->assertDatabaseHas('roles', [
+        'name' => 'Petugas Primer A',
+        'koperasi_id' => $koperasiA->id,
+    ]);
+    $this->assertDatabaseMissing('roles', [
+        'name' => 'Petugas Primer A',
+        'koperasi_id' => $koperasiB->id,
+    ]);
+
+    $createdRole = Role::where('name', 'Petugas Primer A')->firstOrFail();
+    expect($createdRole->permissions->pluck('name')->all())->toBe(['barang.view']);
 
     $ownRole = Role::where('koperasi_id', $adminA->koperasi_id)->where('name', 'admin_primer')->firstOrFail();
     $this->delete(route('role.destroy', $ownRole))->assertForbidden();

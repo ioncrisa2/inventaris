@@ -12,7 +12,7 @@ class UpdateRoleRequest extends StoreRoleRequest
         return $user->can('role.update')
             && $role !== null
             && ! $role->isSystem()
-            && ($user->isSuperAdmin() || $role->koperasi_id === $user->koperasi_id);
+            && ($user->isSuperAdmin() || (int) $role->koperasi_id === (int) $user->koperasi_id);
     }
 
     protected function roleId(): ?int

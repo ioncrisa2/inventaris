@@ -20,7 +20,8 @@ belakang arsitektur multi-tenant-nya.
 5. Simpan. Sistem otomatis membuat:
    - Baris `koperasi` baru (`is_active = true`).
    - Role `admin_primer` khusus koperasi ini — permission penuh (semua
-     modul bisnis) **kecuali** membuat/menghapus role dan mengangkat
+     modul bisnis), dapat membuat role custom di koperasinya sendiri,
+     tetapi tidak dapat menghapus role atau mengangkat
      `super_admin`/`admin_primer` lain.
    - Akun pengguna pertama, langsung terikat ke koperasi ini dan ber-role
      `admin_primer`.
@@ -49,23 +50,29 @@ menghapus lewat database langsung.
 
 ## 3. Menambah role custom untuk satu koperasi tertentu
 
-`admin_primer` **tidak bisa** membuat role baru sendiri (cuma bisa
-mengatur ulang permission pada role yang sudah ada) — ini pembatasan
-sengaja, bukan bug. Kalau sebuah koperasi butuh role tambahan (mis.
-"Kasir", "Staf Gudang"), Super Admin yang membuatkannya:
+Role custom dapat dibuat oleh Super Admin maupun Admin Primer:
+
+- Super Admin memilih koperasi tujuan dari dropdown.
+- Admin Primer tidak memilih koperasi; sistem otomatis mengikat role baru
+  ke `koperasi_id` miliknya sendiri dan mengabaikan tenant lain yang
+  mungkin dipalsukan melalui request.
 
 1. **Administrasi → Role & Hak Akses**.
 2. Klik **Tambah Role**.
-3. Isi **Nama Role** (bebas, sesuai kebutuhan koperasi tsb) dan pilih
-   **Koperasi** tujuan dari dropdown — role ini nantinya HANYA muncul dan
-   bisa dipakai di koperasi yang dipilih di sini.
+3. Isi **Nama Role**. Jika login sebagai Super Admin, pilih **Koperasi**
+   tujuan dari dropdown. Jika login sebagai Admin Primer, koperasi tujuan
+   sudah ditentukan otomatis.
 4. Centang permission yang sesuai, lalu simpan.
 
-Setelah ini, admin_primer koperasi yang dituju akan melihat role baru
-tersebut di halaman Role & Hak Akses mereka sendiri (dan bisa mengubah
-permission-nya sendiri lewat sana), serta bisa memilihnya di dropdown role
-saat menambah/mengedit pengguna. Koperasi lain tidak akan pernah melihat
-role ini sama sekali.
+Setelah ini, Admin Primer koperasi terkait dapat melihat dan mengubah
+permission role tersebut, serta memilihnya saat menambah/mengedit pengguna.
+Koperasi lain tidak akan pernah melihat role ini sama sekali. Penghapusan
+role tetap hanya dapat dilakukan oleh Super Admin.
+
+Pada halaman **Role & Hak Akses**, Admin Primer juga melihat role sistem
+**Admin Primer** milik koperasinya sebagai referensi, tetapi role sistem ini
+terkunci dan tidak dapat diedit. Daftar serta tombol edit untuk Admin Primer
+selalu dibatasi ke role dengan `koperasi_id` yang sama dengan akunnya.
 
 > Catatan: nama role BOLEH sama persis dengan role di koperasi lain (mis.
 > dua koperasi sama-sama punya role "Staff") — itu memang didukung, tidak

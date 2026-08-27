@@ -207,15 +207,15 @@ class PermissionCatalog
 
     /**
      * Permission untuk role sistem admin_primer (dipakai KoperasiService saat
-     * provisioning koperasi baru) — seluruh permission KECUALI role.create
-     * & role.delete. Pembuatan/penghapusan role dikunci ke super_admin lewat
-     * guard eksplisit (RoleService/RoleController), bukan lewat permission
-     * checkbox, jadi admin_primer memang tidak pernah diberi permission ini.
+     * provisioning koperasi baru) — seluruh permission KECUALI role.delete.
+     * Admin primer boleh membuat role baru yang otomatis terikat ke
+     * koperasinya sendiri, tetapi penghapusan role tetap dikunci ke
+     * super_admin lewat guard eksplisit.
      *
      * @return list<string>
      */
     public static function adminPrimerTemplate(): array
     {
-        return array_values(array_diff(self::all(), ['role.create', 'role.delete']));
+        return array_values(array_diff(self::all(), ['role.delete']));
     }
 }

@@ -37,7 +37,7 @@ test('super admin provisioning a koperasi creates the koperasi, its admin_primer
 
     expect($user->koperasi_id)->toBe($koperasi->id)
         ->and($user->hasRole($role))->toBeTrue()
-        ->and($role->permissions->pluck('name'))->not->toContain('role.create')
+        ->and($role->permissions->pluck('name'))->toContain('role.create')
         ->and($role->permissions->pluck('name'))->not->toContain('role.delete')
         ->and($role->permissions->pluck('name'))->toContain('barang.view')
         ->and($role->permissions->pluck('name'))->toContain('pengguna.update');

@@ -42,8 +42,8 @@ Karena itu isolasi tenant **wajib diterapkan di level data** (kolom
 
 | Role | `koperasi_id` | Cakupan akses |
 |---|---|---|
-| `super_admin` | `null` (global) | Lintas semua koperasi. Kelola entitas `Koperasi` (buat/perpanjang/nonaktifkan, set `expires_at`). Satu-satunya yang boleh membuat/menghapus Role, dan satu-satunya yang boleh menetapkan role `super_admin`/`admin_primer` ke user manapun. |
-| `admin_primer` | terikat 1 koperasi | Full permission (`PermissionCatalog`) **di koperasinya sendiri**, kecuali dua pengecualian di bawah. |
+| `super_admin` | `null` (global) | Lintas semua koperasi. Kelola entitas `Koperasi` (buat/perpanjang/nonaktifkan, set `expires_at`). Dapat membuat role untuk koperasi mana pun; satu-satunya yang boleh menghapus Role dan menetapkan role `super_admin`/`admin_primer`. |
+| `admin_primer` | terikat 1 koperasi | Full permission (`PermissionCatalog`) **di koperasinya sendiri**, termasuk membuat role custom yang otomatis terikat ke koperasinya, kecuali dua pengecualian di bawah. |
 
 **Pengecualian akses `admin_primer` (wajib, bukan opsional):**
 
@@ -51,18 +51,16 @@ Karena itu isolasi tenant **wajib diterapkan di level data** (kolom
    Ini *hardcoded guard* di `UserService`, **bukan** checkbox permission biasa
    — supaya `admin_primer` tidak bisa membuat "Super Admin bayangan" atau
    admin_primer tambahan sendiri.
-2. **Hanya dapat `role.view` + `role.update`**, tidak pernah `role.create`
-   atau `role.delete`. Artinya `admin_primer` hanya bisa mengubah permission
-   pada role yang sudah ada di koperasinya, tidak bisa membuat role baru dari
-   nol.
+2. **Tidak mendapat `role.delete`**. Admin Primer mendapat `role.create`,
+   tetapi role baru selalu memakai `koperasi_id` dari sesi login dan tidak
+   dapat diarahkan ke koperasi lain lewat input request.
 
 Role `Staff` yang ada sekarang **tidak otomatis dibuatkan** untuk tiap
 koperasi baru. Saat Super Admin membuat koperasi baru, sistem hanya
 men-seed role `admin_primer` untuk tenant itu dan langsung memasangnya ke
 akun pertama. Kalau koperasi butuh role tambahan untuk karyawannya (mis. staf
-gudang, kasir), **Super Admin yang membuatkan role tersebut secara manual**
-untuk koperasi itu — `admin_primer` baru bisa mengatur ulang permission-nya,
-tidak membuatnya sendiri.
+gudang, kasir), Admin Primer dapat membuatnya sendiri dan role tersebut
+otomatis terikat ke koperasinya.
 
 ### 2.3 Isolasi data
 
@@ -72,6 +70,9 @@ tidak membuatnya sendiri.
 - Satu `admin_primer` **tidak pernah** boleh melihat data koperasi lain —
   ini persyaratan keras, harus diuji lewat automated test, bukan cuma
   diasumsikan lewat UI hiding.
+- Daftar Role Admin Primer menampilkan role sistem `admin_primer` dan role
+  custom milik tenantnya saja. Role sistem tampil terkunci; hanya role custom
+  dengan `koperasi_id` yang sama yang dapat dibuka dan diperbarui.
 
 ### 2.4 Masa aktif (expiry)
 
@@ -130,16 +131,14 @@ Repository → Service → Controller, komponen Blade reusable):
   berakhir" kalau tidak valid.
 - **`UserService`** — tambah guard: tolak assign role `super_admin`/
   `admin_primer` kecuali aktor yang melakukan adalah `super_admin`.
-- **`RoleService`/`RoleController`** — `role.create` & `role.delete` cuma
-  bisa dieksekusi oleh `super_admin` (baik lewat permission maupun guard
-  eksplisit); scoping query Role ikut `koperasi_id` (dengan pengecualian
-  `super_admin` yang butuh selector koperasi di UI-nya).
+- **`RoleService`/`RoleController`** — `role.create` dapat dieksekusi oleh
+  `super_admin` dan `admin_primer`; tenant Admin Primer selalu diturunkan
+  dari identitas aktor. `role.delete` tetap khusus `super_admin`.
 - **`PermissionCatalog`/`PermissionSeeder`** — sesuaikan agar men-seed role
   `super_admin` (global) & `admin_primer` (template per koperasi saat
   provisioning), bukan lagi `Admin`/`Staff` seperti sekarang.
 - **`NavigationMenu`** — tambah grup menu baru "Manajemen Koperasi" (khusus
-  `super_admin`), dan pastikan tombol "Tambah Role"/hapus Role disembunyikan
-  untuk `admin_primer` di halaman Role & Hak Akses.
+  `super_admin`); tombol hapus Role tetap disembunyikan untuk `admin_primer`.
 - **Modul baru "Koperasi"** (CRUD, khusus Super Admin): Model, Migration,
   Repository, Service, Controller, Form Requests, Views — mengikuti pola
   modul lain yang sudah ada (lihat `RoleController`/`RoleService`/
@@ -267,13 +266,12 @@ guard mengambil user dari DB).
 - [x] **Guard ganda** (permission checkbox TETAP ada di catalog + hardcoded
       check, sesuai rencana awal "baik lewat permission maupun guard
       eksplisit"):
-      - `StoreRoleRequest::authorize()`: `can('role.create') && isSuperAdmin()`
-      - `RoleController::create()`: tambahan `abort_unless(isSuperAdmin())`
-      - `RoleService::store()/destroy()/destroyMany()`: terima parameter
-        `User $actor`, lempar `DomainException` kalau bukan super_admin —
-        lapisan pertahanan kedua di level Service, independen dari HTTP/
-        FormRequest (menutup celah kalau ada role lain yang suatu saat
-        salah dikonfigurasi punya permission `role.create`/`role.delete`).
+      - `StoreRoleRequest::authorize()`: wajib punya `role.create` dan
+        identitas `super_admin` atau `admin_primer`.
+      - `RoleController::create()`: guard identitas yang sama.
+      - `RoleService::store()`: Super Admin memakai koperasi pilihan;
+        Admin Primer selalu memakai `koperasi_id` aktor. Penghapusan tetap
+        dijaga `ensureActorIsSuperAdmin()`.
 - [x] `UserService::store()/update()` sekarang terima parameter
       `User $actor` — lempar `DomainException` kalau aktor mencoba
       menetapkan role `super_admin`/`admin_primer` tanpa jadi super_admin
@@ -281,15 +279,14 @@ guard mengambil user dari DB).
 - [x] `UserController::selectableRoles()` — dropdown pemilihan role di form
       pengguna otomatis menyembunyikan `super_admin`/`admin_primer` untuk
       aktor yang bukan super_admin (UX; guard sesungguhnya tetap di Service).
-- [x] `resources/views/role/index.blade.php`: tombol "Tambah Role" & aksi
-      hapus role sekarang dikunci ke `@if(auth()->user()->isSuperAdmin())`,
-      bukan `@can('role.create'/'role.delete')` — konsisten dengan guard
-      hardcoded di atas.
-- [x] Test baru (`tests/Feature/SuperAdminGuardTest.php`, 4 test): non-super
-      admin gagal `role.create` (403) & `role.delete` (diblokir di Service
-      walau permission-nya sengaja diberikan), gagal assign role
-      `super_admin` ke user lain, dan super_admin tetap bisa create/delete
-      role normal.
+- [x] `resources/views/role/index.blade.php`: tombol "Tambah Role" tampil
+      untuk Super Admin dan Admin Primer yang punya `role.create`; aksi
+      hapus tetap hanya tampil untuk Super Admin.
+- [x] `tests/Feature/SuperAdminGuardTest.php`: role tenant biasa tetap gagal
+      membuat role meski diberi `role.create`; hanya identitas Admin Primer
+      yang dapat membuat role dalam tenantnya. Penghapusan dan penetapan
+      role sistem tetap dilindungi, sementara Super Admin dapat membuat dan
+      menghapus role lintas tenant.
 
 > **Catatan implementasi (temuan saat migrasi):** migrasi lama
 > `2026_07_30_000005_add_employee_history_permissions.php` (dari sebelum
@@ -314,10 +311,9 @@ guard mengambil user dari DB).
 - [x] Alur store: buat `koperasi` + role `admin_primer` (koperasi_id diisi
       manual, BUKAN lewat auto-assign trait — aktor super_admin sendiri
       tidak terikat koperasi manapun) + user pertama, satu `DB::transaction`.
-      `PermissionCatalog::adminPrimerTemplate()` (baru) = semua permission
-      KECUALI `role.create`/`role.delete` — konsisten dengan guard hardcode
-      di Fase 4, supaya checkbox role admin_primer sendiri tidak
-      menampilkan izin yang toh tidak pernah bisa dipakai.
+      `PermissionCatalog::adminPrimerTemplate()` = semua permission KECUALI
+      `role.delete`. Permission `role.create` dipakai untuk membuat role
+      custom yang terikat ke tenant sendiri.
 - [x] Tambah entri menu "Manajemen Koperasi" di `NavigationMenu.php` — pakai
       key baru `'super_admin_only' => true` di skema item (bukan
       `'permission'`, karena kelola koperasi tidak masuk akal jadi
@@ -332,8 +328,8 @@ guard mengambil user dari DB).
       `is_active`/`expires_at`, bukan hapus baris.
 - [x] Test baru (`tests/Feature/KoperasiTest.php`, 6 test): akses ditolak
       utk non-super_admin, index bisa diakses super_admin, provisioning
-      membuat koperasi+role+user dengan benar (termasuk permission
-      admin_primer tidak memuat role.create/delete), **dua koperasi
+      membuat koperasi+role+user dengan benar (permission Admin Primer
+      memuat `role.create`, tetapi tidak `role.delete`), **dua koperasi
       masing-masing dapat role "admin_primer" sendiri tanpa tabrakan nama**
       (diuji eksplisit — lihat catatan di bawah), **isolasi data nyata
       antar-tenant** (admin_primer koperasi A tidak bisa lihat data
@@ -501,15 +497,10 @@ guard mengambil user dari DB).
       detail karyawan milik koperasi manapun.
 - [x] Feature test: login diblokir saat koperasi expired — sudah selesai
       di Fase 3 (`tests/Feature/EnsureKoperasiActiveTest.php`, 6 test).
-- [x] Feature test: `admin_primer` gagal saat mencoba `role.create`,
-      `role.delete`, atau assign role `super_admin`/`admin_primer` — test
-      baru: coba `role.store` (403, ditolak `StoreRoleRequest::authorize()`
-      karena admin_primer memang tidak pernah punya permission
-      `role.create`), coba hapus role `admin_primer` miliknya sendiri (403,
-      guard `role.delete`), dan coba naikkan user lain jadi `super_admin`
-      atau `admin_primer` lewat form Pengguna biasa (redirect + flash
-      error dari `UserService::resolveAssignableRole()`, role tidak
-      berubah — diverifikasi lewat assertion `hasRole()` tetap `false`).
+- [x] Feature test: `admin_primer` dapat membuat role untuk tenant sendiri;
+      `koperasi_id` tenant lain dalam request ditimpa oleh server. Admin
+      Primer tetap gagal menghapus role atau menetapkan `super_admin`/
+      `admin_primer` kepada pengguna lain.
 
 **Sinkronisasi seeder demo** (di luar checklist Fase 8 tertulis, tapi
 bagian wajar dari "testing merepresentasikan pemakaian nyata" — sekaligus
@@ -539,7 +530,7 @@ contoh + akun admin_primer... dipindah ke Fase 8"*):
   yang sudah ada (`database seeder is idempotent...`) tetap hijau.
 - `tests/Feature/DatabaseSeederTest.php` diperbarui: `roles` 2→3,
   `users` 7→8, plus assertion baru: `admin_primer` benar py role &
-  permission (68 = 70 dikurangi `role.create`/`role.delete`) yang benar,
+  permission (69 = 70 dikurangi `role.delete`) yang benar,
   dan SEMUA data domain (`unit_kerja`, `karyawan`, `barang`) benar-benar
   ter-tag ke koperasi demo (bukan `koperasi_id` null) — bukan cuma
   jumlahnya cocok.

@@ -197,7 +197,7 @@
     <div class="guide-step">
         <div class="guide-step-title">Langkah 4: Membuat Role Kustom Tambahan per Koperasi</div>
         <p class="guide-step-desc">
-            Jika koperasi tertentu memerlukan jabatan baru (misal: "Kasir", "Staf Gudang", "Admin Cabang"), Super Admin membuatnya di menu <strong>Administrasi &rarr; Role & Hak Akses &rarr; Tambah Role</strong> dengan memilih target Koperasi tujuan dan mencentang izin yang diinginkan.
+            Role baru dapat dibuat oleh Super Admin maupun Admin Primer melalui menu <strong>Administrasi &rarr; Role & Hak Akses &rarr; Tambah Role</strong>. Super Admin memilih koperasi tujuan, sedangkan role buatan Admin Primer otomatis terikat ke koperasinya sendiri.
         </p>
     </div>
 
@@ -290,4 +290,3 @@
     </div>
 </div>
 @endsection
-

@@ -3,15 +3,28 @@
 namespace App\Repositories;
 
 use App\Models\Role;
-use App\Support\CurrentTenant;
+use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
 class RoleRepository
 {
-    public function paginate(int $perPage = 10): LengthAwarePaginator
+    /**
+     * Super Admin melihat seluruh role. Aktor tenant hanya melihat role yang
+     * koperasi_id-nya sama persis dengan koperasi miliknya; role global dan
+     * role tenant lain tidak pernah masuk ke hasil query.
+     */
+    public function paginateFor(User $actor, int $perPage = 10): LengthAwarePaginator
     {
-        return CurrentTenant::scopeQuery(Role::query())
+        $query = Role::query();
+
+        if (! $actor->isSuperAdmin()) {
+            $actor->koperasi_id === null
+                ? $query->whereRaw('1 = 0')
+                : $query->where('koperasi_id', (int) $actor->koperasi_id);
+        }
+
+        return $query
             ->with('koperasi:id,nama')
             ->withCount(['users', 'permissions'])
             ->orderBy('name')

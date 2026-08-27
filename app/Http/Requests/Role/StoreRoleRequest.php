@@ -11,12 +11,23 @@ class StoreRoleRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('role.create') && $this->user()->isSuperAdmin();
+        $user = $this->user();
+
+        return $user->can('role.create')
+            && ($user->isSuperAdmin() || $user->isAdminPrimer());
     }
 
     protected function prepareForValidation(): void
     {
-        $this->merge(['permissions' => $this->input('permissions', [])]);
+        $data = ['permissions' => $this->input('permissions', [])];
+
+        // Tenant tujuan admin primer selalu berasal dari sesi login. Nilai
+        // koperasi_id yang mungkin dipalsukan di request sengaja ditimpa.
+        if ($this->user()?->isAdminPrimer()) {
+            $data['koperasi_id'] = $this->user()->koperasi_id;
+        }
+
+        $this->merge($data);
     }
 
     public function rules(): array

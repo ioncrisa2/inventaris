@@ -62,7 +62,7 @@ test('database seeder creates a complete usable demo dataset', function () {
         ->and($staff->hasRole('Staff'))->toBeTrue()
         ->and($staff->koperasi_id)->toBe($koperasi->id)
         ->and($admin->getAllPermissions())->toHaveCount(count(PermissionCatalog::superAdminTemplate()))
-        ->and($adminPrimer->getAllPermissions())->toHaveCount(68)
+        ->and($adminPrimer->getAllPermissions())->toHaveCount(69)
         ->and($staff->getAllPermissions())->toHaveCount(39)
         // Semua data domain harus ikut ter-tag ke koperasi demo (bukan
         // koperasi_id null) — ini yang paling penting dari sinkronisasi

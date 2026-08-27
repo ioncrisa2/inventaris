@@ -22,6 +22,21 @@ test('non super admin cannot create a role even via direct request', function ()
     $this->assertDatabaseMissing('roles', ['name' => 'Role Siluman']);
 });
 
+test('role service always binds an admin primer created role to the actor koperasi', function () {
+    $koperasiA = Koperasi::create(['nama' => 'Koperasi Service A']);
+    $koperasiB = Koperasi::create(['nama' => 'Koperasi Service B']);
+    $adminPrimer = adminPrimerUser($koperasiA);
+
+    $role = app(RoleService::class)->store($adminPrimer, [
+        'name' => 'Operator Service',
+        'koperasi_id' => $koperasiB->id,
+        'permissions' => ['barang.view'],
+    ]);
+
+    expect($role->koperasi_id)->toBe($koperasiA->id)
+        ->and($role->permissions->pluck('name')->all())->toBe(['barang.view']);
+});
+
 test('non super admin cannot delete a role even with role.delete permission', function () {
     $this->seed(PermissionSeeder::class);
     $superAdmin = superAdminUser();

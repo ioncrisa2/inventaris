@@ -13,24 +13,49 @@ class RoleService
 {
     public function __construct(private RoleRepository $roleRepository) {}
 
-    public function list(int $perPage = PerPage::DEFAULT): LengthAwarePaginator
+    public function list(User $actor, int $perPage = PerPage::DEFAULT): LengthAwarePaginator
     {
-        return $this->roleRepository->paginate($perPage);
+        return $this->roleRepository->paginateFor($actor, $perPage);
     }
 
     /**
-     * @throws \DomainException Jika aktor bukan super_admin.
+     * @throws \DomainException Jika aktor bukan super_admin/admin_primer.
      */
     public function store(User $actor, array $data): Role
     {
-        $this->ensureActorIsSuperAdmin($actor);
+        $koperasiId = $this->resolveKoperasiIdForCreate(
+            $actor,
+            isset($data['koperasi_id']) ? (int) $data['koperasi_id'] : null,
+        );
 
-        return DB::transaction(function () use ($data) {
-            $role = $this->roleRepository->create($data['name'], $data['koperasi_id']);
+        return DB::transaction(function () use ($data, $koperasiId) {
+            $role = $this->roleRepository->create($data['name'], $koperasiId);
             $role->syncPermissions($data['permissions']);
 
             return $role;
         }, 3);
+    }
+
+    /**
+     * Super admin memilih koperasi tujuan. Untuk admin primer, tenant tujuan
+     * selalu diambil dari identitas aktor agar pemanggilan service secara
+     * langsung pun tidak dapat membuat role untuk koperasi lain.
+     */
+    private function resolveKoperasiIdForCreate(User $actor, ?int $requestedKoperasiId): int
+    {
+        if ($actor->isSuperAdmin()) {
+            if ($requestedKoperasiId === null) {
+                throw new \DomainException('Koperasi tujuan wajib dipilih.');
+            }
+
+            return $requestedKoperasiId;
+        }
+
+        if ($actor->isAdminPrimer() && $actor->koperasi_id !== null) {
+            return (int) $actor->koperasi_id;
+        }
+
+        throw new \DomainException('Hanya super admin atau admin primer yang dapat membuat role.');
     }
 
     public function update(User $actor, Role $role, array $data): Role
@@ -88,16 +113,15 @@ class RoleService
     }
 
     /**
-     * Bikin/hapus role dikunci ke super_admin — bukan sekadar permission
-     * biasa, supaya admin_primer tidak bisa membuka celah ini lewat toggle
-     * permission pada role yang dia kelola sendiri.
+     * Hapus role dikunci ke super_admin — bukan sekadar permission biasa,
+     * supaya role tenant tidak dapat membuka akses ini lewat toggle.
      *
      * @throws \DomainException
      */
     private function ensureActorIsSuperAdmin(User $actor): void
     {
         if (! $actor->isSuperAdmin()) {
-            throw new \DomainException('Hanya super admin yang dapat membuat atau menghapus role.');
+            throw new \DomainException('Hanya super admin yang dapat menghapus role.');
         }
     }
 

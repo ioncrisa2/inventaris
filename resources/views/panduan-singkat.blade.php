@@ -135,7 +135,7 @@
                 <div class="ps-3 mb-4" style="border-left: 3px solid #1e3a8a;">
                     <div class="fw-bold text-dark mb-1">Langkah 4: Pembuatan Role Khusus per Koperasi Anggota</div>
                     <p class="text-body-secondary small mb-0">
-                        Apabila koperasi anggota memerlukan pembagian wewenang khusus (misal: "Staf Kasir", "Petugas Lapangan", "Staf Gudang"), Super Admin membuatnya melalui menu <strong>Administrasi &rarr; Role & Hak Akses &rarr; Tambah Role</strong> dengan memilih target Koperasi tujuan dan menandai izin-izin yang disetujui.
+                        Role dapat dibuat oleh Super Admin maupun Admin Primer melalui menu <strong>Administrasi &rarr; Role & Hak Akses &rarr; Tambah Role</strong>. Super Admin memilih koperasi tujuan, sedangkan role buatan Admin Primer otomatis terikat ke koperasinya sendiri.
                     </p>
                 </div>
 

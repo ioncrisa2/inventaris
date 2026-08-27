@@ -17,7 +17,7 @@
         <div class="col-md-6">
             <x-form.input name="name" label="Nama Role" :value="$role->name" required autofocus maxlength="255" />
         </div>
-        @unless($role->exists)
+        @if(! $role->exists && auth()->user()->isSuperAdmin())
         <div class="col-md-6">
             <x-form.select
                 name="koperasi_id"
@@ -28,7 +28,13 @@
             />
             <div class="form-text">Role ini cuma berlaku dan bisa dipilih oleh pengguna di koperasi ini.</div>
         </div>
-        @endunless
+        @elseif(! $role->exists)
+        <div class="col-md-6">
+            <label class="form-label">Koperasi</label>
+            <div class="form-control bg-body-tertiary">{{ auth()->user()->koperasi->nama }}</div>
+            <div class="form-text">Role ini otomatis hanya berlaku di koperasi Anda.</div>
+        </div>
+        @endif
     </div>
 
     <div class="border-bottom pb-3 mb-4">
