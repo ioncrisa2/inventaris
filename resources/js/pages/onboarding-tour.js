@@ -132,7 +132,7 @@ function buildTour(config) {
     tour.addStep({
         id: 'tenant-context',
         title: 'Konteks Koperasi',
-        text: 'Area ini menampilkan koperasi aktif dan mode akses. Untuk admin primer, ini adalah koperasi Anda. Untuk super admin, menampilkan "Seluruh koperasi".',
+        text: 'Area ini menunjukkan koperasi Anda dan mode akses yang sedang aktif. Semua data yang Anda lihat dan kelola dibatasi dalam lingkup koperasi ini.',
         attachTo: {
             element: () => findVisibleTenantContext(),
             on: 'bottom'

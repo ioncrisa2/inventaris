@@ -19,6 +19,7 @@ class UserRepository
                     ->select('id', 'nama')
                     ->withCount('adminPrimerUsers'),
                 'roles',
+                'unitKerja:id,koperasi_id,nama_unit',
             ])
             ->when($filters['koperasi_id'] ?? null, function ($query, $koperasiId) {
                 $query->where('koperasi_id', (int) $koperasiId);

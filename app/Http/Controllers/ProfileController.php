@@ -18,6 +18,7 @@ class ProfileController extends Controller
     public function show(Request $request)
     {
         $user = $request->user();
+        $user->loadMissing('unitKerja');
         $unitKerjas = $this->unitKerjaRepository->orderedList();
 
         return view('profile.show', compact('user', 'unitKerjas'));

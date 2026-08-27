@@ -4,7 +4,9 @@
     <aside class="dashboard-tip" aria-label="Tips penggunaan">
         <p class="dashboard-tip__message">
             <span class="dashboard-tip__copy">Selamat datang — kelola data Anda di sini.</span>
+            @if ($user->isSuperAdmin() || $user->isAdminPrimer())
             <a href="{{ route('panduan-singkat') }}">Panduan singkat</a>
+            @endif
         </p>
         <form method="POST" action="{{ route('dashboard.banner.dismiss') }}">
             @csrf

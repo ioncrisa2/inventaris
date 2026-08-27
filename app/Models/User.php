@@ -19,10 +19,6 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, HasRoles, Notifiable;
 
-    protected $with = [
-        'unitKerja',
-    ];
-
     /**
      * User SENGAJA TIDAK pakai trait BelongsToKoperasi (tidak ada global
      * scope) — beda dari model tenant lain. Auth::user() me-resolve User
@@ -33,6 +29,12 @@ class User extends Authenticatable
      * henti sampai kehabisan memory. Sama persis kelas masalah yang sudah
      * didokumentasikan di App\Models\Role. Listing user per-koperasi difilter
      * eksplisit lewat CurrentTenant::scopeQuery() (lihat UserRepository).
+     *
+     * Relasi unitKerja juga tidak boleh dimuat otomatis di sini. UnitKerja
+     * memiliki KoperasiScope yang membutuhkan auth()->user(); eager loading
+     * saat SessionGuard masih me-resolve User akan meminta user yang sama
+     * berulang kali sampai PHP kehabisan memori. Relasi tersebut dimuat
+     * setelah autentikasi selesai di repository/controller yang memerlukannya.
      */
     protected static function booted(): void
     {

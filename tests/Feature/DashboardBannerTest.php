@@ -54,6 +54,9 @@ test('dashboard banner actions and quick guide require authentication', function
 
     $this->get(route('panduan-singkat'))
         ->assertRedirect('/login');
+
+    $this->get(route('panduan-singkat.cetak'))
+        ->assertRedirect('/login');
 });
 
 test('dismissing the banner preserves the selected dashboard period', function () {
@@ -66,24 +69,81 @@ test('dismissing the banner preserves the selected dashboard period', function (
     expect($user->fresh()->dashboard_banner_dismissed_at)->not->toBeNull();
 });
 
-test('authenticated users can open the quick guide as a separate page', function () {
-    $this->actingAs(adminUser())
+test('admin primer sees a guide dedicated to their own koperasi context', function () {
+    $adminPrimer = adminUser();
+
+    $this->actingAs($adminPrimer)
         ->get(route('panduan-singkat'))
         ->assertOk()
-        ->assertSee('Panduan Singkat')
+        ->assertSee('Panduan Admin Primer')
+        ->assertSee('Admin Primer '.$adminPrimer->koperasi->nama)
+        ->assertSee('Siapkan fondasi koperasi')
+        ->assertSee('Buat role custom koperasi')
+        ->assertSee('Role otomatis terikat ke koperasi Anda')
+        ->assertDontSee('Panduan Super Admin')
+        ->assertDontSee('Seluruh koperasi')
+        ->assertDontSee('Manajemen Koperasi')
         ->assertSee('Kembali ke Dashboard')
-        ->assertSee('Cetak / Unduh PDF Panduan')
-        ->assertSee('Proses penggajian dan laporan')
+        ->assertSee('Cetak Panduan')
         ->assertSee('Created By : Yohanes Dwiki Septian')
+        ->assertSee('+62 895 6049 5663 2')
+        ->assertSee('zyohanes67@gmail.com')
+        ->assertSeeInOrder(['Created By : Yohanes Dwiki Septian', '|', '+62 895 6049 5663 2', '|', 'zyohanes67@gmail.com'])
+        ->assertDontSee('Dokumen:')
         ->assertDontSee('welcomeModal', false)
         ->assertDontSee('dashboard-tip', false);
 });
 
-test('authenticated users can access the printable PDF guide page', function () {
-    $this->actingAs(adminUser())
+test('admin primer printable guide excludes super admin instructions', function () {
+    $adminPrimer = adminUser();
+
+    $this->actingAs($adminPrimer)
         ->get(route('panduan-singkat.cetak'))
         ->assertOk()
-        ->assertSee('Panduan Langkah Demi Langkah: Admin Pusat')
-        ->assertSee('Panduan Langkah Demi Langkah: Admin Primer')
-        ->assertSee('Yohanes Dwiki Septian');
+        ->assertSee('Panduan Admin Primer')
+        ->assertSee($adminPrimer->koperasi->nama)
+        ->assertSee('Jalankan operasional harian')
+        ->assertDontSee('Panduan Super Admin')
+        ->assertDontSee('Seluruh koperasi')
+        ->assertSee('Yohanes Dwiki Septian')
+        ->assertSee('+62 895 6049 5663 2')
+        ->assertSee('zyohanes67@gmail.com')
+        ->assertDontSee('Dokumen:');
+});
+
+test('super admin sees a separate control plane guide', function () {
+    $this->actingAs(superAdminUser())
+        ->get(route('panduan-singkat'))
+        ->assertOk()
+        ->assertSee('Panduan Super Admin')
+        ->assertSee('Seluruh koperasi')
+        ->assertSee('Kelola siklus hidup koperasi')
+        ->assertSee('Daftarkan koperasi baru')
+        ->assertSee('Sinkronkan hari libur nasional')
+        ->assertDontSee('Panduan Admin Primer')
+        ->assertDontSee('Siapkan fondasi koperasi')
+        ->assertSee('+62 895 6049 5663 2')
+        ->assertSee('zyohanes67@gmail.com')
+        ->assertDontSee('Dokumen:');
+
+    $this->get(route('panduan-singkat.cetak'))
+        ->assertOk()
+        ->assertSee('Panduan Super Admin')
+        ->assertSee('Lakukan pengawasan lintas koperasi')
+        ->assertDontSee('Panduan Admin Primer')
+        ->assertSee('+62 895 6049 5663 2')
+        ->assertSee('zyohanes67@gmail.com')
+        ->assertDontSee('Dokumen:');
+});
+
+test('custom tenant roles do not receive an admin primer guide', function () {
+    $staff = staffUser();
+
+    $this->actingAs($staff)
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertDontSee('Panduan singkat');
+
+    $this->get(route('panduan-singkat'))->assertForbidden();
+    $this->get(route('panduan-singkat.cetak'))->assertForbidden();
 });

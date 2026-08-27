@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\UnitKerja;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -50,6 +51,32 @@ test('users can login with valid credentials', function () {
         ->assertSee('Panduan singkat')
         ->assertDontSee('welcomeModal', false)
         ->assertDontSee('data-auto-show-modal', false);
+});
+
+test('session can resolve a tenant user assigned to a unit kerja without recursion', function () {
+    $user = adminUser([
+        'email' => 'unit@example.com',
+        'password' => 'password',
+    ]);
+
+    $unitKerja = new UnitKerja(['nama_unit' => 'Operasional']);
+    $unitKerja->koperasi_id = $user->koperasi_id;
+    $unitKerja->save();
+
+    $user->unit_kerja_id = $unitKerja->id;
+    $user->save();
+
+    $this->post('/login', [
+        'email' => 'unit@example.com',
+        'password' => 'password',
+    ])->assertRedirect('/dashboard');
+
+    // Paksa request berikutnya memulihkan User dari session seperti request
+    // browser baru; actingAs()/guard yang masih hangat tidak melewati jalur ini.
+    $this->app['auth']->forgetGuards();
+
+    $this->get('/dashboard')
+        ->assertOk();
 });
 
 test('users cannot login with invalid credentials', function () {

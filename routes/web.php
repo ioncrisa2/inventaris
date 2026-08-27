@@ -3,7 +3,6 @@
 use App\Http\Controllers\AbsensiController;
 use App\Http\Controllers\BarangController;
 use App\Http\Controllers\DashboardBannerController;
-use App\Http\Controllers\OnboardingTourController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DokumenBarangController;
 use App\Http\Controllers\DokumenKaryawanController;
@@ -15,6 +14,8 @@ use App\Http\Controllers\KomponenGajiController;
 use App\Http\Controllers\KoperasiController;
 use App\Http\Controllers\KoperasiExpiredController;
 use App\Http\Controllers\LaporanController;
+use App\Http\Controllers\OnboardingTourController;
+use App\Http\Controllers\PanduanSingkatController;
 use App\Http\Controllers\PengaturanController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RiwayatKaryawanController;
@@ -39,8 +40,8 @@ Route::middleware(['auth', 'koperasi.active'])->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::patch('/dashboard/banner', DashboardBannerController::class)->name('dashboard.banner.dismiss');
     Route::patch('/onboarding/tour', OnboardingTourController::class)->name('onboarding.tour.finish');
-    Route::view('/panduan-singkat', 'panduan-singkat')->name('panduan-singkat');
-    Route::view('/panduan-singkat/cetak', 'panduan-singkat-cetak')->name('panduan-singkat.cetak');
+    Route::get('/panduan-singkat', [PanduanSingkatController::class, 'show'])->name('panduan-singkat');
+    Route::get('/panduan-singkat/cetak', [PanduanSingkatController::class, 'print'])->name('panduan-singkat.cetak');
 
     Route::delete('unit-kerja/bulk', [UnitKerjaController::class, 'bulkDestroy'])->name('unit-kerja.bulk-destroy');
     Route::resource('unit-kerja', UnitKerjaController::class)->except(['show', 'create', 'edit']);
