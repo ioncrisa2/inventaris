@@ -72,6 +72,49 @@ test('karyawan can be created', function () {
     Storage::disk('public')->assertExists($karyawan->foto_karyawan);
 });
 
+test('npwp bersifat opsional', function () {
+    $this->post(route('karyawan.store'), payloadKaryawan($this->unitKerja, [
+        'npwp' => null,
+    ]))->assertRedirect(route('karyawan.index'));
+
+    $this->assertDatabaseHas('karyawan', [
+        'nik' => 'EMP-001',
+        'npwp' => null,
+    ]);
+});
+
+test('nomor dan tanggal sk opsional untuk semua status karyawan', function () {
+    foreach (Karyawan::STATUSES as $index => $status) {
+        $this->post(route('karyawan.store'), payloadKaryawan($this->unitKerja, [
+            'nik' => 'EMP-'.str_pad((string) ($index + 1), 3, '0', STR_PAD_LEFT),
+            'nomor_ktp' => '167101010190'.str_pad((string) ($index + 1), 4, '0', STR_PAD_LEFT),
+            'status_karyawan' => $status,
+            'nomor_sk_pengangkatan' => null,
+            'tanggal_sk_pengangkatan' => null,
+        ]))->assertRedirect(route('karyawan.index'));
+    }
+
+    expect(Karyawan::query()
+        ->whereNull('nomor_sk_pengangkatan')
+        ->whereNull('tanggal_sk_pengangkatan')
+        ->count())->toBe(count(Karyawan::STATUSES));
+});
+
+test('nomor dan tanggal sk dapat disimpan untuk karyawan honorer', function () {
+    $this->post(route('karyawan.store'), payloadKaryawan($this->unitKerja, [
+        'status_karyawan' => 'Honorer',
+        'nomor_sk_pengangkatan' => 'SK/HONORER/001',
+        'tanggal_sk_pengangkatan' => '2020-01-01',
+    ]))->assertRedirect(route('karyawan.index'));
+
+    $this->assertDatabaseHas('karyawan', [
+        'nik' => 'EMP-001',
+        'status_karyawan' => 'Honorer',
+        'nomor_sk_pengangkatan' => 'SK/HONORER/001',
+        'tanggal_sk_pengangkatan' => '2020-01-01',
+    ]);
+});
+
 test('karyawan can be viewed', function () {
     $this->post(route('karyawan.store'), payloadKaryawan($this->unitKerja))
         ->assertRedirect(route('karyawan.index'));

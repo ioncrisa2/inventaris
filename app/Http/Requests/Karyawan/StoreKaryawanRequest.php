@@ -43,8 +43,8 @@ class StoreKaryawanRequest extends FormRequest
             'tanggal_masuk_kerja' => ['required', 'date', 'before_or_equal:today'],
             'jabatan' => ['required', 'string', 'max:255'],
             'status_karyawan' => ['required', Rule::in(Karyawan::STATUSES)],
-            'nomor_sk_pengangkatan' => ['required', 'string', 'max:255'],
-            'tanggal_sk_pengangkatan' => ['required', 'date', 'before_or_equal:today'],
+            'nomor_sk_pengangkatan' => ['nullable', 'string', 'max:255'],
+            'tanggal_sk_pengangkatan' => ['nullable', 'date', 'before_or_equal:today'],
             'atasan_langsung_id' => ['nullable', TenantRule::exists('karyawan')],
             'gaji_pokok' => ['required', new Decimal15Two],
 

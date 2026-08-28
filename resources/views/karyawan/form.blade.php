@@ -114,7 +114,13 @@
                 </div>
 
                 <div class="col-md-6">
-                    <x-form.input name="npwp" label="NPWP" :value="$karyawan->npwp" required maxlength="30" />
+                    <x-form.input
+                        name="npwp"
+                        label="NPWP"
+                        :value="$karyawan->npwp"
+                        maxlength="30"
+                        help="Opsional — isi jika karyawan sudah memiliki NPWP."
+                    />
                 </div>
 
                 <div class="col-md-6">
@@ -225,7 +231,13 @@
                 </div>
 
                 <div class="col-md-6">
-                    <x-form.input name="nomor_sk_pengangkatan" label="Nomor SK Pengangkatan" :value="$karyawan->nomor_sk_pengangkatan" required maxlength="255" />
+                    <x-form.input
+                        name="nomor_sk_pengangkatan"
+                        label="Nomor SK Pengangkatan"
+                        :value="$karyawan->nomor_sk_pengangkatan"
+                        maxlength="255"
+                        help="Opsional — isi jika sudah ada SK pengangkatan atau perubahan status."
+                    />
                 </div>
 
                 <div class="col-md-6">
@@ -234,8 +246,8 @@
                         label="Tanggal SK Pengangkatan"
                         type="date"
                         :value="$karyawan->tanggal_sk_pengangkatan?->format('Y-m-d')"
-                        required
                         :max="now()->toDateString()"
+                        help="Opsional — isi sesuai tanggal yang tercantum pada SK."
                     />
                 </div>
 
