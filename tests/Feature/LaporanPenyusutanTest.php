@@ -3,6 +3,7 @@
 use App\Exports\PenyusutanExport;
 use App\Models\Barang;
 use App\Models\UnitKerja;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -100,7 +101,7 @@ test('staff with laporan.penyusutan.view permission can access the report', func
 });
 
 test('user without laporan.penyusutan.view permission is forbidden', function () {
-    $this->actingAs(\App\Models\User::factory()->create());
+    $this->actingAs(User::factory()->create());
 
     $this->get(route('laporan.penyusutan'))->assertForbidden();
 });

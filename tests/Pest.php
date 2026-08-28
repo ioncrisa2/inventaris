@@ -1,8 +1,10 @@
 <?php
 
 use App\Models\Koperasi;
+use App\Models\ProductRequest;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\ProductRequestService;
 use App\Support\PermissionCatalog;
 use Database\Seeders\DemoStaffRoleSeeder;
 use Database\Seeders\PermissionSeeder;
@@ -167,6 +169,40 @@ function adminPrimerUser(?Koperasi $koperasi = null, array $attributes = []): Us
     $user = User::factory()->create($attributes);
     $user->koperasi_id = $koperasi->id;
     $user->save();
+    $user->assignRole($role);
+
+    return $user;
+}
+
+/** Buat request produk melalui service agar invariant tiket dan history ikut diuji. */
+function productRequestFor(User $actor, array $overrides = []): ProductRequest
+{
+    test()->actingAs($actor);
+
+    return app(ProductRequestService::class)->create($actor, array_merge([
+        'type' => 'feature',
+        'module' => 'inventaris',
+        'title' => 'Tambahkan ringkasan inventaris per lokasi',
+        'description' => 'Kami membutuhkan ringkasan agregat inventaris berdasarkan lokasi penempatan.',
+        'requester_priority' => 'normal',
+        'attachments' => [],
+    ], $overrides));
+}
+
+/** Buat anggota tenant custom yang hanya mengakses domain request produk. */
+function tenantRequestMember(Koperasi $koperasi, string $name = 'Anggota Request'): User
+{
+    test()->seed(PermissionSeeder::class);
+    $role = new Role(['name' => $name.' Role '.uniqid(), 'guard_name' => 'web']);
+    $role->koperasi_id = $koperasi->id;
+    $role->save();
+    $role->syncPermissions([
+        'product-request.view',
+        'product-request.create',
+        'product-request.reply',
+        'product-request.close',
+    ]);
+    $user = User::factory()->create(['name' => $name, 'koperasi_id' => $koperasi->id]);
     $user->assignRole($role);
 
     return $user;
