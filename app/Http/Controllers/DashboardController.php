@@ -18,6 +18,10 @@ class DashboardController extends Controller
      */
     public function __invoke(Request $request)
     {
+        if ($request->user()->isSystemOwner()) {
+            return redirect()->route('owner.dashboard');
+        }
+
         return view('dashboard', $this->dashboardService->widgets(
             $request->user(),
             $request->string('periode')->toString(),

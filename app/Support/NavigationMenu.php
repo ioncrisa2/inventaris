@@ -79,9 +79,46 @@ class NavigationMenu
      */
     public static function visibleGroups(User $user): array
     {
+        if ($user->isSystemOwner()) {
+            return self::markActive($user, self::ownerGroups());
+        }
+
+        return self::markActive($user, self::groups());
+    }
+
+    /**
+     * Navigasi owner sengaja tidak memuat satupun route CRUD operasional.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private static function ownerGroups(): array
+    {
+        return [
+            [
+                'type' => 'link',
+                'label' => 'Ringkasan Platform',
+                'icon' => 'bi-grid-1x2',
+                'route' => 'owner.dashboard',
+                'active_routes' => ['owner.dashboard'],
+                'permission' => null,
+            ],
+            [
+                'type' => 'group',
+                'key' => 'observability-platform',
+                'label' => 'Observability',
+                'items' => [
+                    ['label' => 'Analitik Koperasi', 'icon' => 'bi-graph-up-arrow', 'route' => 'owner.analytics', 'active_routes' => ['owner.analytics', 'owner.analytics.koperasi'], 'permission' => null],
+                ],
+            ],
+        ];
+    }
+
+    /** @param list<array<string, mixed>> $groups */
+    private static function markActive(User $user, array $groups): array
+    {
         $visible = [];
 
-        foreach (self::groups() as $group) {
+        foreach ($groups as $group) {
             if ($group['type'] === 'link') {
                 if (! self::isVisibleTo($user, $group)) {
                     continue;

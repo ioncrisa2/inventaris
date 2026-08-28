@@ -15,6 +15,7 @@ use App\Http\Controllers\KoperasiController;
 use App\Http\Controllers\KoperasiExpiredController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\OnboardingTourController;
+use App\Http\Controllers\OwnerAnalyticsController;
 use App\Http\Controllers\PanduanSingkatController;
 use App\Http\Controllers\PengaturanController;
 use App\Http\Controllers\ProfileController;
@@ -22,9 +23,11 @@ use App\Http\Controllers\RiwayatKaryawanController;
 use App\Http\Controllers\RiwayatKondisiBarangController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SlipGajiTemplateController;
+use App\Http\Controllers\SystemOwnerDashboardController;
 use App\Http\Controllers\TransaksiGajiController;
 use App\Http\Controllers\UnitKerjaController;
 use App\Http\Controllers\UserController;
+use App\Http\Middleware\AuditSystemOwnerAccess;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -35,6 +38,17 @@ Auth::routes(['register' => false, 'reset' => false, 'confirm' => false, 'verify
 Route::middleware('auth')->group(function () {
     Route::get('koperasi/masa-aktif-berakhir', KoperasiExpiredController::class)->name('koperasi.expired');
 });
+
+Route::middleware(['auth', 'system_owner', AuditSystemOwnerAccess::class])
+    ->prefix('owner')
+    ->name('owner.')
+    ->group(function () {
+        Route::get('/', SystemOwnerDashboardController::class)->name('dashboard');
+        Route::get('analytics', [OwnerAnalyticsController::class, 'index'])->name('analytics');
+        Route::get('analytics/koperasi/{koperasi}', [OwnerAnalyticsController::class, 'koperasi'])
+            ->whereNumber('koperasi')
+            ->name('analytics.koperasi');
+    });
 
 Route::middleware(['auth', 'koperasi.active'])->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');

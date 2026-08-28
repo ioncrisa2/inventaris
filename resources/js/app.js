@@ -11,6 +11,7 @@ import './pages/absensi';
 import './pages/barang';
 import './pages/dashboard';
 import './pages/onboarding-tour';
+import './pages/owner-dashboard';
 import './pages/hari-libur';
 import './pages/karyawan';
 import './pages/komponen-gaji';
