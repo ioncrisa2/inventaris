@@ -45,6 +45,10 @@ test('admin primer dapat menghubungkan dan melepas akun karyawan dalam koperasin
         'action' => 'linked',
     ]);
 
+    $this->get(route('karyawan.show', $karyawan))
+        ->assertOk()
+        ->assertSee($target->email);
+
     $this->delete(route('karyawan.akun.destroy', $karyawan))
         ->assertRedirect()
         ->assertSessionHas('success');

@@ -20,7 +20,7 @@ class KaryawanAccountService
                 $query->whereDoesntHave('karyawan');
 
                 if ($karyawan->user_id !== null) {
-                    $query->orWhereKey($karyawan->user_id);
+                    $query->orWhere('users.id', $karyawan->user_id);
                 }
             })
             ->with('roles:id,name,koperasi_id')
