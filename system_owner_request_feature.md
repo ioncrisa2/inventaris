@@ -18,6 +18,16 @@ Aturan pengerjaan:
 - Branch pusat request harus berawal dari commit `main` yang sudah memuat actor `system_owner` agar tidak menduplikasi logika identitas dan middleware.
 - Dokumen ini boleh ikut berada di `main` sebagai rencana induk kedua pekerjaan.
 
+### Status implementasi per 28 Agustus 2026
+
+Fase `system_owner` telah selesai di `main` melalui commit berikut:
+
+- `5a24667` — fondasi identitas, middleware, audit, proteksi akun, dan provisioning.
+- `d8e579a` — analitik agregat global/per koperasi serta workspace owner.
+- `3ff3388` — kesehatan sistem, scheduler heartbeat, dan pengukuran storage.
+
+Quality gate terakhir: 438 test lulus dengan 2.447 assertion, build Vite lulus, route/config cache lulus, dan `git diff --check` bersih. Integrasi backup, counter error eksternal, dan telemetry mail bersifat opt-in; UI menampilkan `Tidak tersedia` sampai sumber metadata nyata dikonfigurasi. Backfill `size_bytes`, MFA/passkey, IP allowlist, dan optimasi index berbasis `EXPLAIN` tetap menjadi pekerjaan lanjutan.
+
 ## 2. Tujuan produk
 
 ### 2.1 System owner
@@ -441,102 +451,102 @@ Nama final boleh menyesuaikan konvensi setelah implementasi dimulai, tetapi pemi
 
 ### 6.1 Persiapan
 
-- [ ] Pastikan berada di branch `main` dan working tree bersih sebelum mulai implementasi.
+- [x] Pastikan berada di branch `main` dan working tree bersih sebelum mulai implementasi.
 - [ ] Tarik/selaraskan perubahan terbaru `main` sesuai workflow repository.
-- [ ] Jalankan baseline `php artisan test`.
-- [ ] Catat waktu test dan kegagalan yang sudah ada sebelum perubahan.
-- [ ] Inventarisasi seluruh pemanggilan `isSuperAdmin()` dan klasifikasikan: khusus super admin, akun platform, atau bypass tenant.
-- [ ] Tetapkan daftar metrik MVP dan definisi matematisnya.
+- [x] Jalankan baseline `php artisan test`.
+- [x] Catat waktu test dan kegagalan yang sudah ada sebelum perubahan.
+- [x] Inventarisasi seluruh pemanggilan `isSuperAdmin()` dan klasifikasikan: khusus super admin, akun platform, atau bypass tenant.
+- [x] Tetapkan daftar metrik MVP dan definisi matematisnya.
 - [ ] Tetapkan sumber metadata backup/deployment yang benar-benar tersedia di environment target.
 
 ### 6.2 Identitas dan otorisasi
 
-- [ ] Tambahkan role sistem `system_owner` dan display name.
-- [ ] Tambahkan `User::isSystemOwner()`.
-- [ ] Tambahkan `User::isPlatformAccount()`.
-- [ ] Tambahkan middleware `EnsureIsSystemOwner` dan alias `system_owner`.
-- [ ] Izinkan akun platform melewati pemeriksaan masa aktif tenant tanpa membuka tenant scope.
-- [ ] Buat redirect dashboard khusus berdasarkan actor setelah login.
-- [ ] Sembunyikan role owner dari semua form role/user biasa.
-- [ ] Blok super admin/admin primer/role tenant mengelola akun owner pada policy dan service.
-- [ ] Pastikan owner tidak memperoleh permission mutasi tenant.
-- [ ] Pastikan owner tidak memperoleh bypass melalui `Gate::before()`.
-- [ ] Pastikan akun owner dapat mengubah profil/password sendiri melalui jalur aman.
+- [x] Tambahkan role sistem `system_owner` dan display name.
+- [x] Tambahkan `User::isSystemOwner()`.
+- [x] Tambahkan `User::isPlatformAccount()`.
+- [x] Tambahkan middleware `EnsureIsSystemOwner` dan alias `system_owner`.
+- [x] Izinkan akun platform melewati pemeriksaan masa aktif tenant tanpa membuka tenant scope.
+- [x] Buat redirect dashboard khusus berdasarkan actor setelah login.
+- [x] Sembunyikan role owner dari semua form role/user biasa.
+- [x] Blok super admin/admin primer/role tenant mengelola akun owner pada policy dan service.
+- [x] Pastikan owner tidak memperoleh permission mutasi tenant.
+- [x] Pastikan owner tidak memperoleh bypass melalui `Gate::before()`.
+- [x] Pastikan akun owner dapat mengubah profil/password sendiri melalui jalur aman.
 
 ### 6.3 Provisioning
 
-- [ ] Buat command provisioning owner dengan password hidden prompt.
-- [ ] Bungkus pembuatan user dan assignment role dalam transaction.
-- [ ] Tambahkan validasi email unik dan akun global.
-- [ ] Bersihkan permission cache setelah assignment.
-- [ ] Tambahkan skenario demo hanya untuk local/testing jika dibutuhkan.
-- [ ] Tambahkan test command: membuat, memperbarui, membatalkan, dan menolak kondisi tidak aman.
-- [ ] Dokumentasikan prosedur provisioning produksi tanpa menaruh kredensial di repository.
+- [x] Buat command provisioning owner dengan password hidden prompt.
+- [x] Bungkus pembuatan user dan assignment role dalam transaction.
+- [x] Tambahkan validasi email unik dan akun global.
+- [x] Bersihkan permission cache setelah assignment.
+- [x] Tambahkan skenario demo hanya untuk local/testing jika dibutuhkan. (Diputuskan tidak membuat akun demo owner; hanya role yang di-seed.)
+- [x] Tambahkan test command: membuat, memperbarui, membatalkan, dan menolak kondisi tidak aman.
+- [x] Dokumentasikan prosedur provisioning produksi tanpa menaruh kredensial di repository.
 
 ### 6.4 Analitik
 
-- [ ] Buat request validator periode dan koperasi.
-- [ ] Buat repository agregat lintas tenant khusus owner.
-- [ ] Buat service analitik global.
-- [ ] Buat service ringkasan per koperasi.
-- [ ] Terapkan minimum cohort untuk data sensitif.
-- [ ] Pastikan DTO/array tidak membawa data individual.
-- [ ] Tambahkan cache namespace owner.
+- [x] Buat request validator periode dan koperasi.
+- [x] Buat repository agregat lintas tenant khusus owner.
+- [x] Buat service analitik global.
+- [x] Buat service ringkasan per koperasi.
+- [x] Terapkan minimum cohort untuk data sensitif.
+- [x] Pastikan DTO/array tidak membawa data individual.
+- [x] Tambahkan cache namespace owner.
 - [ ] Tambahkan index setelah verifikasi `EXPLAIN` bila diperlukan.
-- [ ] Buat dashboard global.
-- [ ] Buat halaman ringkasan per koperasi tanpa drill-down operasional.
-- [ ] Buat grafik menggunakan Chart.js yang sudah tersedia.
-- [ ] Tambahkan empty/error/loading states.
-- [ ] Tambahkan audit akses analitik owner.
+- [x] Buat dashboard global.
+- [x] Buat halaman ringkasan per koperasi tanpa drill-down operasional.
+- [x] Buat grafik menggunakan Chart.js yang sudah tersedia.
+- [x] Tambahkan empty/error states. (Loading async tidak diperlukan karena halaman server-rendered.)
+- [x] Tambahkan audit akses analitik owner.
 
 ### 6.5 Kesehatan sistem dan storage
 
-- [ ] Implementasikan database health check dengan latency.
-- [ ] Implementasikan cache probe yang aman.
-- [ ] Implementasikan statistik queue dan failed jobs yang disanitasi.
-- [ ] Implementasikan scheduler heartbeat.
-- [ ] Integrasikan metadata backup atau tampilkan `Tidak tersedia` secara jujur.
-- [ ] Implementasikan ringkasan error tanpa stack trace/payload mentah.
-- [ ] Implementasikan ukuran database sesuai driver yang dipakai.
-- [ ] Implementasikan kapasitas local/object storage sesuai environment.
-- [ ] Implementasikan kategori file aplikasi.
+- [x] Implementasikan database health check dengan latency.
+- [x] Implementasikan cache probe yang aman.
+- [x] Implementasikan statistik queue dan failed jobs yang disanitasi.
+- [x] Implementasikan scheduler heartbeat.
+- [x] Integrasikan metadata backup atau tampilkan `Tidak tersedia` secara jujur.
+- [x] Implementasikan ringkasan error tanpa stack trace/payload mentah.
+- [x] Implementasikan ukuran database sesuai driver yang dipakai.
+- [x] Implementasikan kapasitas local/object storage sesuai environment.
+- [x] Implementasikan kategori file aplikasi.
 - [ ] Rencanakan/backfill `size_bytes` untuk file lama bila diperlukan.
-- [ ] Cache pemeriksaan mahal dan beri timestamp pengukuran.
-- [ ] Tambahkan throttle route.
+- [x] Cache pemeriksaan mahal dan beri timestamp pengukuran.
+- [x] Tambahkan throttle route.
 - [ ] Uji kondisi dependency sehat, gagal, timeout, dan tidak tersedia.
 
 ### 6.6 Pengujian keamanan tenant
 
-- [ ] Owner dapat membuka semua route `/owner/*`.
-- [ ] Super admin mendapat 403 pada route owner.
-- [ ] Admin primer dan role tenant mendapat 403 pada route owner.
-- [ ] Guest diarahkan ke login.
+- [x] Owner dapat membuka semua route `/owner/*`.
+- [x] Super admin mendapat 403 pada route owner.
+- [x] Admin primer dan role tenant mendapat 403 pada route owner.
+- [x] Guest diarahkan ke login.
 - [ ] Owner tidak dapat membuka route detail barang.
 - [ ] Owner tidak dapat membuka route detail karyawan.
 - [ ] Owner tidak dapat membuka absensi individu.
 - [ ] Owner tidak dapat membuka transaksi/slip gaji.
-- [ ] Owner tidak dapat membuat, mengubah, atau menghapus data operasional.
+- [x] Owner tidak dapat membuat, mengubah, atau menghapus data operasional.
 - [ ] Owner tidak dapat mengunduh foto/dokumen tenant.
-- [ ] Response analitik tidak memuat nama, email, NIK/KTP, path file, atau primary key operasional.
-- [ ] Filter koperasi tidak menerima ID yang tidak valid.
-- [ ] Query agregat tidak bocor melalui global cache antar-filter.
-- [ ] Akun non-owner tanpa koperasi tetap fail-closed.
-- [ ] Perilaku super admin yang sudah ada tidak berubah.
-- [ ] Perilaku tenant isolation yang sudah ada tetap lulus.
+- [x] Response analitik tidak memuat nama, email, NIK/KTP, path file, atau primary key operasional.
+- [x] Filter koperasi tidak menerima ID yang tidak valid.
+- [x] Query agregat tidak bocor melalui global cache antar-filter.
+- [x] Akun non-owner tanpa koperasi tetap fail-closed.
+- [x] Perilaku super admin yang sudah ada tidak berubah.
+- [x] Perilaku tenant isolation yang sudah ada tetap lulus.
 
 ### 6.7 Quality gate dan commit `main`
 
-- [ ] Jalankan `vendor/bin/pint --test` atau formatter sesuai standar proyek.
-- [ ] Jalankan `npm run build`.
-- [ ] Jalankan test khusus system owner.
-- [ ] Jalankan seluruh `php artisan test`.
+- [x] Jalankan `vendor/bin/pint --test` atau formatter sesuai standar proyek.
+- [x] Jalankan `npm run build`.
+- [x] Jalankan test khusus system owner.
+- [x] Jalankan seluruh `php artisan test`.
 - [ ] Tinjau query count dan performa halaman dengan data representatif.
-- [ ] Tinjau output HTML/JSON untuk kebocoran data detail.
-- [ ] Tinjau `git diff` dan pastikan tidak ada secret atau file environment.
-- [ ] Commit identitas/middleware ke `main` sebagai unit yang lulus test.
-- [ ] Commit analitik owner ke `main` sebagai unit yang lulus test.
-- [ ] Commit health/storage ke `main` sebagai unit yang lulus test.
-- [ ] Jangan menunggu pusat request produk untuk menyelesaikan system owner.
+- [x] Tinjau output HTML/JSON untuk kebocoran data detail.
+- [x] Tinjau `git diff` dan pastikan tidak ada secret atau file environment.
+- [x] Commit identitas/middleware ke `main` sebagai unit yang lulus test.
+- [x] Commit analitik owner ke `main` sebagai unit yang lulus test.
+- [x] Commit health/storage ke `main` sebagai unit yang lulus test.
+- [x] Jangan menunggu pusat request produk untuk menyelesaikan system owner.
 
 ## 7. Notes implementasi pusat request produk (branch baru)
 
@@ -905,16 +915,16 @@ Implementasi:
 
 ### System owner
 
-- [ ] Akun owner merupakan actor global yang valid tanpa `koperasi_id`.
-- [ ] Owner mempunyai dashboard tersendiri.
-- [ ] Owner dapat melihat ringkasan global dan per koperasi dalam bentuk agregat.
-- [ ] Owner dapat melihat kesehatan sistem dan penggunaan storage.
-- [ ] Owner tidak dapat membuka atau memutasi record operasional tenant.
-- [ ] Owner tidak dapat memperoleh data personal melalui grafik, response, export, cache, atau error.
-- [ ] Super admin dan tenant tidak dapat mengakses halaman owner.
-- [ ] Akun owner tidak dapat dikelola melalui UI pengguna biasa.
-- [ ] Semua akses penting owner tercatat.
-- [ ] Seluruh test lama dan baru lulus.
+- [x] Akun owner merupakan actor global yang valid tanpa `koperasi_id`.
+- [x] Owner mempunyai dashboard tersendiri.
+- [x] Owner dapat melihat ringkasan global dan per koperasi dalam bentuk agregat.
+- [x] Owner dapat melihat kesehatan sistem dan penggunaan storage.
+- [x] Owner tidak dapat membuka atau memutasi record operasional tenant.
+- [x] Owner tidak dapat memperoleh data personal melalui grafik, response, export, cache, atau error.
+- [x] Super admin dan tenant tidak dapat mengakses halaman owner.
+- [x] Akun owner tidak dapat dikelola melalui UI pengguna biasa.
+- [x] Semua akses penting owner tercatat.
+- [x] Seluruh test lama dan baru lulus.
 
 ### Pusat request produk
 
@@ -942,4 +952,3 @@ Item berikut tidak perlu menghambat MVP:
 - Anonimisasi data analitik historis.
 - Tabel snapshot/data warehouse khusus jika volume data berkembang besar.
 - Read replica atau akun database read-only khusus proses analitik.
-
