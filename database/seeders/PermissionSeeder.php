@@ -11,9 +11,10 @@ use Spatie\Permission\PermissionRegistrar;
 class PermissionSeeder extends Seeder
 {
     /**
-     * Seed katalog permission + role `super_admin` global. Super admin hanya
-     * mendapat akses control-plane dan baca lintas koperasi; permission
-     * mutasi operasional tetap milik role tenant seperti admin_primer.
+     * Seed katalog permission serta role platform global. System owner tidak
+     * menerima permission tenant; area owner dikunci dengan middleware
+     * identitas. Super admin hanya mendapat akses control-plane dan baca
+     * lintas koperasi.
      */
     public function run(): void
     {
@@ -30,6 +31,27 @@ class PermissionSeeder extends Seeder
             ->where('guard_name', 'web')
             ->whereIn('name', $semuaPermission)
             ->get();
+
+        $systemOwnerRoles = Role::query()
+            ->where('name', 'system_owner')
+            ->where('guard_name', 'web')
+            ->whereNull('koperasi_id')
+            ->get();
+
+        if ($systemOwnerRoles->count() > 1) {
+            throw new \RuntimeException('Ditemukan lebih dari satu role global system_owner untuk guard web.');
+        }
+
+        $systemOwnerRole = $systemOwnerRoles->first();
+
+        if (! $systemOwnerRole) {
+            $systemOwnerRole = new Role(['name' => 'system_owner', 'guard_name' => 'web']);
+            $systemOwnerRole->koperasi_id = null;
+            $systemOwnerRole->save();
+        }
+
+        // Jangan pernah mewariskan katalog permission tenant kepada owner.
+        $systemOwnerRole->syncPermissions([]);
 
         $superAdminRole = Role::query()
             ->where('name', 'super_admin')

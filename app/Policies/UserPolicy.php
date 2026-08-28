@@ -40,6 +40,10 @@ class UserPolicy
      */
     private function canManage(User $user, User $model): bool
     {
+        if ($user->isSystemOwner() || $model->isSystemOwner()) {
+            return false;
+        }
+
         if ($user->isSuperAdmin()) {
             return true;
         }

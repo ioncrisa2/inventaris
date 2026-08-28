@@ -20,15 +20,16 @@ use Spatie\Permission\Models\Role as SpatieRole;
  */
 class Role extends SpatieRole
 {
-    public const SYSTEM_NAMES = ['super_admin', 'admin_primer'];
+    public const SYSTEM_NAMES = ['system_owner', 'super_admin', 'admin_primer'];
 
     /**
-     * Nama role sistem (super_admin, admin_primer) sengaja snake_case di
+     * Nama role sistem sengaja snake_case di
      * kode/DB, tapi harus tampil ramah-baca di UI. Role custom bikinan
      * super_admin per koperasi (mis. "Staff", "Kepala Gudang") sudah nama
      * manusiawi apa adanya, jadi cukup ditampilkan langsung.
      */
     private const DISPLAY_NAMES = [
+        'system_owner' => 'System Owner',
         'super_admin' => 'Super Admin',
         'admin_primer' => 'Admin Primer',
     ];
@@ -46,6 +47,11 @@ class Role extends SpatieRole
     public function isSuperAdminRole(): bool
     {
         return $this->name === 'super_admin' && $this->koperasi_id === null;
+    }
+
+    public function isSystemOwnerRole(): bool
+    {
+        return $this->name === 'system_owner' && $this->koperasi_id === null;
     }
 
     public function isAdminPrimerRole(): bool

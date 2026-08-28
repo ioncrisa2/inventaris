@@ -10,7 +10,7 @@ class EnsureKoperasiActive
 {
     /**
      * Blokir akses kalau koperasi milik user sudah nonaktif/lewat masa
-     * aktif. Hanya super_admin yang sah boleh tidak memiliki koperasi;
+     * aktif. Hanya akun platform yang sah boleh tidak memiliki koperasi;
      * akun tenant tanpa koperasi harus ditolak secara fail-closed.
      */
     public function handle(Request $request, Closure $next): Response
@@ -21,7 +21,7 @@ class EnsureKoperasiActive
             return $next($request);
         }
 
-        if ($user->isSuperAdmin()) {
+        if ($user->isPlatformAccount()) {
             return $next($request);
         }
 

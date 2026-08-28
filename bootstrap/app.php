@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureIsSuperAdmin;
+use App\Http\Middleware\EnsureIsSystemOwner;
 use App\Http\Middleware\EnsureKoperasiActive;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -16,16 +17,18 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
+    ->withCommands()
     ->withMiddleware(function (Middleware $middleware): void {
 
-	$middleware->trustProxies(at: '*');        
+        $middleware->trustProxies(at: '*');
 
-	$middleware->alias([
+        $middleware->alias([
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
             'koperasi.active' => EnsureKoperasiActive::class,
             'super_admin' => EnsureIsSuperAdmin::class,
+            'system_owner' => EnsureIsSystemOwner::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

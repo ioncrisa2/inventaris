@@ -21,7 +21,11 @@ class StoreUserRequest extends FormRequest
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')],
             'password' => ['required', Password::defaults()],
             'unit_kerja_id' => ['nullable', TenantRule::exists('unit_kerja')],
-            'role_id' => ['required', 'integer', TenantRule::exists('roles')],
+            'role_id' => [
+                'required',
+                'integer',
+                TenantRule::exists('roles')->whereNot('name', 'system_owner'),
+            ],
         ];
     }
 }

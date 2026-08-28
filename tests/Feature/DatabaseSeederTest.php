@@ -32,7 +32,7 @@ test('database seeder creates a complete usable demo dataset', function () {
 
     expect(SeederDataset::counts())->toBe([
         'permissions' => 70,
-        'roles' => 3,
+        'roles' => 4,
         'users' => 8,
         'units' => 6,
         'employees' => 15,

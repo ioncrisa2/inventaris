@@ -126,9 +126,13 @@ class UserController extends Controller
             return back()->with('error', 'Pilihan memuat akun Anda sendiri. Batalkan pilihan tersebut sebelum menghapus.');
         }
 
-        DB::transaction(fn () => $users->each(
-            fn (User $user) => $this->userService->destroy($request->user(), $user)
-        ));
+        try {
+            DB::transaction(fn () => $users->each(
+                fn (User $user) => $this->userService->destroy($request->user(), $user)
+            ));
+        } catch (\DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
         return redirect()->route('pengguna.index')
             ->with('success', $users->count().' pengguna berhasil dihapus.');
@@ -143,6 +147,7 @@ class UserController extends Controller
     private function selectableRoles(User $actor, ?int $koperasiId = null)
     {
         return CurrentTenant::scopeQuery(Role::query())
+            ->where('name', '!=', 'system_owner')
             ->with('koperasi:id,nama')
             ->when(
                 $actor->isSuperAdmin(),
@@ -156,7 +161,7 @@ class UserController extends Controller
             )
             ->when(
                 ! $actor->isSuperAdmin(),
-                fn ($query) => $query->whereNotIn('name', ['super_admin', 'admin_primer']),
+                fn ($query) => $query->whereNotIn('name', Role::SYSTEM_NAMES),
             )
             ->when(
                 $actor->isSuperAdmin() && $koperasiId !== null,

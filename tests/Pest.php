@@ -80,6 +80,26 @@ function superAdminUser(array $attributes = []): User
     return $user;
 }
 
+/** Buat system owner global tanpa permission tenant untuk feature test. */
+function systemOwnerUser(array $attributes = []): User
+{
+    test()->seed(PermissionSeeder::class);
+
+    $role = Role::query()
+        ->where('name', 'system_owner')
+        ->where('guard_name', 'web')
+        ->whereNull('koperasi_id')
+        ->firstOrFail();
+
+    $user = User::factory()->create($attributes);
+    $user->koperasi_id = null;
+    $user->unit_kerja_id = null;
+    $user->save();
+    $user->syncRoles([$role]);
+
+    return $user;
+}
+
 /**
  * Buat user dengan role Staff (akses terbatas, lihat DemoStaffRoleSeeder
  * untuk daftar permission-nya) untuk test yang memverifikasi pembatasan

@@ -14,6 +14,11 @@ class UserRepository
     public function paginate(array $filters, int $perPage = 10): LengthAwarePaginator
     {
         return CurrentTenant::scopeQuery(User::query())
+            // Akun owner hanya diprovisikan melalui command server dan tidak
+            // pernah menjadi bagian dari UI manajemen pengguna biasa.
+            ->whereDoesntHave('roles', fn ($query) => $query
+                ->where('roles.name', 'system_owner')
+                ->whereNull('roles.koperasi_id'))
             ->with([
                 'koperasi' => fn ($query) => $query
                     ->select('id', 'nama')

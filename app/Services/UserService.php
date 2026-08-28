@@ -107,6 +107,10 @@ class UserService
      */
     private function ensureCanManage(User $actor, User $target): void
     {
+        if ($actor->isSystemOwner() || $target->isSystemOwner()) {
+            throw new \DomainException('Akun system owner tidak dapat dikelola melalui manajemen pengguna.');
+        }
+
         if ($actor->isSuperAdmin()) {
             return;
         }
@@ -179,6 +183,10 @@ class UserService
         }
 
         $role = $query->first() ?? throw RoleDoesNotExist::withId($roleId, 'web');
+
+        if ($role->name === 'system_owner') {
+            throw new \DomainException('Role system owner hanya dapat ditetapkan melalui command provisioning.');
+        }
 
         if ($role->koperasi_id === null && ! $role->isSuperAdminRole()) {
             throw new \DomainException('Role global tanpa koperasi tidak dapat ditetapkan kepada pengguna.');

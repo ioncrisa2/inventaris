@@ -87,6 +87,33 @@ class User extends Authenticatable
         );
     }
 
+    /**
+     * System owner adalah akun global untuk observability dan pengelolaan
+     * produk. Identitas ini tidak memberi bypass tenant maupun mewarisi
+     * permission super admin.
+     */
+    public function isSystemOwner(): bool
+    {
+        if ($this->koperasi_id !== null) {
+            return false;
+        }
+
+        $this->loadMissing('roles');
+
+        return $this->roles->contains(
+            fn (Role $role) => $role->isSystemOwnerRole(),
+        );
+    }
+
+    /**
+     * Akun global yang sah. Hanya gunakan helper ini untuk aturan yang memang
+     * berlaku bagi owner dan super admin, bukan sebagai bypass data tenant.
+     */
+    public function isPlatformAccount(): bool
+    {
+        return $this->isSystemOwner() || $this->isSuperAdmin();
+    }
+
     public function isAdminPrimer(): bool
     {
         if ($this->koperasi_id === null) {
@@ -121,7 +148,7 @@ class User extends Authenticatable
     /**
      * Check if the user belongs to a tenant (has a valid koperasi_id).
      * Used for onboarding tour eligibility: includes admin_primer and all
-     * tenant roles, excludes super_admin and tenantless accounts.
+     * tenant roles, excludes platform accounts and tenantless accounts.
      */
     public function isTenantUser(): bool
     {
