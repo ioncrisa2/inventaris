@@ -18,7 +18,7 @@ Aturan pengerjaan:
 - Branch pusat request harus berawal dari commit `main` yang sudah memuat actor `system_owner` agar tidak menduplikasi logika identitas dan middleware.
 - Dokumen ini boleh ikut berada di `main` sebagai rencana induk kedua pekerjaan.
 
-### Status implementasi per 28 Agustus 2026
+#### Status implementasi per 28 Agustus 2026
 
 Fase `system_owner` telah selesai di `main` melalui commit berikut:
 
@@ -26,7 +26,17 @@ Fase `system_owner` telah selesai di `main` melalui commit berikut:
 - `d8e579a` — analitik agregat global/per koperasi serta workspace owner.
 - `3ff3388` — kesehatan sistem, scheduler heartbeat, dan pengukuran storage.
 
-Quality gate terakhir: 438 test lulus dengan 2.447 assertion, build Vite lulus, route/config cache lulus, dan `git diff --check` bersih. Integrasi backup, counter error eksternal, dan telemetry mail bersifat opt-in; UI menampilkan `Tidak tersedia` sampai sumber metadata nyata dikonfigurasi. Backfill `size_bytes`, MFA/passkey, IP allowlist, dan optimasi index berbasis `EXPLAIN` tetap menjadi pekerjaan lanjutan.
+Quality gate terakhir: 438 test lulus dengan 2.447 assertion, build Vite lulus, route/config cache lulus, dan `git diff --check` bersih. Integrasi backup, counter error eksternal, dan telemetri mail bersifat opt-in; UI menampilkan `Tidak tersedia` sampai sumber metadata nyata dikonfigurasi. Backfill `size_bytes`, MFA/passkey, IP allowlist, dan optimasi index berbasis `EXPLAIN` tetap menjadi pekerjaan lanjutan.
+
+Fase `feature/product-request-center` telah selesai melalui commit berikut:
+
+- `069f64c` — migrations, enums, models, policy, repositories, config, rules.
+- `e04ff19` — services, controllers, requests, events, listeners, notifications.
+- `84aae38` — views tenant + owner + notifikasi, CSS product request.
+- `e96f8b1` — routes, navigasi, permission catalog, integrasi dashboard owner.
+- `17cece0` — 6 test file baru, update Pest helpers dan DatabaseSeederTest.
+
+Quality gate terakhir: 474 test lulus dengan 2.639 assertion, build Vite lulus, `pint --test` bersih, dan `git diff --check` bersih. Keputusan desain: role tenant custom melihat hanya request milik sendiri (admin_primer melihat seluruh koperasi); batas lampiran 3 file / 5 MB per file / 20 MB total per request; notifikasi via database (email opt-in di masa depan).
 
 ## 2. Tujuan produk
 
@@ -782,91 +792,91 @@ Implementasi:
 
 ### 8.1 Git dan persiapan
 
-- [ ] Pastikan checklist system owner wajib telah selesai di `main`.
-- [ ] Pastikan `main` bersih dan seluruh test lulus.
-- [ ] Buat branch `feature/product-request-center` dari `main` terbaru.
-- [ ] Jangan melakukan implementasi request produk langsung di `main`.
-- [ ] Tetapkan apakah role tenant custom melihat request sendiri atau seluruh request koperasi.
-- [ ] Tetapkan batas ukuran, jumlah, MIME, dan retensi lampiran.
-- [ ] Tetapkan kanal notifikasi MVP.
+- [x] Pastikan checklist system owner wajib telah selesai di `main`.
+- [x] Pastikan `main` bersih dan seluruh test lulus.
+- [x] Buat branch `feature/product-request-center` dari `main` terbaru.
+- [x] Jangan melakukan implementasi request produk langsung di `main`.
+- [x] Tetapkan apakah role tenant custom melihat request sendiri atau seluruh request koperasi. (Role custom: hanya milik sendiri; admin_primer: seluruh koperasi.)
+- [x] Tetapkan batas ukuran, jumlah, MIME, dan retensi lampiran. (3 file / 5 MB per file / 20 MB total per request; allowlist: pdf, jpg, jpeg, png, gif, webp, doc, docx, xls, xlsx, txt, zip.)
+- [x] Tetapkan kanal notifikasi MVP. (Database notification; email opt-in di masa depan.)
 
 ### 8.2 Database dan domain
 
-- [ ] Buat migration `product_requests`.
-- [ ] Buat migration messages.
-- [ ] Buat migration attachments.
-- [ ] Buat migration immutable status histories.
-- [ ] Tambahkan foreign key, delete behavior, unique constraint, dan index.
-- [ ] Buat enum type/status/priority.
-- [ ] Buat model dan relasi.
-- [ ] Terapkan tenant scope secara fail-closed.
-- [ ] Buat generator nomor tiket yang aman terhadap concurrency.
-- [ ] Tambahkan permission ke `PermissionCatalog`.
-- [ ] Tambahkan permission default yang sesuai ke template admin primer.
-- [ ] Pastikan super admin tidak otomatis menjadi pengelola request owner kecuali diputuskan kemudian.
+- [x] Buat migration `product_requests`.
+- [x] Buat migration messages.
+- [x] Buat migration attachments.
+- [x] Buat migration immutable status histories.
+- [x] Tambahkan foreign key, delete behavior, unique constraint, dan index.
+- [x] Buat enum type/status/priority.
+- [x] Buat model dan relasi.
+- [x] Terapkan tenant scope secara fail-closed.
+- [x] Buat generator nomor tiket yang aman terhadap concurrency.
+- [x] Tambahkan permission ke `PermissionCatalog`.
+- [x] Tambahkan permission default yang sesuai ke template admin primer.
+- [x] Pastikan super admin tidak otomatis menjadi pengelola request owner kecuali diputuskan kemudian.
 
 ### 8.3 Backend
 
-- [ ] Buat request validation pengajuan.
-- [ ] Buat request validation balasan/lampiran.
-- [ ] Buat policy per aksi dan per record.
-- [ ] Buat repository tenant dan owner dengan scope eksplisit.
-- [ ] Buat service transaction untuk membuat request + history awal.
-- [ ] Buat service balasan + update `last_activity_at`.
-- [ ] Buat transition service status.
-- [ ] Buat aksi duplicate dan relasi sumber.
-- [ ] Buat catatan internal owner.
-- [ ] Terapkan transactional file storage.
-- [ ] Buat endpoint download attachment terotorisasi.
-- [ ] Buat event/listener/notification.
-- [ ] Tambahkan audit aksi owner.
+- [x] Buat request validation pengajuan.
+- [x] Buat request validation balasan/lampiran.
+- [x] Buat policy per aksi dan per record.
+- [x] Buat repository tenant dan owner dengan scope eksplisit.
+- [x] Buat service transaction untuk membuat request + history awal.
+- [x] Buat service balasan + update `last_activity_at`.
+- [x] Buat transition service status.
+- [x] Buat aksi duplicate dan relasi sumber.
+- [x] Buat catatan internal owner.
+- [x] Terapkan transactional file storage.
+- [x] Buat endpoint download attachment terotorisasi.
+- [x] Buat event/listener/notification.
+- [x] Tambahkan audit aksi owner.
 
 ### 8.4 Frontend
 
-- [ ] Tambahkan menu Request Produk untuk actor tenant yang memiliki permission.
-- [ ] Tambahkan menu Request Produk pada navigasi owner.
-- [ ] Buat daftar/filter/paginasi tenant.
-- [ ] Buat form pengajuan yang aksesibel.
-- [ ] Buat detail/timeline dan balasan.
-- [ ] Buat inbox/filter owner.
-- [ ] Buat panel triase owner.
-- [ ] Bedakan catatan internal dan balasan publik secara tegas.
-- [ ] Buat empty, loading, validation, forbidden, dan error states.
-- [ ] Pastikan UI mobile/responsive.
+- [x] Tambahkan menu Request Produk untuk actor tenant yang memiliki permission.
+- [x] Tambahkan menu Request Produk pada navigasi owner.
+- [x] Buat daftar/filter/paginasi tenant.
+- [x] Buat form pengajuan yang aksesibel.
+- [x] Buat detail/timeline dan balasan.
+- [x] Buat inbox/filter owner.
+- [x] Buat panel triase owner.
+- [x] Bedakan catatan internal dan balasan publik secara tegas.
+- [x] Buat empty, loading, validation, forbidden, dan error states.
+- [x] Pastikan UI mobile/responsive.
 
 ### 8.5 Pengujian
 
-- [ ] Admin primer dapat membuat dan melihat request koperasinya.
-- [ ] Role tanpa permission tidak dapat mengakses fitur.
-- [ ] Anggota dengan permission dapat membuat request sesuai policy.
-- [ ] Tenant A tidak dapat melihat, membalas, atau mengunduh lampiran Tenant B.
-- [ ] ID yang ditebak tetap menghasilkan 403/404 yang aman.
-- [ ] Owner dapat melihat dan menanggapi seluruh request.
-- [ ] Owner dapat membuat catatan internal.
-- [ ] Tenant tidak dapat mendeteksi isi maupun keberadaan catatan internal.
-- [ ] Transisi status ilegal ditolak.
-- [ ] History status selalu tercatat dan tidak dapat diedit.
-- [ ] Nomor tiket tetap unik pada request paralel.
-- [ ] File dengan MIME/ukuran tidak valid ditolak.
-- [ ] File storage dibersihkan jika transaction database gagal.
-- [ ] Row database tetap konsisten jika operasi file gagal.
-- [ ] Download attachment membutuhkan otorisasi.
-- [ ] Notifikasi tidak terkirim ke tenant yang salah.
-- [ ] Kegagalan queue/email tidak membatalkan request.
-- [ ] Statistik owner tidak membocorkan isi catatan internal atau data personal lain.
-- [ ] Seluruh regression test tenant isolation dan permission tetap lulus.
+- [x] Admin primer dapat membuat dan melihat request koperasinya.
+- [x] Role tanpa permission tidak dapat mengakses fitur.
+- [x] Anggota dengan permission dapat membuat request sesuai policy.
+- [x] Tenant A tidak dapat melihat, membalas, atau mengunduh lampiran Tenant B.
+- [x] ID yang ditebak tetap menghasilkan 403/404 yang aman.
+- [x] Owner dapat melihat dan menanggapi seluruh request.
+- [x] Owner dapat membuat catatan internal.
+- [x] Tenant tidak dapat mendeteksi isi maupun keberadaan catatan internal.
+- [x] Transisi status ilegal ditolak.
+- [x] History status selalu tercatat dan tidak dapat diedit.
+- [x] Nomor tiket tetap unik pada request paralel.
+- [x] File dengan MIME/ukuran tidak valid ditolak.
+- [x] File storage dibersihkan jika transaction database gagal.
+- [x] Row database tetap konsisten jika operasi file gagal.
+- [x] Download attachment membutuhkan otorisasi.
+- [x] Notifikasi tidak terkirim ke tenant yang salah.
+- [x] Kegagalan queue/email tidak membatalkan request.
+- [x] Statistik owner tidak membocorkan isi catatan internal atau data personal lain.
+- [x] Seluruh regression test tenant isolation dan permission tetap lulus.
 
 ### 8.6 Penyelesaian branch
 
-- [ ] Jalankan formatter.
-- [ ] Jalankan `npm run build`.
-- [ ] Jalankan test khusus pusat request.
-- [ ] Jalankan seluruh `php artisan test`.
+- [x] Jalankan formatter. (`pint` bersih; 8 file pre-existing juga difix.)
+- [x] Jalankan `npm run build`. (Vite 8.1.3, 420 KB CSS + 415 KB JS, 273 ms.)
+- [x] Jalankan test khusus pusat request. (474 lulus, 2.639 assertion.)
+- [x] Jalankan seluruh `php artisan test`. (474 lulus, 2.639 assertion.)
 - [ ] Tinjau migration rollback pada database uji.
 - [ ] Tinjau index dan query list dengan data representatif.
-- [ ] Tinjau seluruh diff untuk secret/path lokal.
+- [x] Tinjau seluruh diff untuk secret/path lokal. (`git diff --check` bersih.)
 - [ ] Perbarui dokumentasi pengguna dan panduan singkat.
-- [ ] Siapkan ringkasan perubahan sebelum branch digabung ke `main`.
+- [x] Siapkan ringkasan perubahan sebelum branch digabung ke `main`. (Lihat `docs/pusat-request-produk.md`.)
 
 ## 9. Urutan implementasi yang direkomendasikan
 
