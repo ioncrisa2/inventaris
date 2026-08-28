@@ -34,6 +34,16 @@ class NavigationMenu
             ],
             [
                 'type' => 'group',
+                'key' => 'akun-saya',
+                'label' => 'Akun Saya',
+                'items' => [
+                    ['label' => 'Data Saya', 'icon' => 'bi-person-vcard', 'route' => 'me.profile', 'active_routes' => ['me.profile'], 'permission' => null, 'tenant_only' => true],
+                    ['label' => 'Absensi Saya', 'icon' => 'bi-calendar-check', 'route' => 'me.attendance', 'active_routes' => ['me.attendance'], 'permission' => null, 'tenant_only' => true],
+                    ['label' => 'Slip Gaji Saya', 'icon' => 'bi-receipt', 'route' => 'me.salary-slips.index', 'active_routes' => ['me.salary-slips.*'], 'permission' => null, 'tenant_only' => true],
+                ],
+            ],
+            [
+                'type' => 'group',
                 'key' => 'sdm-kehadiran',
                 'label' => 'SDM & Kehadiran',
                 'items' => [
@@ -126,6 +136,8 @@ class NavigationMenu
                     ['label' => 'Analitik Koperasi', 'icon' => 'bi-graph-up-arrow', 'route' => 'owner.analytics', 'active_routes' => ['owner.analytics', 'owner.analytics.koperasi'], 'permission' => null],
                     ['label' => 'Kesehatan Sistem', 'icon' => 'bi-heart-pulse', 'route' => 'owner.system-health', 'active_routes' => ['owner.system-health'], 'permission' => null],
                     ['label' => 'Penyimpanan', 'icon' => 'bi-device-ssd', 'route' => 'owner.storage', 'active_routes' => ['owner.storage'], 'permission' => null],
+                    ['label' => 'Maintenance', 'icon' => 'bi-tools', 'route' => 'owner.maintenance.edit', 'active_routes' => ['owner.maintenance.*'], 'permission' => null],
+                    ['label' => 'Pengumuman', 'icon' => 'bi-megaphone', 'route' => 'owner.announcements.index', 'active_routes' => ['owner.announcements.*'], 'permission' => null],
                 ],
             ],
         ];
@@ -181,6 +193,10 @@ class NavigationMenu
      */
     private static function isVisibleTo(User $user, array $item): bool
     {
+        if (($item['tenant_only'] ?? false) && ! $user->isTenantUser()) {
+            return false;
+        }
+
         if ($item['super_admin_only'] ?? false) {
             return $user->isSuperAdmin();
         }

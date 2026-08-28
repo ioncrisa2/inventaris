@@ -9,7 +9,9 @@
     $tahunBerikutnya = $bulan === 12 ? $tahun + 1 : $tahun;
 
     $namaHariSingkat = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
-    $canManageAbsensi = auth()->user()->can('absensi.create');
+    $personalMode = $personalMode ?? false;
+    $canManageAbsensi = ! $personalMode && auth()->user()->can('absensi.create');
+    $attendanceRoute = $personalMode ? 'me.attendance' : 'absensi.show';
 @endphp
 
 @section('content')
@@ -21,7 +23,7 @@
                 <x-badge class="align-middle" :color="\App\Models\Karyawan::STATUS_COLORS[$karyawan->status_karyawan] ?? 'bg-secondary'">{{ $karyawan->status_karyawan }}</x-badge>
             </x-slot:title>
             <x-slot:actions>
-                <a href="{{ route('absensi.index') }}" class="btn btn-light">
+                <a href="{{ $personalMode ? route('me.profile') : route('absensi.index') }}" class="btn btn-light">
                     <i class="bi bi-arrow-left"></i>
                     Kembali
                 </a>
@@ -64,12 +66,12 @@
         <div class="card">
             <div class="card-header d-flex align-items-center justify-content-between">
                 <a class="btn btn-sm btn-outline-secondary"
-                    href="{{ route('absensi.show', ['karyawan' => $karyawan, 'bulan' => $bulanSebelumnya, 'tahun' => $tahunSebelumnya]) }}">
+                    href="{{ $personalMode ? route($attendanceRoute, ['bulan' => $bulanSebelumnya, 'tahun' => $tahunSebelumnya]) : route($attendanceRoute, ['karyawan' => $karyawan, 'bulan' => $bulanSebelumnya, 'tahun' => $tahunSebelumnya]) }}">
                     <i class="bi bi-chevron-left"></i>
                 </a>
                 <h2 class="mb-0 h5">{{ $namaBulan }} {{ $tahun }}</h2>
                 <a class="btn btn-sm btn-outline-secondary"
-                    href="{{ route('absensi.show', ['karyawan' => $karyawan, 'bulan' => $bulanBerikutnya, 'tahun' => $tahunBerikutnya]) }}">
+                    href="{{ $personalMode ? route($attendanceRoute, ['bulan' => $bulanBerikutnya, 'tahun' => $tahunBerikutnya]) : route($attendanceRoute, ['karyawan' => $karyawan, 'bulan' => $bulanBerikutnya, 'tahun' => $tahunBerikutnya]) }}">
                     <i class="bi bi-chevron-right"></i>
                 </a>
             </div>
@@ -150,7 +152,7 @@
 
     </x-app-page>
 
-    @can('absensi.create')
+    @if(! $personalMode && auth()->user()->can('absensi.create'))
     <x-modal-form id="modalAbsensi" :data-auto-show-modal="$errors->any()" :data-libur-allowed-statuses="json_encode(\App\Models\Absensi::LIBUR_ALLOWED_STATUSES)" dialog-class="modal-dialog-centered"
         :action="route('absensi.store', $karyawan)" submit-label="Simpan Absensi" submit-variant="success">
         <x-slot:header>
@@ -178,5 +180,5 @@
             @enderror
         </div>
     </x-modal-form>
-    @endcan
+    @endif
 @endsection

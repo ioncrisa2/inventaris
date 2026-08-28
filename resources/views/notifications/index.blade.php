@@ -28,8 +28,8 @@
                     <button class="notification-row {{ $notification->read_at ? '' : 'notification-row--unread' }}" type="submit">
                         <span class="notification-row__icon"><i class="bi bi-chat-square-text" aria-hidden="true"></i></span>
                         <span class="notification-row__body">
-                            <strong>{{ \App\Notifications\ProductRequestUpdated::eventLabel($notification->data['event'] ?? '') }}</strong>
-                            <span>{{ $notification->data['ticket_number'] ?? 'Request produk' }} · {{ $notification->data['status_label'] ?? 'Diperbarui' }}</span>
+                            <strong>{{ $notification->data['title'] ?? \App\Notifications\ProductRequestUpdated::eventLabel($notification->data['event'] ?? '') }}</strong>
+                            <span>{{ $notification->data['body'] ?? (($notification->data['ticket_number'] ?? 'Request produk').' · '.($notification->data['status_label'] ?? 'Diperbarui')) }}</span>
                         </span>
                         <time datetime="{{ $notification->created_at->toIso8601String() }}">{{ $notification->created_at->locale('id')->diffForHumans() }}</time>
                     </button>

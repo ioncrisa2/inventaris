@@ -8,6 +8,7 @@ use App\Models\Karyawan;
 use App\Repositories\KaryawanRepository;
 use App\Repositories\UnitKerjaRepository;
 use App\Services\KaryawanService;
+use App\Services\KaryawanAccountService;
 use App\Support\KaryawanPerubahanSchema;
 use App\Support\PerPage;
 use App\Support\TenantContext;
@@ -19,6 +20,7 @@ class KaryawanController extends Controller
         private KaryawanService $karyawanService,
         private UnitKerjaRepository $unitKerjaRepository,
         private KaryawanRepository $karyawanRepository,
+        private KaryawanAccountService $karyawanAccountService,
     ) {
         $this->authorizeResource(Karyawan::class, 'karyawan');
     }
@@ -75,7 +77,7 @@ class KaryawanController extends Controller
      */
     public function show(Request $request, Karyawan $karyawan)
     {
-        $karyawan->load('koperasi:id,nama', 'unitKerja', 'dokumen', 'atasanLangsung');
+        $karyawan->load('koperasi:id,nama', 'unitKerja', 'dokumen', 'atasanLangsung', 'user.roles');
         if ($request->user()->can('karyawan.riwayat.view')) {
             $karyawan->load([
                 'riwayatPerubahan' => fn ($query) => $query
@@ -95,6 +97,9 @@ class KaryawanController extends Controller
         $atasanOptions = $jenisPerubahanTersedia === []
             ? collect()
             : $this->karyawanRepository->orderedList()->reject(fn ($item) => $item->id === $karyawan->id);
+        $availableAccountUsers = $request->user()->can('manageAccount', $karyawan)
+            ? $this->karyawanAccountService->availableUsers($karyawan)
+            : collect();
 
         return view('karyawan.show', compact(
             'karyawan',
@@ -104,6 +109,7 @@ class KaryawanController extends Controller
             'jenisPerubahanTersedia',
             'unitKerjas',
             'atasanOptions',
+            'availableAccountUsers',
         ));
     }
 

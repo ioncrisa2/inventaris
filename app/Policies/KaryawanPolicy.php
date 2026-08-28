@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Models\Karyawan;
 use App\Models\User;
 
 class KaryawanPolicy
@@ -49,5 +50,12 @@ class KaryawanPolicy
     public function delete(User $user): bool
     {
         return $user->can('karyawan.delete');
+    }
+
+    public function manageAccount(User $user, Karyawan $karyawan): bool
+    {
+        return $user->can('karyawan.akun.update')
+            && $user->koperasi_id !== null
+            && (int) $user->koperasi_id === (int) $karyawan->koperasi_id;
     }
 }

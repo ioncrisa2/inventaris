@@ -5753,3 +5753,6 @@ a.data-quality-item:focus-visible {
         text-align: left;
     }
 }
+.text-prewrap {
+    white-space: pre-wrap;
+}

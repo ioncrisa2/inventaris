@@ -119,6 +119,19 @@ class TransaksiGajiController extends Controller
         ));
     }
 
+    public function publish(Request $request, TransaksiGaji $transaksiGaji)
+    {
+        $this->authorize('publish', $transaksiGaji);
+
+        try {
+            $this->transaksiGajiService->publish($transaksiGaji, $request->user()->id);
+        } catch (\DomainException $exception) {
+            return back()->with('error', $exception->getMessage());
+        }
+
+        return back()->with('success', 'Slip gaji berhasil diterbitkan kepada karyawan.');
+    }
+
     /**
      * Cetak slip gaji karyawan untuk transaksi ini.
      */
@@ -197,7 +210,11 @@ class TransaksiGajiController extends Controller
     {
         $karyawanId = $transaksiGaji->karyawan_id;
 
-        $this->transaksiGajiService->destroy($transaksiGaji);
+        try {
+            $this->transaksiGajiService->destroy($transaksiGaji);
+        } catch (\DomainException $exception) {
+            return back()->with('error', $exception->getMessage());
+        }
 
         return redirect()->route('transaksi-gaji.karyawan', ['karyawan' => $karyawanId])
             ->with('success', 'Transaksi gaji berhasil dihapus.');
@@ -212,9 +229,13 @@ class TransaksiGajiController extends Controller
 
         $karyawanTerlibat = $transaksiGaji->pluck('karyawan_id')->unique();
 
-        DB::transaction(fn () => $transaksiGaji->each(
-            fn (TransaksiGaji $transaksi) => $this->transaksiGajiService->destroy($transaksi)
-        ));
+        try {
+            DB::transaction(fn () => $transaksiGaji->each(
+                fn (TransaksiGaji $transaksi) => $this->transaksiGajiService->destroy($transaksi)
+            ));
+        } catch (\DomainException $exception) {
+            return back()->with('error', $exception->getMessage());
+        }
 
         $redirect = $karyawanTerlibat->count() === 1
             ? redirect()->route('transaksi-gaji.karyawan', ['karyawan' => $karyawanTerlibat->first()])

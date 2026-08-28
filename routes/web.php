@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AbsensiController;
+use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\BarangController;
 use App\Http\Controllers\DashboardBannerController;
 use App\Http\Controllers\DashboardController;
@@ -10,13 +11,19 @@ use App\Http\Controllers\FotoBarangController;
 use App\Http\Controllers\HariLiburController;
 use App\Http\Controllers\HariLiburSinkronisasiController;
 use App\Http\Controllers\KaryawanController;
+use App\Http\Controllers\KaryawanAccountController;
 use App\Http\Controllers\KomponenGajiController;
 use App\Http\Controllers\KoperasiController;
 use App\Http\Controllers\KoperasiExpiredController;
+use App\Http\Controllers\MyAttendanceController;
+use App\Http\Controllers\MyProfileController;
+use App\Http\Controllers\MySalarySlipController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OnboardingTourController;
 use App\Http\Controllers\OwnerAnalyticsController;
+use App\Http\Controllers\Owner\MaintenanceController;
+use App\Http\Controllers\Owner\AnnouncementController as OwnerAnnouncementController;
 use App\Http\Controllers\OwnerProductRequestAttachmentController;
 use App\Http\Controllers\OwnerProductRequestController;
 use App\Http\Controllers\OwnerProductRequestMessageController;
@@ -53,6 +60,12 @@ Route::middleware(['auth', 'system_owner', AuditSystemOwnerAccess::class])
     ->name('owner.')
     ->group(function () {
         Route::get('/', SystemOwnerDashboardController::class)->name('dashboard');
+        Route::get('maintenance', [MaintenanceController::class, 'edit'])->name('maintenance.edit');
+        Route::put('maintenance', [MaintenanceController::class, 'update'])->name('maintenance.update');
+        Route::delete('maintenance', [MaintenanceController::class, 'destroy'])->name('maintenance.destroy');
+        Route::get('announcements', [OwnerAnnouncementController::class, 'index'])->name('announcements.index');
+        Route::post('announcements', [OwnerAnnouncementController::class, 'store'])->name('announcements.store');
+        Route::patch('announcements/{announcement}/publish', [OwnerAnnouncementController::class, 'publish'])->name('announcements.publish');
         Route::get('analytics', [OwnerAnalyticsController::class, 'index'])->name('analytics');
         Route::get('analytics/koperasi/{koperasi}', [OwnerAnalyticsController::class, 'koperasi'])
             ->whereNumber('koperasi')
@@ -83,6 +96,13 @@ Route::middleware(['auth', 'system_owner', AuditSystemOwnerAccess::class])
     });
 
 Route::middleware(['auth', 'koperasi.active'])->group(function () {
+    Route::get('announcements/{announcement}', [AnnouncementController::class, 'show'])->name('announcements.show');
+    Route::prefix('saya')->name('me.')->group(function () {
+        Route::get('/', MyProfileController::class)->name('profile');
+        Route::get('absensi', MyAttendanceController::class)->name('attendance');
+        Route::get('slip-gaji', [MySalarySlipController::class, 'index'])->name('salary-slips.index');
+        Route::get('slip-gaji/{transaksiGaji}', [MySalarySlipController::class, 'show'])->name('salary-slips.show');
+    });
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::patch('/dashboard/banner', DashboardBannerController::class)->name('dashboard.banner.dismiss');
     Route::patch('/onboarding/tour', OnboardingTourController::class)->name('onboarding.tour.finish');
@@ -122,6 +142,8 @@ Route::middleware(['auth', 'koperasi.active'])->group(function () {
     Route::resource('unit-kerja', UnitKerjaController::class)->except(['show', 'create', 'edit']);
 
     Route::delete('karyawan/bulk', [KaryawanController::class, 'bulkDestroy'])->name('karyawan.bulk-destroy');
+    Route::put('karyawan/{karyawan}/akun', [KaryawanAccountController::class, 'update'])->name('karyawan.akun.update');
+    Route::delete('karyawan/{karyawan}/akun', [KaryawanAccountController::class, 'destroy'])->name('karyawan.akun.destroy');
     Route::resource('karyawan', KaryawanController::class)->except(['edit', 'update']);
 
     Route::post('karyawan/{karyawan}/riwayat', [RiwayatKaryawanController::class, 'store'])
@@ -179,6 +201,7 @@ Route::middleware(['auth', 'koperasi.active'])->group(function () {
     Route::get('transaksi-gaji/cetak-massal', [TransaksiGajiController::class, 'cetakMassal'])
         ->name('transaksi-gaji.cetak-massal');
     Route::delete('transaksi-gaji/bulk', [TransaksiGajiController::class, 'bulkDestroy'])->name('transaksi-gaji.bulk-destroy');
+    Route::patch('transaksi-gaji/{transaksiGaji}/terbitkan', [TransaksiGajiController::class, 'publish'])->name('transaksi-gaji.publish');
     Route::get('transaksi-gaji/karyawan/{karyawan}', [TransaksiGajiController::class, 'karyawan'])->name('transaksi-gaji.karyawan');
     Route::resource('transaksi-gaji', TransaksiGajiController::class);
 

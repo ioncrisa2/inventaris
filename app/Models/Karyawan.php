@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToKoperasi;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Karyawan extends Model
 {
@@ -30,6 +31,7 @@ class Karyawan extends Model
     protected $table = 'karyawan';
 
     protected $fillable = [
+        'user_id',
         'nik',
         'nama_lengkap',
         'tempat_lahir',
@@ -70,6 +72,11 @@ class Karyawan extends Model
     public function unitKerja()
     {
         return $this->belongsTo(UnitKerja::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function atasanLangsung()

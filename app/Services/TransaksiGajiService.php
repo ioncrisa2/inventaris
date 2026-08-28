@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\KomponenGaji;
 use App\Models\TransaksiGaji;
+use App\Models\User;
+use App\Notifications\SalarySlipPublished;
 use App\Repositories\KaryawanRepository;
 use App\Repositories\KomponenGajiRepository;
 use App\Repositories\TransaksiGajiRepository;
@@ -95,12 +97,46 @@ class TransaksiGajiService
 
     public function update(TransaksiGaji $transaksiGaji, array $header, array $barisTerpilih): TransaksiGaji
     {
+        if ($transaksiGaji->isPublished()) {
+            throw new \DomainException('Transaksi gaji yang sudah diterbitkan tidak dapat diubah.');
+        }
+
         return $this->simpanTransaksi($header, $barisTerpilih, $transaksiGaji);
     }
 
     public function destroy(TransaksiGaji $transaksiGaji): void
     {
+        if ($transaksiGaji->isPublished()) {
+            throw new \DomainException('Transaksi gaji yang sudah diterbitkan tidak dapat dihapus.');
+        }
+
         $this->transaksiGajiRepository->delete($transaksiGaji);
+    }
+
+    public function publish(TransaksiGaji $transaksiGaji, int $publisherUserId): TransaksiGaji
+    {
+        return DB::transaction(function () use ($transaksiGaji, $publisherUserId) {
+            $locked = $this->transaksiGajiRepository->findOrFailForUpdate($transaksiGaji->id);
+
+            if ($locked->isPublished()) {
+                throw new \DomainException('Slip gaji sudah diterbitkan.');
+            }
+
+            $locked->forceFill([
+                'published_at' => now(),
+                'published_by' => $publisherUserId,
+            ])->save();
+
+            $recipientId = $locked->karyawan()->value('user_id');
+
+            if ($recipientId !== null) {
+                DB::afterCommit(function () use ($recipientId, $locked) {
+                    User::query()->find($recipientId)?->notify(new SalarySlipPublished($locked));
+                });
+            }
+
+            return $locked;
+        }, 3);
     }
 
     private function simpanTransaksi(array $header, array $barisTerpilih, ?TransaksiGaji $transaksiGaji): TransaksiGaji
@@ -128,6 +164,15 @@ class TransaksiGajiService
     ): TransaksiGaji {
         $karyawanId = $transaksiGaji?->karyawan_id ?? (int) $header['karyawan_id'];
         $karyawan = $this->karyawanRepository->findOrFailForUpdate($karyawanId);
+        $actor = auth()->user();
+
+        if ($actor
+            && ! $actor->isAdminPrimer()
+            && $actor->karyawan()->whereKey($karyawan->id)->exists()) {
+            throw ValidationException::withMessages([
+                'karyawan_id' => 'Anda tidak dapat memproses transaksi gaji Anda sendiri.',
+            ]);
+        }
 
         if ($transaksiGaji) {
             $transaksiGaji = $this->transaksiGajiRepository->findOrFailForUpdate($transaksiGaji->id);

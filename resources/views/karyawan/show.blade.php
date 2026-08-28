@@ -27,6 +27,64 @@
 
         <x-flash-alert />
 
+        @can('manageAccount', $karyawan)
+            <section class="card mb-4" aria-labelledby="akun-login-title">
+                <div class="card-header">
+                    <h2 class="h6 mb-0" id="akun-login-title">Akun Login Karyawan</h2>
+                </div>
+                <div class="card-body">
+                    @if($karyawan->user)
+                        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                            <div>
+                                <strong class="d-block">{{ $karyawan->user->name }}</strong>
+                                <span class="text-body-secondary">{{ $karyawan->user->email }}</span>
+                                <div class="small text-body-secondary mt-1">
+                                    Role: {{ $karyawan->user->roles->map->displayName()->implode(', ') ?: 'Belum memiliki role' }}
+                                </div>
+                            </div>
+                            <form method="POST" action="{{ route('karyawan.akun.destroy', $karyawan) }}">
+                                @csrf
+                                @method('DELETE')
+                                <button class="btn btn-outline-danger" type="submit">
+                                    <i class="bi bi-link-45deg" aria-hidden="true"></i>
+                                    Lepas Hubungan Akun
+                                </button>
+                            </form>
+                        </div>
+                    @else
+                        <p class="text-body-secondary mb-3">
+                            Hubungkan data karyawan ini dengan akun login dari koperasi yang sama agar fitur personal dapat digunakan.
+                        </p>
+                        <form class="row g-3 align-items-end" method="POST" action="{{ route('karyawan.akun.update', $karyawan) }}">
+                            @csrf
+                            @method('PUT')
+                            <div class="col-lg-8">
+                                <label class="form-label" for="user_id">Akun login <span class="text-danger">*</span></label>
+                                <select class="form-select @error('user_id') is-invalid @enderror" id="user_id" name="user_id" required>
+                                    <option value="">Pilih akun yang belum terhubung</option>
+                                    @foreach($availableAccountUsers as $accountUser)
+                                        <option value="{{ $accountUser->id }}" @selected((int) old('user_id') === (int) $accountUser->id)>
+                                            {{ $accountUser->name }} — {{ $accountUser->email }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('user_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                @if($availableAccountUsers->isEmpty())
+                                    <div class="form-text">Belum ada akun koperasi yang tersedia untuk dihubungkan.</div>
+                                @endif
+                            </div>
+                            <div class="col-lg-4">
+                                <button class="btn btn-primary w-100" type="submit" @disabled($availableAccountUsers->isEmpty())>
+                                    <i class="bi bi-link" aria-hidden="true"></i>
+                                    Hubungkan Akun
+                                </button>
+                            </div>
+                        </form>
+                    @endif
+                </div>
+            </section>
+        @endcan
+
         <div class="card employee-detail-card">
             <div class="card-header d-flex justify-content-between align-items-center gap-3">
                 <span>{{ $karyawan->nama_lengkap }}</span>
