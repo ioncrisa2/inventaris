@@ -108,6 +108,8 @@ class NavigationMenu
                 'label' => 'Observability',
                 'items' => [
                     ['label' => 'Analitik Koperasi', 'icon' => 'bi-graph-up-arrow', 'route' => 'owner.analytics', 'active_routes' => ['owner.analytics', 'owner.analytics.koperasi'], 'permission' => null],
+                    ['label' => 'Kesehatan Sistem', 'icon' => 'bi-heart-pulse', 'route' => 'owner.system-health', 'active_routes' => ['owner.system-health'], 'permission' => null],
+                    ['label' => 'Penyimpanan', 'icon' => 'bi-device-ssd', 'route' => 'owner.storage', 'active_routes' => ['owner.storage'], 'permission' => null],
                 ],
             ],
         ];

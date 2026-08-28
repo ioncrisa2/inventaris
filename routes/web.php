@@ -23,6 +23,8 @@ use App\Http\Controllers\RiwayatKaryawanController;
 use App\Http\Controllers\RiwayatKondisiBarangController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SlipGajiTemplateController;
+use App\Http\Controllers\StorageUsageController;
+use App\Http\Controllers\SystemHealthController;
 use App\Http\Controllers\SystemOwnerDashboardController;
 use App\Http\Controllers\TransaksiGajiController;
 use App\Http\Controllers\UnitKerjaController;
@@ -48,6 +50,10 @@ Route::middleware(['auth', 'system_owner', AuditSystemOwnerAccess::class])
         Route::get('analytics/koperasi/{koperasi}', [OwnerAnalyticsController::class, 'koperasi'])
             ->whereNumber('koperasi')
             ->name('analytics.koperasi');
+        Route::middleware('throttle:20,1')->group(function () {
+            Route::get('system-health', SystemHealthController::class)->name('system-health');
+            Route::get('storage', StorageUsageController::class)->name('storage');
+        });
     });
 
 Route::middleware(['auth', 'koperasi.active'])->group(function () {
