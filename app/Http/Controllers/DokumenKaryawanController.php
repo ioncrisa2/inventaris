@@ -17,5 +17,4 @@ class DokumenKaryawanController extends Controller
 
         return $this->dokumenKaryawanService->streamedDownload($dokumenKaryawan);
     }
-
 }

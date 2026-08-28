@@ -112,6 +112,6 @@ test('restart link navigates to dashboard with fragment', function () {
     $user = adminUser();
 
     $this->actingAs($user)
-        ->get(route('dashboard') . '#onboarding-tour')
+        ->get(route('dashboard').'#onboarding-tour')
         ->assertOk();
 });

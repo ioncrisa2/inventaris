@@ -143,6 +143,15 @@ class PermissionCatalog
                     'pengaturan.slip-gaji.publish' => 'Terbitkan Format Slip Gaji',
                 ],
             ],
+            'product-request' => [
+                'label' => 'Request Produk',
+                'permissions' => [
+                    'product-request.view' => 'Lihat Request',
+                    'product-request.create' => 'Ajukan Request',
+                    'product-request.reply' => 'Balas Request',
+                    'product-request.close' => 'Tutup/Buka Kembali Request',
+                ],
+            ],
         ];
     }
 
@@ -200,6 +209,13 @@ class PermissionCatalog
             'pengaturan.identitas.update',
             'pengaturan.slip-gaji.update',
             'pengaturan.slip-gaji.publish',
+            // Pusat request dikelola tenant dan system owner. Super admin
+            // bukan actor produk dan tidak boleh ikut hanya karena template
+            // ini berbasis seluruh katalog permission.
+            'product-request.view',
+            'product-request.create',
+            'product-request.reply',
+            'product-request.close',
         ];
 
         return array_values(array_diff(self::all(), $tenantMutationPermissions));

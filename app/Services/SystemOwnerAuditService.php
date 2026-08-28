@@ -21,6 +21,12 @@ class SystemOwnerAuditService
         'tanggal_selesai',
         'tahun',
         'modul',
+        'type',
+        'status',
+        'priority',
+        'assigned_to',
+        'date_from',
+        'date_to',
     ];
 
     public function record(Request $request, int $responseStatus): void

@@ -1,5 +1,9 @@
 @php
     $user = auth()->user();
+    if (! request()->attributes->has('unread_notification_count')) {
+        request()->attributes->set('unread_notification_count', $user->unreadNotifications()->count());
+    }
+    $unreadNotificationCount = (int) request()->attributes->get('unread_notification_count');
 @endphp
 <div class="dropdown {{ $class ?? '' }}">
     <button type="button" class="app-topbar-user dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
@@ -43,9 +47,17 @@
         <a class="dropdown-item" href="{{ route('profile.show') }}">
             <i class="bi bi-person me-2"></i>Profil
         </a>
-        <a class="dropdown-item" href="{{ route('pengaturan.edit') }}">
-            <i class="bi bi-gear me-2"></i>Pengaturan Aplikasi
+        <a class="dropdown-item d-flex align-items-center" href="{{ route('notifications.index') }}">
+            <i class="bi bi-bell me-2"></i>Notifikasi
+            @if($unreadNotificationCount > 0)
+                <span class="badge text-bg-danger ms-auto">{{ $unreadNotificationCount > 99 ? '99+' : $unreadNotificationCount }}</span>
+            @endif
         </a>
+        @unless ($user->isSystemOwner())
+            <a class="dropdown-item" href="{{ route('pengaturan.edit') }}">
+                <i class="bi bi-gear me-2"></i>Pengaturan Aplikasi
+            </a>
+        @endunless
 
         @if ($user->isAdminPrimer())
             <a class="dropdown-item" href="{{ route('dashboard') }}#onboarding-tour" data-onboarding-restart>

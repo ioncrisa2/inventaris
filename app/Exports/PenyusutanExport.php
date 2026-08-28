@@ -2,6 +2,7 @@
 
 namespace App\Exports;
 
+use App\Support\PenyusutanCalculator;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
@@ -50,7 +51,7 @@ class PenyusutanExport implements FromCollection, ShouldAutoSize, WithHeadings, 
             $barang->kode_barang,
             $barang->nama_barang,
             $barang->kategori,
-            \App\Support\PenyusutanCalculator::namaMetode($row['metode']),
+            PenyusutanCalculator::namaMetode($row['metode']),
             $row['masa_manfaat_tahun'],
             $barang->tanggal_perolehan->format('Y-m-d'),
             (float) $barang->harga_perolehan,

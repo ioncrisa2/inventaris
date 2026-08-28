@@ -92,7 +92,7 @@ class HariOperasionalService
      * Satu query batch ke hari_libur, bukan query per hari.
      *
      * @return Collection<string, ?string> tanggal (Y-m-d) => keterangan libur
-     *                                      nasional (null = libur mingguan biasa)
+     *                                     nasional (null = libur mingguan biasa)
      */
     public function liburDalamRentang(Carbon $awal, Carbon $akhir): Collection
     {

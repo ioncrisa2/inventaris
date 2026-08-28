@@ -121,5 +121,4 @@ class KaryawanPerubahanSchema
     {
         return ['nomor_ktp', 'npwp', 'alamat_ktp', 'alamat_domisili', 'gaji_pokok'];
     }
-
 }
