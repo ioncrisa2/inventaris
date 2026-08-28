@@ -14,10 +14,17 @@ use App\Http\Controllers\KomponenGajiController;
 use App\Http\Controllers\KoperasiController;
 use App\Http\Controllers\KoperasiExpiredController;
 use App\Http\Controllers\LaporanController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OnboardingTourController;
 use App\Http\Controllers\OwnerAnalyticsController;
+use App\Http\Controllers\OwnerProductRequestAttachmentController;
+use App\Http\Controllers\OwnerProductRequestController;
+use App\Http\Controllers\OwnerProductRequestMessageController;
 use App\Http\Controllers\PanduanSingkatController;
 use App\Http\Controllers\PengaturanController;
+use App\Http\Controllers\ProductRequestAttachmentController;
+use App\Http\Controllers\ProductRequestController;
+use App\Http\Controllers\ProductRequestMessageController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RiwayatKaryawanController;
 use App\Http\Controllers\RiwayatKondisiBarangController;
@@ -54,6 +61,25 @@ Route::middleware(['auth', 'system_owner', AuditSystemOwnerAccess::class])
             Route::get('system-health', SystemHealthController::class)->name('system-health');
             Route::get('storage', StorageUsageController::class)->name('storage');
         });
+
+        Route::prefix('product-requests')->name('product-requests.')->group(function () {
+            Route::get('/', [OwnerProductRequestController::class, 'index'])->name('index');
+            Route::get('{productRequest}', [OwnerProductRequestController::class, 'show'])
+                ->where('productRequest', '[A-Z0-9-]+')
+                ->name('show');
+            Route::get('{productRequest}/attachments/{attachment}', OwnerProductRequestAttachmentController::class)
+                ->where('productRequest', '[A-Z0-9-]+')
+                ->whereNumber('attachment')
+                ->name('attachments.download');
+            Route::middleware('throttle:30,1')->group(function () {
+                Route::post('{productRequest}/messages', [OwnerProductRequestMessageController::class, 'store'])
+                    ->where('productRequest', '[A-Z0-9-]+')
+                    ->name('messages.store');
+                Route::patch('{productRequest}/triage', [OwnerProductRequestController::class, 'update'])
+                    ->where('productRequest', '[A-Z0-9-]+')
+                    ->name('triage.update');
+            });
+        });
     });
 
 Route::middleware(['auth', 'koperasi.active'])->group(function () {
@@ -62,6 +88,35 @@ Route::middleware(['auth', 'koperasi.active'])->group(function () {
     Route::patch('/onboarding/tour', OnboardingTourController::class)->name('onboarding.tour.finish');
     Route::get('/panduan-singkat', [PanduanSingkatController::class, 'show'])->name('panduan-singkat');
     Route::get('/panduan-singkat/cetak', [PanduanSingkatController::class, 'print'])->name('panduan-singkat.cetak');
+
+    Route::prefix('product-requests')->name('product-requests.')->group(function () {
+        Route::get('/', [ProductRequestController::class, 'index'])->name('index');
+        Route::get('create', [ProductRequestController::class, 'create'])->name('create');
+        Route::post('/', [ProductRequestController::class, 'store'])
+            ->middleware('throttle:10,1')
+            ->name('store');
+        Route::get('{productRequest}', [ProductRequestController::class, 'show'])
+            ->where('productRequest', '[A-Z0-9-]+')
+            ->name('show');
+        Route::get('{productRequest}/attachments/{attachment}', ProductRequestAttachmentController::class)
+            ->where('productRequest', '[A-Z0-9-]+')
+            ->whereNumber('attachment')
+            ->name('attachments.download');
+        Route::post('{productRequest}/messages', [ProductRequestMessageController::class, 'store'])
+            ->middleware('throttle:30,1')
+            ->where('productRequest', '[A-Z0-9-]+')
+            ->name('messages.store');
+        Route::patch('{productRequest}/state', [ProductRequestController::class, 'toggle'])
+            ->middleware('throttle:20,1')
+            ->where('productRequest', '[A-Z0-9-]+')
+            ->name('state.toggle');
+    });
+
+    Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::patch('notifications/{notification}', [NotificationController::class, 'open'])
+        ->whereUuid('notification')
+        ->name('notifications.open');
+    Route::patch('notifications', [NotificationController::class, 'readAll'])->name('notifications.read-all');
 
     Route::delete('unit-kerja/bulk', [UnitKerjaController::class, 'bulkDestroy'])->name('unit-kerja.bulk-destroy');
     Route::resource('unit-kerja', UnitKerjaController::class)->except(['show', 'create', 'edit']);

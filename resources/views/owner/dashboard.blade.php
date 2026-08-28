@@ -26,6 +26,38 @@
 
         @include('owner.partials.metric-cards', ['cards' => $analytics['kartu']])
 
+        <section class="owner-request-pulse mt-4" aria-labelledby="requestPulseTitle">
+            <div class="owner-request-pulse__intro">
+                <span><i class="bi bi-inboxes" aria-hidden="true"></i></span>
+                <div>
+                    <p>Suara pengguna</p>
+                    <h2 id="requestPulseTitle">Pusat request produk</h2>
+                    <small>Backlog dan respons tanpa menampilkan isi percakapan.</small>
+                </div>
+            </div>
+            <dl>
+                <div>
+                    <dt>Backlog</dt>
+                    <dd>{{ number_format($requestStatistics['backlog'], 0, ',', '.') }}</dd>
+                </div>
+                <div>
+                    <dt>Baru</dt>
+                    <dd>{{ number_format($requestStatistics['submitted'], 0, ',', '.') }}</dd>
+                </div>
+                <div>
+                    <dt>Butuh info</dt>
+                    <dd>{{ number_format($requestStatistics['needs_information'], 0, ',', '.') }}</dd>
+                </div>
+                <div>
+                    <dt>Planned / progress</dt>
+                    <dd>{{ number_format($requestStatistics['planned_or_in_progress'], 0, ',', '.') }}</dd>
+                </div>
+            </dl>
+            <a class="btn btn-primary" href="{{ route('owner.product-requests.index') }}">
+                Buka inbox <i class="bi bi-arrow-right" aria-hidden="true"></i>
+            </a>
+        </section>
+
         <div class="owner-dashboard-grid mt-4">
             <div class="owner-dashboard-grid__main">
                 @include('owner.partials.chart', [

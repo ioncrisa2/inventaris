@@ -25,6 +25,14 @@ class NavigationMenu
                 'permission' => null,
             ],
             [
+                'type' => 'link',
+                'label' => 'Request Produk',
+                'icon' => 'bi-chat-square-text',
+                'route' => 'product-requests.index',
+                'active_routes' => ['product-requests.*'],
+                'permission' => 'product-request.view',
+            ],
+            [
                 'type' => 'group',
                 'key' => 'sdm-kehadiran',
                 'label' => 'SDM & Kehadiran',
@@ -100,6 +108,14 @@ class NavigationMenu
                 'icon' => 'bi-grid-1x2',
                 'route' => 'owner.dashboard',
                 'active_routes' => ['owner.dashboard'],
+                'permission' => null,
+            ],
+            [
+                'type' => 'link',
+                'label' => 'Request Produk',
+                'icon' => 'bi-inboxes',
+                'route' => 'owner.product-requests.index',
+                'active_routes' => ['owner.product-requests.*'],
                 'permission' => null,
             ],
             [
