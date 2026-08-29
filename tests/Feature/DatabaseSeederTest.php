@@ -32,8 +32,8 @@ test('database seeder creates a complete usable demo dataset', function () {
 
     expect(SeederDataset::counts())->toBe([
         'permissions' => count(PermissionCatalog::all()),
-        'roles' => 4,
-        'users' => 8,
+        'roles' => 10,
+        'users' => 13,
         'units' => 6,
         'employees' => 15,
         'attendance' => 2028,
@@ -50,9 +50,30 @@ test('database seeder creates a complete usable demo dataset', function () {
     ]);
 
     $admin = User::where('email', 'admin@example.com')->firstOrFail();
-    $adminPrimer = User::where('email', 'admin.primer@example.com')->firstOrFail();
-    $staff = User::where('email', 'staff@example.com')->firstOrFail();
-    $koperasi = Koperasi::where('nama', 'Koperasi Demo')->firstOrFail();
+    $adminPrimer = User::where('email', 'admin.primer.rukun@example.com')->firstOrFail();
+    $staff = User::where('email', 'staff.keuangan.rukun@example.com')->firstOrFail();
+    $koperasi = Koperasi::where('nama', 'Koperasi Rukun')->firstOrFail();
+
+    expect(Koperasi::query()
+        ->withCount('users')
+        ->orderBy('nama')
+        ->pluck('users_count', 'nama')
+        ->all())->toBe([
+            'Koperasi Abdi Sesama' => 3,
+            'Koperasi Karya Jasa' => 3,
+            'Koperasi Rukun' => 3,
+            'Koperasi Sentosa' => 3,
+        ]);
+
+    $tenantUsers = User::query()->whereNotNull('koperasi_id')->with('roles')->get();
+
+    expect($tenantUsers)->toHaveCount(12);
+
+    $tenantUsers->each(function (User $user) {
+        expect($user->roles)->toHaveCount(1)
+            ->and($user->roles->first()->koperasi_id)->toBe($user->koperasi_id)
+            ->and($user->roles->first()->name)->toBeIn(['admin_primer', 'Staff']);
+    });
 
     expect(Hash::check((string) config('demo.user_password'), $admin->password))->toBeTrue()
         ->and($admin->hasRole('super_admin'))->toBeTrue()
@@ -64,7 +85,7 @@ test('database seeder creates a complete usable demo dataset', function () {
         ->and($admin->getAllPermissions())->toHaveCount(count(PermissionCatalog::superAdminTemplate()))
         ->and($adminPrimer->getAllPermissions())->toHaveCount(count(PermissionCatalog::adminPrimerTemplate()))
         ->and($staff->getAllPermissions())->toHaveCount(39)
-        // Semua data domain harus ikut ter-tag ke koperasi demo (bukan
+        // Semua data domain harus ikut ter-tag ke koperasi primer utama (bukan
         // koperasi_id null) — ini yang paling penting dari sinkronisasi
         // seeder ke arsitektur multi-tenant, bukan cuma jumlahnya benar.
         ->and(UnitKerja::whereNull('kode')->count())->toBe(0)
@@ -101,7 +122,18 @@ test('database seeder creates a complete usable demo dataset', function () {
     $this->actingAs($admin)->get(route('dashboard'))->assertOk();
 });
 
-test('database seeder is idempotent and preserves existing demo passwords', function () {
+test('database seeder is idempotent and preserves global account data', function () {
+    $this->artisan('system-owner:provision', [
+        '--name' => 'Owner Tetap',
+        '--email' => 'owner@example.com',
+    ])
+        ->expectsQuestion('Password baru', 'Password-Owner-123')
+        ->expectsQuestion('Konfirmasi password baru', 'Password-Owner-123')
+        ->assertSuccessful();
+
+    $owner = User::where('email', 'owner@example.com')->firstOrFail();
+    $ownerPassword = $owner->password;
+
     $this->seed(DatabaseSeeder::class);
     $counts = SeederDataset::counts();
     $password = User::where('email', 'admin@example.com')->value('password');
@@ -110,6 +142,10 @@ test('database seeder is idempotent and preserves existing demo passwords', func
 
     expect(SeederDataset::counts())->toBe($counts)
         ->and(User::where('email', 'admin@example.com')->value('password'))->toBe($password)
+        ->and($owner->refresh()->name)->toBe('Owner Tetap')
+        ->and($owner->password)->toBe($ownerPassword)
+        ->and($owner->koperasi_id)->toBeNull()
+        ->and($owner->isSystemOwner())->toBeTrue()
         ->and(KomponenGaji::count())->toBe(KomponenGaji::distinct('nama_komponen')->count('nama_komponen'));
 
     if (DB::getDriverName() === 'sqlite') {

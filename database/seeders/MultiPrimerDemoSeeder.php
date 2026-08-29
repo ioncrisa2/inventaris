@@ -6,33 +6,26 @@ use App\Models\Barang;
 use App\Models\Karyawan;
 use App\Models\KomponenGaji;
 use App\Models\Koperasi;
-use App\Models\Role;
 use App\Models\TransaksiGaji;
 use App\Models\UnitKerja;
 use App\Models\User;
-use App\Services\KoperasiService;
 use App\Services\TransaksiGajiService;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\PermissionRegistrar;
 
 /**
- * Seeder demo tambahan: 4 koperasi primer sungguhan (bukan "Koperasi Demo"
- * bawaan DatabaseSeeder), masing-masing dengan admin_primer, unit kerja,
- * karyawan, inventaris, dan riwayat transaksi gaji Juli 2024–Juli 2026
- * sendiri-sendiri — dipakai untuk menguji isolasi data multi-tenant dengan
- * volume data yang lebih realistis daripada satu koperasi demo saja.
+ * Seeder demo lengkap: 4 koperasi primer, masing-masing dengan 3 user
+ * (1 admin_primer + 2 Staff), unit kerja, karyawan, inventaris, dan riwayat
+ * transaksi gaji Juli 2024–Juli 2026 sendiri-sendiri. Dataset ini dipakai
+ * untuk menguji isolasi multi-tenant dengan volume yang lebih realistis.
  *
- * Berdiri sendiri (tidak dipanggil dari DatabaseSeeder) supaya tidak
- * mengubah dataset "Koperasi Demo" yang sudah dikunci angka pastinya oleh
- * DatabaseSeederTest/DatabaseSeederSafetyTest. Bisa dijalankan langsung
- * lewat `php artisan db:seed --class=MultiPrimerDemoSeeder` — seeder ini
- * membuat permission & akun super_admin sendiri kalau belum ada, jadi tidak
- * bergantung pada DatabaseSeeder dijalankan lebih dulu.
+ * Bisa dijalankan langsung lewat
+ * `php artisan db:seed --class=MultiPrimerDemoSeeder`; fondasi akun dibuat
+ * oleh MultiPrimerUserSeeder sehingga tidak bergantung pada DatabaseSeeder.
  */
 class MultiPrimerDemoSeeder extends Seeder
 {
@@ -95,8 +88,9 @@ class MultiPrimerDemoSeeder extends Seeder
 
         try {
             DB::transaction(function () {
-                $this->call(PermissionSeeder::class);
-                $this->seedSuperAdmin();
+                // Gunakan fondasi akun yang sama dengan DatabaseSeeder agar
+                // jumlah dan afiliasi user konsisten di semua mode seeding.
+                $this->call(MultiPrimerUserSeeder::class);
 
                 foreach (self::PRIMER as $index => $primer) {
                     $this->seedPrimer($primer, $index);
@@ -109,49 +103,11 @@ class MultiPrimerDemoSeeder extends Seeder
         $this->pastikanIsolasiAntarPrimer();
     }
 
-    private function seedSuperAdmin(): void
-    {
-        $password = (string) config('demo.user_password');
-
-        if (blank($password)) {
-            throw new \RuntimeException('DEMO_USER_PASSWORD wajib diisi untuk membuat akun demo.');
-        }
-
-        $user = User::firstOrCreate(
-            ['email' => 'admin@example.com'],
-            [
-                'name' => 'Super Admin',
-                'password' => Hash::make($password),
-                'email_verified_at' => now(),
-            ],
-        );
-        $user->forceFill([
-            'name' => 'Super Admin',
-            'email_verified_at' => $user->email_verified_at ?? now(),
-        ])->save();
-        $superAdminRole = Role::query()
-            ->where('name', 'super_admin')
-            ->where('guard_name', 'web')
-            ->whereNull('koperasi_id')
-            ->firstOrFail();
-        $user->syncRoles([$superAdminRole]);
-    }
-
     private function seedPrimer(array $primer, int $primerIndex): void
     {
-        if (! Koperasi::where('nama', $primer['nama'])->exists()) {
-            app(KoperasiService::class)->store([
-                'nama' => $primer['nama'],
-                'expires_at' => null,
-                'admin_nama' => $primer['admin_nama'],
-                'admin_email' => $primer['admin_email'],
-                'admin_password' => (string) config('demo.user_password'),
-            ]);
-        }
-
         // Dari sini, semua model BelongsToKoperasi otomatis ter-tag
         // koperasi_id milik primer ini — persis pola yang sama dengan
-        // DatabaseSeeder untuk koperasi demo.
+        // DatabaseSeeder untuk primer operasional utamanya.
         Auth::setUser(User::where('email', $primer['admin_email'])->firstOrFail());
 
         $this->call([
