@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Koperasi;
 use App\Models\TemplateSlipGaji;
 use App\Services\SlipGajiTemplateService;
 use App\Support\SlipGajiPaperLayout;
@@ -43,6 +44,10 @@ test('draf disimpan terpisah dan baru dipakai setelah diterbitkan', function () 
         ->and(app(SlipGajiTemplateService::class)->publishedConfiguration()['blocks'][2]['font_size'])->toBe(13)
         ->and(app(SlipGajiTemplateService::class)->publishedPaperLayout())->toBe(SlipGajiPaperLayout::LEFT_RIGHT);
 
+    $this->get(route('pengaturan.slip-gaji.edit'))
+        ->assertOk()
+        ->assertSee('perubahan draf belum dipakai saat mencetak');
+
     $this->post(route('pengaturan.slip-gaji.publish'), [
         'configuration' => json_encode($configuration),
         'expected_revision' => 2,
@@ -55,6 +60,61 @@ test('draf disimpan terpisah dan baru dipakai setelah diterbitkan', function () 
         ->and($template->diterbitkan_pada)->not->toBeNull()
         ->and(app(SlipGajiTemplateService::class)->publishedConfiguration()['blocks'][2]['font_size'])->toBe(15)
         ->and(app(SlipGajiTemplateService::class)->publishedPaperLayout())->toBe(SlipGajiPaperLayout::TOP_BOTTOM);
+
+    $this->get(route('pengaturan.slip-gaji.edit'))
+        ->assertOk()
+        ->assertSee('Revisi ini aktif dan dipakai saat mencetak.')
+        ->assertSee('Terbitkan untuk Cetak');
+});
+
+test('format slip gaji terisolasi per koperasi dan digunakan bersama dalam koperasi yang sama', function () {
+    $koperasiA = Koperasi::create(['nama' => 'Primer Format A']);
+    $koperasiB = Koperasi::create(['nama' => 'Primer Format B']);
+    $adminA = adminPrimerUser($koperasiA);
+    $adminARekan = adminPrimerUser($koperasiA);
+    $adminB = adminPrimerUser($koperasiB);
+
+    $configurationA = SlipGajiTemplateSchema::default();
+    $configurationA['blocks'][2]['font_size'] = 15;
+    $configurationB = SlipGajiTemplateSchema::default();
+    $configurationB['blocks'][2]['font_size'] = 10;
+
+    $this->actingAs($adminA)
+        ->post(route('pengaturan.slip-gaji.publish'), [
+            'configuration' => json_encode($configurationA),
+            'expected_revision' => 1,
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($adminB)
+        ->post(route('pengaturan.slip-gaji.publish'), [
+            'configuration' => json_encode($configurationB),
+            'expected_revision' => 1,
+        ])
+        ->assertRedirect();
+
+    expect(app(SlipGajiTemplateService::class)->publishedConfiguration()['blocks'][2]['font_size'])
+        ->toBe(10);
+
+    $this->actingAs($adminARekan);
+    expect(app(SlipGajiTemplateService::class)->publishedConfiguration()['blocks'][2]['font_size'])
+        ->toBe(15)
+        ->and(TemplateSlipGaji::withoutGlobalScopes()->count())->toBe(2)
+        ->and(TemplateSlipGaji::withoutGlobalScopes()->pluck('koperasi_id')->sort()->values()->all())
+        ->toBe(collect([$koperasiA->id, $koperasiB->id])->sort()->values()->all());
+});
+
+test('tipografi isi slip memakai skala relatif terhadap ukuran blok editor', function () {
+    $printCss = file_get_contents(resource_path('css/print.css'));
+
+    expect($printCss)
+        ->toMatch('/\.salary-slip__identity dd\s*\{[^}]*font-size:\s*\.9em;/s')
+        ->toMatch('/\.salary-slip__component-list\s*\{[^}]*font-size:\s*\.89em;/s')
+        ->toMatch('/\.salary-slip__net\s*\{[^}]*font-size:\s*1\.13em;/s')
+        ->toMatch('/\.salary-slip__signature\s*\{[^}]*font-size:\s*\.93em;/s')
+        ->toMatch('/\.salary-slip__signature-space\s*\{[^}]*height:\s*22mm;/s')
+        ->toMatch('/\.salary-slip-sheet--left-right[^}]*\.salary-slip__signature-space\s*\{[^}]*height:\s*20mm;/s')
+        ->toMatch('/\.salary-slip__footer\s*\{[^}]*font-size:\s*\.95em;/s');
 });
 
 test('konfigurasi lama tanpa pembagian kertas dinormalisasi ke kiri kanan', function () {

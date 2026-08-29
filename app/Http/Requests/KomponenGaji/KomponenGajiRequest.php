@@ -27,7 +27,7 @@ class KomponenGajiRequest extends FormRequest
                     $nilai = Decimal15Two::normalizeNonNegative($value);
 
                     if ($nilai !== null
-                        && $this->input('metode_perhitungan') === 'persentase'
+                        && in_array($this->input('metode_perhitungan'), ['persentase', 'persentase_pengali'], true)
                         && bccomp($nilai, '100', 2) > 0) {
                         $fail('Nilai persentase harus berada antara 0 sampai 100.');
                     }

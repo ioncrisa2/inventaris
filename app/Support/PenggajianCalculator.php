@@ -24,11 +24,15 @@ class PenggajianCalculator
      * Seluruh operasi pakai bcmath (bukan float) supaya perhitungan uang
      * tidak kena masalah presisi floating-point.
      */
-    public static function hitungNominal(string $metodePerhitungan, string $nilai, ?string $gajiPokok = null, ?int $jumlahHari = null): string
+    public static function hitungNominal(string $metodePerhitungan, string $nilai, ?string $gajiPokok = null, ?int $jumlahHari = null, ?int $jumlahPengali = null): string
     {
-        if ($metodePerhitungan === 'persentase') {
+        if (in_array($metodePerhitungan, ['persentase', 'persentase_pengali'], true)) {
             $dasar = $gajiPokok ?? '0';
             $hasil = bcmul($dasar, bcdiv($nilai, '100', 10), 10);
+
+            if ($metodePerhitungan === 'persentase_pengali') {
+                $hasil = bcmul($hasil, (string) ($jumlahPengali ?? 0), 10);
+            }
 
             return self::round2($hasil);
         }

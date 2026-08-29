@@ -138,6 +138,11 @@ class StoreTransaksiGajiRequest extends FormRequest
                             continue;
                         }
 
+                        if ($komponenMaster->metode_perhitungan === 'persentase_pengali'
+                            && ! $this->validasiJumlahPengali($validator, $kunci, $row)) {
+                            continue;
+                        }
+
                         $adaBarisSah = true;
 
                         continue;
@@ -165,7 +170,7 @@ class StoreTransaksiGajiRequest extends FormRequest
 
                     if ($nilaiTeks === null) {
                         $validator->errors()->add("baris.{$kunci}.nilai", 'Nilai harus berupa desimal non-negatif, maksimal 13 digit dan 2 angka pecahan.');
-                    } elseif ($metode === 'persentase' && bccomp($nilaiTeks, '100', 2) > 0) {
+                    } elseif (in_array($metode, ['persentase', 'persentase_pengali'], true) && bccomp($nilaiTeks, '100', 2) > 0) {
                         $validator->errors()->add("baris.{$kunci}.nilai", 'Nilai persentase harus berada antara 0 sampai 100.');
                     }
 
@@ -175,6 +180,8 @@ class StoreTransaksiGajiRequest extends FormRequest
                         $this->validasiTanggalTunggal($validator, $kunci, $row);
                     } elseif ($metode === 'harian_manual') {
                         $this->validasiJumlahHariManual($validator, $kunci, $row);
+                    } elseif ($metode === 'persentase_pengali') {
+                        $this->validasiJumlahPengali($validator, $kunci, $row);
                     }
 
                     if (! $validator->errors()->has("baris.{$kunci}.metode_perhitungan")
@@ -183,6 +190,9 @@ class StoreTransaksiGajiRequest extends FormRequest
                         && ! $validator->errors()->has("baris.{$kunci}.tanggal_akhir")
                         && ! $validator->errors()->has("baris.{$kunci}.tanggal")
                         && ! $validator->errors()->has("baris.{$kunci}.jumlah_hari")) {
+                        if ($validator->errors()->has("baris.{$kunci}.jumlah_pengali")) {
+                            continue;
+                        }
                         $adaBarisSah = true;
                     }
                 }
@@ -264,6 +274,30 @@ class StoreTransaksiGajiRequest extends FormRequest
             'jumlah_hari.integer' => 'Jumlah hari harus berupa angka bulat.',
             'jumlah_hari.min' => 'Jumlah hari minimal 1.',
             'jumlah_hari.max' => 'Jumlah hari maksimal 366.',
+        ]);
+
+        if ($subValidator->fails()) {
+            foreach ($subValidator->errors()->messages() as $field => $messages) {
+                foreach ($messages as $message) {
+                    $validator->errors()->add("baris.{$kunci}.{$field}", $message);
+                }
+            }
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private function validasiJumlahPengali(Validator $validator, string $kunci, array $row): bool
+    {
+        $subValidator = ValidatorFacade::make($row, [
+            'jumlah_pengali' => ['required', 'integer', 'min:1', 'max:65535'],
+        ], [
+            'jumlah_pengali.required' => 'Jumlah pengali wajib diisi.',
+            'jumlah_pengali.integer' => 'Jumlah pengali harus berupa angka bulat.',
+            'jumlah_pengali.min' => 'Jumlah pengali minimal 1.',
+            'jumlah_pengali.max' => 'Jumlah pengali maksimal 65.535.',
         ]);
 
         if ($subValidator->fails()) {

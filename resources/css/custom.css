@@ -1893,7 +1893,9 @@ input[data-date-range] {
 
 .slip-editor-toolbar__status {
     display: grid;
-    min-width: max-content;
+    flex: 0 1 30rem;
+    min-width: 14rem;
+    max-width: 30rem;
 }
 
 .slip-editor-toolbar__status strong {
@@ -2255,9 +2257,17 @@ input[data-date-range] {
 
 .slip-sample-signatures > div {
     display: grid;
-    gap: 7mm;
     min-width: 0;
     text-align: center;
+}
+
+.slip-sample-signature-space {
+    height: 22mm;
+}
+
+.slip-template-editor[data-paper-layout="left_right"] .slip-sample-signature-space,
+.slip-editor-page-preview[data-paper-layout="left_right"] .slip-sample-signature-space {
+    height: 20mm;
 }
 
 .slip-sample-signatures b {
@@ -2402,6 +2412,10 @@ input[data-date-range] {
 
     .slip-editor-toolbar__actions {
         justify-content: flex-start;
+    }
+
+    .slip-editor-toolbar__status {
+        max-width: none;
     }
 
     .slip-editor-workspace {

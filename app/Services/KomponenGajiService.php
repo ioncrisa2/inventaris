@@ -77,7 +77,7 @@ class KomponenGajiService
      */
     private function withDasarPersentase(array $data): array
     {
-        $data['dasar_persentase'] = $data['metode_perhitungan'] === 'persentase'
+        $data['dasar_persentase'] = in_array($data['metode_perhitungan'], ['persentase', 'persentase_pengali'], true)
             ? 'gaji_pokok'
             : null;
 

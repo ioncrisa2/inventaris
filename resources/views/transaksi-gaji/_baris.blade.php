@@ -26,6 +26,7 @@
         <select name="{{ $namaField }}[metode_perhitungan]" id="{{ $idAwalan }}_metode" class="form-select form-select-sm" data-salary-calculation-method>
             <option value="nominal_tetap" @selected($baris['metode'] === 'nominal_tetap')>Nominal Tetap</option>
             <option value="persentase" @selected($baris['metode'] === 'persentase')>Persentase</option>
+            <option value="persentase_pengali" @selected($baris['metode'] === 'persentase_pengali')>Persentase × Pengali</option>
             <option value="per_hari" @selected($baris['metode'] === 'per_hari')>Per Hari (Range Tanggal)</option>
             <option value="harian_sehari" @selected($baris['metode'] === 'harian_sehari')>Harian (Sehari)</option>
             <option value="harian_manual" @selected($baris['metode'] === 'harian_manual')>Harian (Dikali Jumlah Hari)</option>
@@ -72,6 +73,9 @@
                 max="366"
             />
         </div>
+        <div class="salary-jumlah-pengali mt-2 {{ $baris['metode'] === 'persentase_pengali' ? '' : 'd-none' }}" id="{{ $idAwalan }}_jumlah_pengali">
+            <x-form.input name="{{ $namaField }}[jumlah_pengali]" type="number" label="Jumlah Pengali" :value="$baris['jumlah_pengali'] ?? null" min="1" max="65535" />
+        </div>
     </td>
     @else
     <td>
@@ -80,6 +84,11 @@
     <td>
         @if($baris['metode'] === 'persentase')
             {{ rtrim(rtrim($baris['nilai'], '0'), '.') }}%
+        @elseif($baris['metode'] === 'persentase_pengali')
+            {{ rtrim(rtrim($baris['nilai'], '0'), '.') }}% dari gaji pokok
+            <div class="salary-jumlah-pengali mt-2">
+                <x-form.input name="{{ $namaField }}[jumlah_pengali]" type="number" label="Jumlah Pengali" :value="$baris['jumlah_pengali'] ?? null" min="1" max="65535" required />
+            </div>
         @elseif($baris['metode'] === 'per_hari')
             Rp {{ number_format($baris['nilai'], 0, ',', '.') }} /hari
             <div class="salary-date-range mt-2">

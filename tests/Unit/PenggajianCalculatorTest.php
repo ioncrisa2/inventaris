@@ -31,6 +31,15 @@ test('gaji pokok null dianggap nol untuk persentase', function () {
     expect(PenggajianCalculator::hitungNominal('persentase', '10', null))->toBe('0.00');
 });
 
+test('persentase dengan pengali dihitung dari gaji pokok lalu dikalikan jumlah', function () {
+    // Tunjangan anak 2% per anak: Rp5.000.000 x 2% x 3 anak = Rp300.000.
+    expect(PenggajianCalculator::hitungNominal('persentase_pengali', '2', '5000000', null, 3))->toBe('300000.00');
+});
+
+test('persentase dengan pengali null menghasilkan nol', function () {
+    expect(PenggajianCalculator::hitungNominal('persentase_pengali', '2', '5000000'))->toBe('0.00');
+});
+
 test('per hari dikalikan dari nilai per hari dan jumlah hari pada rentang tanggal', function () {
     expect(PenggajianCalculator::hitungNominal('per_hari', '15000', null, 20))->toBe('300000.00');
 });

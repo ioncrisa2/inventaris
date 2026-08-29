@@ -41,10 +41,12 @@
                 <div class="slip-editor-toolbar__status">
                     <strong>Draf revisi {{ $templateState['draft_revision'] }}</strong>
                     <small>
-                        @if($templateState['published_revision'])
-                            Aktif: revisi {{ $templateState['published_revision'] }}
+                        @if(! $templateState['published_revision'])
+                            Belum diterbitkan; perubahan draf belum dipakai saat mencetak dan cetak masih memakai format bawaan.
+                        @elseif($templateState['draft_revision'] !== $templateState['published_revision'])
+                            Aktif revisi {{ $templateState['published_revision'] }}; perubahan draf belum dipakai saat mencetak.
                         @else
-                            Belum pernah diterbitkan
+                            Revisi ini aktif dan dipakai saat mencetak.
                         @endif
                     </small>
                 </div>
@@ -95,7 +97,7 @@
                             formaction="{{ route('pengaturan.slip-gaji.publish') }}"
                         >
                             <i class="bi bi-check2-circle" aria-hidden="true"></i>
-                            Terbitkan
+                            Terbitkan untuk Cetak
                         </button>
                     @endif
                 </div>

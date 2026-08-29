@@ -51,6 +51,22 @@ test('nilai persentase harus antara 0 sampai 100', function () {
     $this->assertDatabaseMissing('komponen_gaji', ['nama_komponen' => 'Tunjangan Tidak Wajar']);
 });
 
+test('komponen persentase dengan pengali dapat dibuat', function () {
+    $this->post(route('komponen-gaji.store'), [
+        'nama_komponen' => 'Tunjangan Anak',
+        'jenis' => 'Tunjangan',
+        'metode_perhitungan' => 'persentase_pengali',
+        'nilai_default' => 2,
+    ])->assertRedirect(route('komponen-gaji.index'));
+
+    $this->assertDatabaseHas('komponen_gaji', [
+        'nama_komponen' => 'Tunjangan Anak',
+        'metode_perhitungan' => 'persentase_pengali',
+        'nilai_default' => 2,
+        'dasar_persentase' => 'gaji_pokok',
+    ]);
+});
+
 test('nilai nominal tidak boleh negatif', function () {
     $this->post(route('komponen-gaji.store'), [
         'nama_komponen' => 'Potongan Aneh',

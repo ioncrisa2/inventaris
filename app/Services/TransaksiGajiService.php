@@ -300,6 +300,7 @@ class TransaksiGajiService
             $tanggalAkhir = $row['tanggal_akhir'] ?? null;
             $tanggalTunggal = $row['tanggal'] ?? null;
             $jumlahHariManual = $row['jumlah_hari'] ?? null;
+            $jumlahPengali = $row['jumlah_pengali'] ?? null;
         } elseif (preg_match('/\Acustom_([1-9]\d*)\z/', $kunci, $matches) && $transaksiGaji) {
             $detailYatim = $detailCustomById->get((int) $matches[1]);
 
@@ -318,10 +319,11 @@ class TransaksiGajiService
             $tanggalAkhir = $row['tanggal_akhir'] ?? null;
             $tanggalTunggal = $row['tanggal'] ?? null;
             $jumlahHariManual = $row['jumlah_hari'] ?? null;
+            $jumlahPengali = $row['jumlah_pengali'] ?? null;
 
             if (! in_array($metode, array_keys(KomponenGaji::METODE_PERHITUNGAN), true)
                 || $nilai === null
-                || ($metode === 'persentase' && bccomp($nilai, '100', 2) > 0)) {
+                || (in_array($metode, ['persentase', 'persentase_pengali'], true) && bccomp($nilai, '100', 2) > 0)) {
                 throw ValidationException::withMessages([
                     "baris.{$kunci}" => 'Nilai atau metode komponen khusus tidak valid.',
                 ]);
@@ -340,10 +342,23 @@ class TransaksiGajiService
             ]);
         }
 
-        $dasarSnapshot = $metode === 'persentase' ? 'gaji_pokok' : null;
+        $dasarSnapshot = in_array($metode, ['persentase', 'persentase_pengali'], true) ? 'gaji_pokok' : null;
         $tanggalAwalSnapshot = null;
         $tanggalAkhirSnapshot = null;
         $jumlahHariSnapshot = null;
+        $jumlahPengaliSnapshot = null;
+
+        if ($metode === 'persentase_pengali') {
+            $jumlahPengali = filter_var($jumlahPengali, FILTER_VALIDATE_INT);
+
+            if ($jumlahPengali === false || $jumlahPengali < 1 || $jumlahPengali > 65535) {
+                throw ValidationException::withMessages([
+                    "baris.{$kunci}.jumlah_pengali" => 'Jumlah pengali wajib berupa angka bulat antara 1 dan 65.535.',
+                ]);
+            }
+
+            $jumlahPengaliSnapshot = $jumlahPengali;
+        }
 
         if ($metode === 'per_hari') {
             try {
@@ -388,7 +403,7 @@ class TransaksiGajiService
             $jumlahHariSnapshot = $jumlahHariManual;
         }
 
-        $nominalHasil = PenggajianCalculator::hitungNominal($metode, $nilai, $gajiPokok, $jumlahHariSnapshot);
+        $nominalHasil = PenggajianCalculator::hitungNominal($metode, $nilai, $gajiPokok, $jumlahHariSnapshot, $jumlahPengaliSnapshot);
 
         if (Decimal15Two::normalizeNonNegative($nominalHasil) === null) {
             throw ValidationException::withMessages([
@@ -406,6 +421,7 @@ class TransaksiGajiService
             'tanggal_awal_snapshot' => $tanggalAwalSnapshot,
             'tanggal_akhir_snapshot' => $tanggalAkhirSnapshot,
             'jumlah_hari_snapshot' => $jumlahHariSnapshot,
+            'jumlah_pengali_snapshot' => $jumlahPengaliSnapshot,
             'nominal_hasil' => $nominalHasil,
         ];
     }
@@ -498,6 +514,9 @@ class TransaksiGajiService
                 'jumlah_hari' => $oldBaris !== null
                     ? data_get($oldBaris, "{$kunci}.jumlah_hari")
                     : $detail?->jumlah_hari_snapshot,
+                'jumlah_pengali' => $oldBaris !== null
+                    ? data_get($oldBaris, "{$kunci}.jumlah_pengali")
+                    : $detail?->jumlah_pengali_snapshot,
             ];
         })->all();
 
@@ -519,6 +538,7 @@ class TransaksiGajiService
                         'tanggal_akhir' => data_get($oldBaris, "{$kunci}.tanggal_akhir") ?? $detail->tanggal_akhir_snapshot?->format('Y-m-d'),
                         'tanggal' => data_get($oldBaris, "{$kunci}.tanggal") ?? $detail->tanggal_awal_snapshot?->format('Y-m-d'),
                         'jumlah_hari' => data_get($oldBaris, "{$kunci}.jumlah_hari") ?? $detail->jumlah_hari_snapshot,
+                        'jumlah_pengali' => data_get($oldBaris, "{$kunci}.jumlah_pengali") ?? $detail->jumlah_pengali_snapshot,
                     ];
                 })
                 ->values()

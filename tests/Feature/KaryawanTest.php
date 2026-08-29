@@ -111,8 +111,10 @@ test('nomor dan tanggal sk dapat disimpan untuk karyawan honorer', function () {
         'nik' => 'EMP-001',
         'status_karyawan' => 'Honorer',
         'nomor_sk_pengangkatan' => 'SK/HONORER/001',
-        'tanggal_sk_pengangkatan' => '2020-01-01',
     ]);
+
+    $karyawan = Karyawan::where('nik', 'EMP-001')->firstOrFail();
+    expect($karyawan->tanggal_sk_pengangkatan->toDateString())->toBe('2020-01-01');
 });
 
 test('karyawan can be viewed', function () {

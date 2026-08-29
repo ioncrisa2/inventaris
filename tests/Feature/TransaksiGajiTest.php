@@ -353,6 +353,32 @@ test('minimal satu komponen harus dipilih', function () {
     expect(TransaksiGaji::count())->toBe(0);
 });
 
+test('persentase dengan pengali memakai jumlah per transaksi dan menyimpan snapshot', function () {
+    $tunjanganAnak = KomponenGaji::create([
+        'nama_komponen' => 'Tunjangan Anak',
+        'jenis' => 'Tunjangan',
+        'metode_perhitungan' => 'persentase_pengali',
+        'nilai_default' => 2,
+        'dasar_persentase' => 'gaji_pokok',
+    ]);
+
+    $this->post(route('transaksi-gaji.store'), [
+        'karyawan_id' => $this->karyawan->id,
+        'bulan' => 7,
+        'tahun' => 2026,
+        'baris' => [
+            "master_{$tunjanganAnak->id}" => ['pakai' => '1', 'jumlah_pengali' => '3'],
+        ],
+    ])->assertRedirect();
+
+    $this->assertDatabaseHas('transaksi_gaji_detail', [
+        'komponen_gaji_id' => $tunjanganAnak->id,
+        'metode_perhitungan_snapshot' => 'persentase_pengali',
+        'jumlah_pengali_snapshot' => 3,
+        'nominal_hasil' => 300000,
+    ]);
+});
+
 test('slip gaji bisa dicetak dengan rincian komponen', function () {
     $this->post(route('transaksi-gaji.store'), payloadGaji($this->karyawan, $this->tunjanganJabatan, $this->potonganBpjs));
     $transaksi = TransaksiGaji::first();
@@ -384,6 +410,32 @@ test('slip gaji bisa dicetak dengan rincian komponen', function () {
 
     expect(strpos($response->getContent(), 'Tunjangan'))
         ->toBeLessThan(strpos($response->getContent(), 'Potongan'));
+});
+
+test('cetak slip menerapkan ukuran blok dari format yang sudah diterbitkan', function () {
+    $configuration = SlipGajiTemplateSchema::default();
+    $configuration['blocks'][4]['font_size'] = 15;
+    $configuration['blocks'][5]['font_size'] = 12;
+
+    $this->post(route('pengaturan.slip-gaji.publish'), [
+        'configuration' => json_encode($configuration),
+        'expected_revision' => 1,
+    ])->assertRedirect();
+
+    $this->post(route('transaksi-gaji.store'), payloadGaji($this->karyawan, $this->tunjanganJabatan, $this->potonganBpjs));
+    $transaksi = TransaksiGaji::firstOrFail();
+    $dibuatOleh = buatPenandaTanganSlip($this->karyawan, 'EMP-SIGN-SIZE-01', 'Siti Pembuat', 'Bendahara');
+    $mengetahui = buatPenandaTanganSlip($this->karyawan, 'EMP-SIGN-SIZE-02', 'Rina Mengetahui', 'Kepala Keuangan');
+
+    $response = $this->get(route('transaksi-gaji.cetak', [
+        'transaksiGaji' => $transaksi,
+        'dibuat_oleh_id' => $dibuatOleh->id,
+        'mengetahui_id' => $mengetahui->id,
+    ]))->assertOk();
+
+    expect($response->getContent())
+        ->toMatch('/salary-slip-block--employee"\s+style="[^"]*font-size:15pt/')
+        ->toMatch('/salary-slip-block--payroll"\s+style="[^"]*font-size:12pt/');
 });
 
 test('modal cetak menjelaskan dua arah pembagian kertas tanpa istilah ambigu', function () {

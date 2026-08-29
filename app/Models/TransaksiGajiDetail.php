@@ -19,6 +19,7 @@ class TransaksiGajiDetail extends Model
         'tanggal_awal_snapshot',
         'tanggal_akhir_snapshot',
         'jumlah_hari_snapshot',
+        'jumlah_pengali_snapshot',
         'nominal_hasil',
     ];
 

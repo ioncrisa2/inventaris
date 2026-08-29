@@ -114,6 +114,8 @@
                                             <td class="text-end">
                                                 @if($detail->metode_perhitungan_snapshot === 'persentase')
                                                     {{ rtrim(rtrim($detail->nilai_snapshot, '0'), '.') }}%
+                                                @elseif($detail->metode_perhitungan_snapshot === 'persentase_pengali')
+                                                    {{ rtrim(rtrim($detail->nilai_snapshot, '0'), '.') }}% &times; {{ $detail->jumlah_pengali_snapshot ?? 0 }}
                                                 @elseif($detail->metode_perhitungan_snapshot === 'per_hari')
                                                     Rp {{ number_format($detail->nilai_snapshot, 0, ',', '.') }} /hari &times; {{ $detail->jumlah_hari_snapshot ?? 0 }} hari
                                                     @if($detail->tanggal_awal_snapshot && $detail->tanggal_akhir_snapshot)

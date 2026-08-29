@@ -8,12 +8,14 @@ const perbaruiSuffixNilai = (select) => {
     const rentang = document.getElementById(`${idAwalan}_rentang`);
     const tanggalTunggal = document.getElementById(`${idAwalan}_tanggal_tunggal`);
     const jumlahHari = document.getElementById(`${idAwalan}_jumlah_hari`);
+    const jumlahPengali = document.getElementById(`${idAwalan}_jumlah_pengali`);
     if (!prefix || !suffix || !input) return;
 
-    const toggle = (perHari, harianSehari, harianManual) => {
+    const toggle = (perHari, harianSehari, harianManual, persentasePengali = false) => {
         rentang?.classList.toggle('d-none', !perHari);
         tanggalTunggal?.classList.toggle('d-none', !harianSehari);
         jumlahHari?.classList.toggle('d-none', !harianManual);
+        jumlahPengali?.classList.toggle('d-none', !persentasePengali);
     };
 
     if (select.value === 'persentase') {
@@ -22,6 +24,12 @@ const perbaruiSuffixNilai = (select) => {
         suffix.classList.remove('d-none');
         input.max = '100';
         toggle(false, false, false);
+    } else if (select.value === 'persentase_pengali') {
+        prefix.classList.add('d-none');
+        suffix.textContent = '%';
+        suffix.classList.remove('d-none');
+        input.max = '100';
+        toggle(false, false, false, true);
     } else if (select.value === 'per_hari') {
         prefix.classList.remove('d-none');
         suffix.textContent = '/hari';

@@ -544,7 +544,7 @@ tfoot td { background: #f9fafb; font-weight: 700; }
 .salary-slip__identity dt {
     margin-bottom: .5mm;
     color: #6b7280;
-    font-size: 6pt;
+    font-size: .75em;
     font-weight: 700;
     text-transform: uppercase;
 }
@@ -552,13 +552,13 @@ tfoot td { background: #f9fafb; font-weight: 700; }
 .salary-slip__identity dd {
     margin: 0;
     overflow-wrap: anywhere;
-    font-size: 7.2pt;
+    font-size: .9em;
     font-weight: 700;
 }
 
 .salary-slip__identity-primary dd {
     color: #111827;
-    font-size: 8pt;
+    font-size: 1em;
 }
 
 .salary-slip__base,
@@ -570,7 +570,7 @@ tfoot td { background: #f9fafb; font-weight: 700; }
 .salary-slip__base {
     padding: 1.8mm 0;
     border-bottom: 1px solid #9ca3af;
-    font-size: 7.5pt;
+    font-size: 1em;
 }
 
 .salary-slip__base strong,
@@ -604,7 +604,7 @@ tfoot td { background: #f9fafb; font-weight: 700; }
     padding: 1.2mm 0;
     color: #111827;
     border-bottom: 1px solid #4b5563;
-    font-size: 6.8pt;
+    font-size: .91em;
 }
 
 .salary-slip__component-group--income > header {
@@ -617,11 +617,11 @@ tfoot td { background: #f9fafb; font-weight: 700; }
 
 .salary-slip__component-group h3 {
     margin: 0;
-    font-size: 7pt;
+    font-size: 1.03em;
 }
 
 .salary-slip__component-list {
-    font-size: 6.7pt;
+    font-size: .89em;
 }
 
 .salary-slip__component-row {
@@ -656,12 +656,12 @@ tfoot td { background: #f9fafb; font-weight: 700; }
     color: #111827;
     border-top: .45mm solid #111827;
     border-bottom: 1px solid #111827;
-    font-size: 8.5pt;
+    font-size: 1.13em;
     font-weight: 700;
 }
 
 .salary-slip__net strong {
-    font-size: 10pt;
+    font-size: 1.18em;
 }
 
 .salary-slip__signatures {
@@ -685,11 +685,11 @@ tfoot td { background: #f9fafb; font-weight: 700; }
 .salary-slip__signature {
     min-width: 0;
     text-align: center;
-    font-size: 6.5pt;
+    font-size: .93em;
 }
 
 .salary-slip__signature-space {
-    height: 12mm;
+    height: 22mm;
 }
 
 .salary-slip__signature strong,
@@ -701,13 +701,13 @@ tfoot td { background: #f9fafb; font-weight: 700; }
 .salary-slip__signature strong {
     padding-top: .8mm;
     border-top: 1px solid #6b7280;
-    font-size: 6.8pt;
+    font-size: 1.05em;
 }
 
 .salary-slip__signature small {
     margin-top: .5mm;
     color: #6b7280;
-    font-size: 5.8pt;
+    font-size: .89em;
 }
 
 .salary-slip__footer {
@@ -717,7 +717,7 @@ tfoot td { background: #f9fafb; font-weight: 700; }
     padding-top: 1mm;
     color: #6b7280;
     border-top: 1px solid #e5e7eb;
-    font-size: 5.7pt;
+    font-size: .95em;
 }
 
 /* Slot kiri-kanan lebih sempit, tetapi mempunyai tinggi satu halaman penuh. */
@@ -768,7 +768,7 @@ tfoot td { background: #f9fafb; font-weight: 700; }
 }
 
 .salary-slip-sheet--left-right:not(.salary-slip-sheet--single) .salary-slip__signature-space {
-    height: 10mm;
+    height: 20mm;
 }
 
 .salary-slip-sheet--left-right:not(.salary-slip-sheet--single) .salary-slip__footer {

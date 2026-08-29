@@ -6,12 +6,14 @@ const perbaruiTampilanNilaiKomponen = (mode) => {
     const help = document.getElementById(`${mode}_nilai_default_help`);
     if (!metode || !prefix || !suffix || !input || !help) return;
 
-    if (metode.value === 'persentase') {
+    if (['persentase', 'persentase_pengali'].includes(metode.value)) {
         prefix.classList.add('d-none');
         suffix.textContent = '%';
         suffix.classList.remove('d-none');
         input.max = '100';
-        help.textContent = 'Persentase dihitung dari gaji pokok karyawan. Isi angka 0-100, contoh: 5 berarti 5%.';
+        help.textContent = metode.value === 'persentase_pengali'
+            ? 'Persentase dari gaji pokok, lalu dikalikan jumlah yang diisi saat transaksi gaji. Contoh: 2% × 3 anak.'
+            : 'Persentase dihitung dari gaji pokok karyawan. Isi angka 0-100, contoh: 5 berarti 5%.';
     } else if (metode.value === 'per_hari') {
         prefix.classList.remove('d-none');
         suffix.textContent = '/hari';
