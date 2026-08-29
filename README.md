@@ -1,94 +1,25 @@
-<p align="center"><strong>Sistem Inventaris &amp; Kepegawaian Koperasi</strong></p>
-<p align="center">Aplikasi multi-koperasi (SaaS) untuk mengelola unit kerja, karyawan, absensi, inventaris barang, dan penggajian dalam satu tempat.</p>
+# Sistem Inventaris & Kepegawaian Koperasi
 
-## Tentang Aplikasi
+Aplikasi web multi-koperasi untuk mengelola karyawan, absensi, inventaris, dan penggajian dalam satu tempat. Data setiap koperasi dipisahkan dan akses pengguna diatur berdasarkan peran.
 
-Aplikasi web berbasis Laravel untuk operasional kepegawaian dan inventaris koperasi: unit kerja & karyawan, rekap absensi bulanan, inventaris barang per unit kerja, penggajian, hingga laporan siap cetak/export. Satu instance melayani banyak koperasi (tenant) sekaligus — data tiap koperasi terisolasi penuh lewat kolom `koperasi_id` (lihat [docs/multi-tenant-koperasi.md](docs/multi-tenant-koperasi.md) & [docs/panduan-super-admin.md](docs/panduan-super-admin.md)). Antarmuka berbahasa Indonesia, hak akses diatur per role memakai [spatie/laravel-permission](https://spatie.be/docs/laravel-permission).
+## Tampilan Aplikasi
 
-### Fitur Utama
+### Login
 
-- **Multi-Koperasi** — satu instance untuk banyak koperasi, data terisolasi penuh; `super_admin` mengelola koperasi & masa aktif langganan, `admin_primer` mengelola koperasinya sendiri.
-- **Kepegawaian** — Unit Kerja, data Karyawan (dokumen & foto pendukung), Absensi harian lewat kalender bulanan, dan sinkronisasi Hari Libur nasional.
-- **Inventaris** — Pendataan barang per unit kerja (termasuk lokasi penempatan), riwayat kondisi, foto/dokumen pendukung, cetak barcode & QR code, serta laporan penyusutan aset.
-- **Penggajian** — Komponen gaji (tunjangan/potongan) dan transaksi gaji bulanan per karyawan, dihitung otomatis dari gaji pokok & kehadiran.
-- **Laporan** — Inventaris, Absensi, Kepegawaian, dan Penggajian; bisa dilihat di layar, dicetak, atau diexport ke Excel.
-- **Administrasi** — Manajemen Pengguna, Role & Hak Akses, Pengaturan Aplikasi, dan tur onboarding interaktif untuk pengguna baru.
-- Tabel data konsisten di seluruh halaman: pencarian & filter, bulk action, paginasi yang bisa diatur (10/25/50/100).
+![Halaman login](docs/screenshots/login.png)
 
-## Teknologi
+### Dashboard
 
-- [Laravel 13](https://laravel.com) (PHP 8.4) dengan pola **Controller → Service → Repository** dan Form Request untuk validasi.
-- Blade + komponen Blade reusable, [Bootstrap 5](https://getbootstrap.com), [Vite](https://vite.dev), [Shepherd.js](https://shepherdjs.dev) untuk onboarding.
-- SQLite untuk pengembangan lokal (bisa diganti MySQL/MariaDB lewat `.env`, dipakai di produksi/Docker).
-- [Pest](https://pestphp.com) untuk automated testing (Feature test per modul).
-- [maatwebsite/excel](https://docs.laravel-excel.com), [endroid/qr-code](https://github.com/endroid/qr-code), [picqer/php-barcode-generator](https://github.com/picqer/php-barcode-generator) untuk export laporan serta cetak barcode/QR barang.
+![Dashboard aplikasi](docs/screenshots/dashboard.png)
 
-## Instalasi
+### Kalender Absensi
 
-### Lokal (development)
+![Kalender absensi karyawan](docs/screenshots/absensi.png)
 
-Prasyarat: PHP 8.4+, Composer, Node.js 18+, npm.
+### Inventaris Barang
 
-```bash
-git clone https://github.com/ioncrisa2/inventaris.git
-cd inventaris
-composer setup
-```
+![Daftar inventaris barang](docs/screenshots/inventaris.png)
 
-`composer setup` menyalin `.env.example` ke `.env`, generate `APP_KEY`, menjalankan migrasi, lalu install & build asset frontend. Untuk data contoh (koperasi demo beserta akun-akunnya), jalankan:
+### Slip Gaji
 
-```bash
-php artisan db:seed
-```
-
-Menjalankan aplikasi (server, queue worker, dan Vite dev server sekaligus):
-
-```bash
-composer dev
-```
-
-Testing:
-
-```bash
-composer test
-```
-
-### Docker (produksi)
-
-```bash
-# Build asset frontend memakai container Node.js 22.
-docker compose run --rm node
-
-# Build ulang image dan jalankan seluruh service.
-docker compose up -d --build
-
-# Sinkronkan dependency PHP ke bind mount aplikasi.
-docker compose exec app composer install --no-dev --optimize-autoloader --no-interaction --no-progress
-
-# Terapkan perubahan database dan cache konfigurasi produksi.
-docker compose exec app php artisan migrate --force
-docker compose exec app php artisan optimize
-```
-
-Service `node` berjalan sekali lalu dihapus setelah build. Dependency Node Linux disimpan di volume Docker, sehingga tidak bercampur dengan folder `node_modules` milik host. Untuk build frontend berikutnya cukup jalankan kembali `docker compose run --rm node`.
-
-Aplikasi tersedia di `http://localhost:8081`. Lihat [Dockerfile](Dockerfile), [docker-compose.yml](docker-compose.yml), dan [nginx/default.conf](nginx/default.conf). Deploy otomatis via [.github/workflows/deploy.yml](.github/workflows/deploy.yml) saat push ke `main`.
-
-## Akun Demo
-
-Setelah `php artisan db:seed`, gunakan salah satu akun berikut (password default: `password`, diatur lewat `DEMO_USER_PASSWORD` di `.env`):
-
-| Email                    | Role         | Koperasi      | Unit Kerja  |
-| ------------------------ | ------------ | ------------- | ----------- |
-| admin@example.com        | Super Admin  | — (lintas koperasi) | —     |
-| admin.primer@example.com | Admin Primer | Koperasi Demo | —           |
-| it@example.com           | Staff        | Koperasi Demo | IT          |
-| staff@example.com        | Staff        | Koperasi Demo | Keuangan    |
-| sdm@example.com          | Staff        | Koperasi Demo | SDM         |
-| operasional@example.com  | Staff        | Koperasi Demo | Operasional |
-| umum@example.com         | Staff        | Koperasi Demo | Bag. Umum   |
-| logistik@example.com     | Staff        | Koperasi Demo | Logistik    |
-
-## Lisensi
-
-Dibangun di atas [Laravel](https://laravel.com), open-source di bawah [lisensi MIT](https://opensource.org/licenses/MIT).
+![Format slip gaji](docs/screenshots/slip-gaji.png)
