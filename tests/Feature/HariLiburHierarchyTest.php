@@ -3,77 +3,124 @@
 use App\Models\HariLibur;
 use App\Models\Koperasi;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 
 uses(RefreshDatabase::class);
 
-test('super admin navigates from year to cooperative before seeing holiday details', function () {
-    $koperasiA = Koperasi::create(['nama' => 'Primer Alfa', 'is_active' => true]);
-    $koperasiB = Koperasi::create(['nama' => 'Primer Beta', 'is_active' => true]);
-    $koperasiKosong = Koperasi::create(['nama' => 'Primer Kosong', 'is_active' => false]);
-    $adminA = adminPrimerUser($koperasiA);
-    $adminB = adminPrimerUser($koperasiB);
+function insertBaselineHolidayForHierarchy(string $tanggal, string $keterangan): int
+{
+    return DB::table('hari_libur')->insertGetId([
+        'koperasi_id' => null,
+        'cakupan_id' => 0,
+        'tanggal' => $tanggal,
+        'keterangan' => $keterangan,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+}
 
-    $this->actingAs($adminA);
-    HariLibur::create(['tanggal' => '2026-01-01', 'keterangan' => 'Libur Alfa Satu']);
-    HariLibur::create(['tanggal' => '2026-08-17', 'keterangan' => 'Libur Alfa Dua']);
+test('super admin sees one national baseline without choosing a primer', function () {
+    $koperasiA = Koperasi::create(['nama' => 'Primer Alfa']);
+    $koperasiB = Koperasi::create(['nama' => 'Primer Beta']);
 
-    $this->actingAs($adminB);
-    HariLibur::create(['tanggal' => '2026-05-01', 'keterangan' => 'Libur Beta']);
+    insertBaselineHolidayForHierarchy('2026-01-01', 'Tahun Baru Nasional');
+
+    $this->actingAs(adminPrimerUser($koperasiA));
+    HariLibur::create(['tanggal' => '2026-04-21', 'keterangan' => 'Libur Tambahan Alfa']);
+
+    $this->actingAs(adminPrimerUser($koperasiB));
+    HariLibur::create(['tanggal' => '2026-05-20', 'keterangan' => 'Libur Tambahan Beta']);
 
     $this->actingAs(superAdminUser())
         ->get(route('hari-libur.index'))
         ->assertOk()
-        ->assertSee(route('hari-libur.tahun', ['tahun' => 2026]), false)
-        ->assertDontSee('hari_libur_index_koperasi_id');
+        ->assertSee('Baseline hari libur nasional yang berlaku otomatis')
+        ->assertSee('1 hari libur')
+        ->assertSee(route('hari-libur.tahun', ['tahun' => 2026]), false);
 
     $this->get(route('hari-libur.tahun', ['tahun' => 2026]))
         ->assertOk()
-        ->assertSee('Pilih koperasi primer untuk melihat daftar hari liburnya.')
-        ->assertSee('Primer Alfa')
-        ->assertSee('2 hari libur')
-        ->assertSee('Primer Beta')
-        ->assertSee('1 hari libur')
-        ->assertSee('Primer Kosong')
-        ->assertSee('0 hari libur')
-        ->assertSee(route('hari-libur.koperasi', ['tahun' => 2026, 'koperasi' => $koperasiA]), false)
-        ->assertDontSee('Libur Alfa Satu')
-        ->assertDontSee('Libur Beta');
-
-    $this->get(route('hari-libur.koperasi', ['tahun' => 2026, 'koperasi' => $koperasiA]))
-        ->assertOk()
-        ->assertSee('Daftar tanggal libur milik Primer Alfa.')
-        ->assertSee('Libur Alfa Satu')
-        ->assertSee('Libur Alfa Dua')
-        ->assertDontSee('Libur Beta')
-        ->assertSee(route('hari-libur.sinkronisasi.create', [
-            'tahun' => 2026,
-            'koperasi_id' => $koperasiA->id,
-        ]));
-
-    $this->get(route('hari-libur.koperasi', ['tahun' => 2026, 'koperasi' => $koperasiKosong]))
-        ->assertOk()
-        ->assertSee('Belum ada hari libur untuk Primer Kosong pada tahun 2026.');
+        ->assertSee('Baseline nasional yang otomatis berlaku')
+        ->assertSee('Tahun Baru Nasional')
+        ->assertSee('Baseline nasional')
+        ->assertDontSee('Libur Tambahan Alfa')
+        ->assertDontSee('Libur Tambahan Beta')
+        ->assertDontSee('Primer Alfa')
+        ->assertDontSee('Primer Beta');
 });
 
-test('admin primer cannot open the super admin cooperative holiday route', function () {
+test('primer sees global baseline and only its own additional holidays', function () {
+    $koperasiA = Koperasi::create(['nama' => 'Primer Alfa']);
+    $koperasiB = Koperasi::create(['nama' => 'Primer Beta']);
+    $baselineId = insertBaselineHolidayForHierarchy('2026-01-01', 'Tahun Baru Nasional');
+
+    $this->actingAs(adminPrimerUser($koperasiA));
+    $tambahanA = HariLibur::create(['tanggal' => '2026-04-21', 'keterangan' => 'Libur Tambahan Alfa']);
+
+    $this->actingAs(adminPrimerUser($koperasiB));
+    HariLibur::create(['tanggal' => '2026-05-20', 'keterangan' => 'Libur Tambahan Beta']);
+
+    $this->actingAs(adminPrimerUser($koperasiA))
+        ->get(route('hari-libur.tahun', ['tahun' => 2026]))
+        ->assertOk()
+        ->assertSee('Gabungan baseline nasional dan hari libur tambahan milik Primer Alfa')
+        ->assertSee('Tahun Baru Nasional')
+        ->assertSee('Baseline nasional')
+        ->assertSee('Libur Tambahan Alfa')
+        ->assertSee('Tambahan primer')
+        ->assertDontSee('Libur Tambahan Beta')
+        ->assertDontSee(route('hari-libur.update', $baselineId), false)
+        ->assertDontSee(route('hari-libur.destroy', $baselineId), false)
+        ->assertSee(route('hari-libur.update', $tambahanA), false)
+        ->assertSee(route('hari-libur.destroy', $tambahanA), false);
+});
+
+test('primer cannot add edit or delete a date from the national baseline', function () {
+    $koperasi = Koperasi::create(['nama' => 'Primer Aman']);
+    $baselineId = insertBaselineHolidayForHierarchy('2026-01-01', 'Tahun Baru Nasional');
+    $admin = adminPrimerUser($koperasi);
+
+    $this->actingAs($admin)
+        ->post(route('hari-libur.store'), [
+            'tanggal' => '2026-01-01',
+            'keterangan' => 'Duplikat Primer',
+        ])
+        ->assertSessionHasErrors('tanggal');
+
+    $this->put(route('hari-libur.update', $baselineId), [
+        'tanggal' => '2026-01-02',
+        'keterangan' => 'Mengubah Baseline',
+    ])->assertForbidden();
+
+    $this->delete(route('hari-libur.destroy', $baselineId))->assertForbidden();
+
+    $this->assertDatabaseHas('hari_libur', [
+        'id' => $baselineId,
+        'koperasi_id' => null,
+        'tanggal' => '2026-01-01',
+        'keterangan' => 'Tahun Baru Nasional',
+    ]);
+});
+
+test('legacy cooperative holiday routes redirect super admin to the national baseline', function () {
+    $koperasi = Koperasi::create(['nama' => 'Primer Lama']);
+    $superAdmin = superAdminUser();
+
+    $this->actingAs($superAdmin)
+        ->get(route('hari-libur.koperasi', ['tahun' => 2026, 'koperasi' => $koperasi]))
+        ->assertRedirect(route('hari-libur.tahun', ['tahun' => 2026]));
+
+    $this->get(route('hari-libur.tahun', [
+        'tahun' => 2026,
+        'koperasi_id' => $koperasi->id,
+    ]))->assertRedirect(route('hari-libur.tahun', ['tahun' => 2026]));
+});
+
+test('admin primer cannot open the legacy super admin cooperative holiday route', function () {
     $koperasiA = Koperasi::create(['nama' => 'Primer Alfa']);
     $koperasiB = Koperasi::create(['nama' => 'Primer Beta']);
 
     $this->actingAs(adminPrimerUser($koperasiA))
         ->get(route('hari-libur.koperasi', ['tahun' => 2026, 'koperasi' => $koperasiB]))
         ->assertForbidden();
-});
-
-test('legacy super admin cooperative filter redirects to the explicit nested detail route', function () {
-    $koperasi = Koperasi::create(['nama' => 'Primer Lama']);
-
-    $this->actingAs(superAdminUser())
-        ->get(route('hari-libur.tahun', [
-            'tahun' => 2026,
-            'koperasi_id' => $koperasi->id,
-        ]))
-        ->assertRedirect(route('hari-libur.koperasi', [
-            'tahun' => 2026,
-            'koperasi' => $koperasi,
-        ]));
 });

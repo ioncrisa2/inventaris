@@ -2,8 +2,9 @@
 
 namespace App\Http\Requests\HariLibur;
 
-use App\Support\TenantRule;
+use App\Support\CurrentTenant;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateHariLiburRequest extends FormRequest
 {
@@ -18,13 +19,18 @@ class UpdateHariLiburRequest extends FormRequest
             'tanggal' => [
                 'required',
                 'date',
-                TenantRule::uniqueFor(
-                    'hari_libur',
-                    'tanggal',
-                    $this->route('hari_libur')?->koperasi_id,
-                )->ignore($this->route('hari_libur')),
+                Rule::unique('hari_libur', 'tanggal')
+                    ->where(fn ($query) => $query->whereIn('cakupan_id', [0, CurrentTenant::id() ?? -1]))
+                    ->ignore($this->route('hari_libur')),
             ],
             'keterangan' => ['required', 'string', 'max:255'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'tanggal.unique' => 'Tanggal tersebut sudah tercatat sebagai baseline nasional atau hari libur tambahan.',
         ];
     }
 }

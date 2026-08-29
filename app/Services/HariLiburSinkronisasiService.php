@@ -22,18 +22,17 @@ class HariLiburSinkronisasiService
      *     snapshot: string
      * }
      */
-    public function bandingkan(int $koperasiId, int $tahun): array
+    public function bandingkan(int $tahun): array
     {
         $dariApi = $this->tanggalMerahClient->holidays($tahun);
-        $tanggalDiDatabase = $this->hariLiburRepository->tanggalDalamRentangUntukKoperasi(
+        $tanggalDiDatabase = $this->hariLiburRepository->tanggalBaselineDalamRentang(
             Carbon::create($tahun, 1, 1),
             Carbon::create($tahun, 12, 31),
-            $koperasiId,
         );
 
         $baru = [];
         $sudahAda = [];
-        $snapshot = $this->buatSnapshot($koperasiId, $tahun, $dariApi);
+        $snapshot = $this->buatSnapshot($tahun, $dariApi);
 
         foreach ($dariApi as $item) {
             if ($tanggalDiDatabase->has($item['tanggal'])) {
@@ -51,7 +50,6 @@ class HariLiburSinkronisasiService
      */
     public function terapkan(
         User $aktor,
-        int $koperasiId,
         int $tahun,
         array $tanggalTerpilih,
         string $snapshotDitinjau,
@@ -62,7 +60,7 @@ class HariLiburSinkronisasiService
 
         $responsTerbaru = $this->tanggalMerahClient->holidays($tahun);
 
-        if (! hash_equals($snapshotDitinjau, $this->buatSnapshot($koperasiId, $tahun, $responsTerbaru))) {
+        if (! hash_equals($snapshotDitinjau, $this->buatSnapshot($tahun, $responsTerbaru))) {
             throw new \RuntimeException('Data API berubah sejak pratinjau ditampilkan. Muat ulang pratinjau dan periksa kembali sebelum menerapkan.');
         }
 
@@ -75,7 +73,7 @@ class HariLiburSinkronisasiService
             ->all();
 
         return DB::transaction(
-            fn () => $this->hariLiburRepository->insertMissingUntukKoperasi($koperasiId, $dataTerpilih),
+            fn () => $this->hariLiburRepository->insertMissingBaseline($dataTerpilih),
             3,
         );
     }
@@ -83,10 +81,9 @@ class HariLiburSinkronisasiService
     /**
      * @param  list<array{tanggal: string, keterangan: string, jenis: 'holiday'|'leave'}>  $items
      */
-    private function buatSnapshot(int $koperasiId, int $tahun, array $items): string
+    private function buatSnapshot(int $tahun, array $items): string
     {
         $payload = json_encode([
-            'koperasi_id' => $koperasiId,
             'tahun' => $tahun,
             'items' => collect($items)->sortBy('tanggal')->values()->all(),
         ], JSON_THROW_ON_ERROR);

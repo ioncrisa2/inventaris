@@ -6,12 +6,12 @@
     <x-app-page long-footer>
         <x-page-header
             title="Sinkronisasi Hari Libur"
-            subtitle="Ambil data publik, periksa hasilnya, lalu tambahkan tanggal terpilih ke satu koperasi."
+            subtitle="Ambil data publik, periksa hasilnya, lalu jadikan tanggal terpilih sebagai baseline seluruh koperasi primer."
         >
             <x-slot:actions>
                 <a
-                    href="{{ $tahun && $koperasiId
-                        ? route('hari-libur.koperasi', ['tahun' => $tahun, 'koperasi' => $koperasiId])
+                    href="{{ $tahun
+                        ? route('hari-libur.tahun', ['tahun' => $tahun])
                         : route('hari-libur.index') }}"
                     class="btn btn-light"
                 >
@@ -29,14 +29,14 @@
                 <strong>Periksa tanggal sebelum menerapkan.</strong>
                 <p class="mb-0">
                     Data berasal dari API publik pihak ketiga dan bukan sumber hukum resmi. Data manual yang sudah ada
-                    tidak akan diubah. Sinkronisasi hanya menambahkan tanggal baru ke koperasi tujuan.
+                    tidak akan diubah. Tanggal yang diterapkan menjadi baseline nasional dan otomatis dipakai seluruh primer.
                 </p>
             </div>
         </div>
 
         <x-section-card
             title="Ambil Data Publik"
-            subtitle="Pilih tahun dan koperasi primer yang akan menerima data."
+            subtitle="Pilih tahun baseline nasional yang akan diperiksa."
         >
             <form method="GET" action="{{ route('hari-libur.sinkronisasi.create') }}" class="row g-3 align-items-end">
                 <div class="col-12 col-md-4 col-xl-3">
@@ -52,21 +52,6 @@
                         required
                     >
                     @error('tahun')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="col-12 col-md-5 col-xl-4">
-                    <label for="koperasi_id" class="form-label">Koperasi Tujuan <span class="text-danger">*</span></label>
-                    <select name="koperasi_id" id="koperasi_id" class="form-select @error('koperasi_id') is-invalid @enderror" required>
-                        <option value="">Pilih koperasi primer</option>
-                        @foreach($koperasis as $opsiKoperasi)
-                            <option value="{{ $opsiKoperasi->id }}" @selected((string) old('koperasi_id', $koperasiId) === (string) $opsiKoperasi->id)>
-                                {{ $opsiKoperasi->nama }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('koperasi_id')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
@@ -90,17 +75,16 @@
             </div>
         @endif
 
-        @if($hasil && $koperasi)
+        @if($hasil)
             <x-data-table
                 title="Tanggal Baru"
-                subtitle="{{ count($hasil['baru']) }} tanggal belum tercatat di {{ $koperasi->nama }}. Centang hanya data yang sudah diperiksa."
+                subtitle="{{ count($hasil['baru']) }} tanggal belum tercatat sebagai baseline nasional. Centang hanya data yang sudah diperiksa."
                 class="mt-4"
             >
                 @if(count($hasil['baru']))
                     <form id="sinkronisasi-hari-libur-form" method="POST" action="{{ route('hari-libur.sinkronisasi.store') }}">
                         @csrf
                         <input type="hidden" name="tahun" value="{{ $tahun }}">
-                        <input type="hidden" name="koperasi_id" value="{{ $koperasi->id }}">
                         <input type="hidden" name="snapshot" value="{{ $hasil['snapshot'] }}">
                     </form>
 
@@ -150,7 +134,7 @@
 
                     <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 p-3 border-top">
                         <small class="text-body-secondary">
-                            Tujuan: <strong>{{ $koperasi->nama }}</strong>. API akan diperiksa ulang saat diterapkan.
+                            Tujuan: <strong>baseline nasional seluruh primer</strong>. API akan diperiksa ulang saat diterapkan.
                         </small>
                         <button type="submit" form="sinkronisasi-hari-libur-form" class="btn btn-primary">
                             <i class="bi bi-check-circle"></i>
@@ -160,14 +144,14 @@
                 @else
                     <div class="p-4 text-center text-body-secondary">
                         <i class="bi bi-check-circle d-block fs-3 mb-2" aria-hidden="true"></i>
-                        Semua tanggal API tahun {{ $tahun }} sudah tercatat di {{ $koperasi->nama }}.
+                        Semua tanggal API tahun {{ $tahun }} sudah tercatat sebagai baseline nasional.
                     </div>
                 @endif
             </x-data-table>
 
             <x-data-table
                 title="Sudah Tercatat"
-                subtitle="{{ count($hasil['sudahAda']) }} tanggal sudah ada di {{ $koperasi->nama }} dan tidak akan diubah."
+                subtitle="{{ count($hasil['sudahAda']) }} tanggal sudah ada di baseline nasional dan tidak akan diubah."
                 class="mt-4"
             >
                 @if(count($hasil['sudahAda']))
@@ -191,7 +175,7 @@
                     </table>
                 @else
                     <div class="p-4 text-center text-body-secondary">
-                        Belum ada tanggal API tahun {{ $tahun }} yang tercatat di {{ $koperasi->nama }}.
+                        Belum ada tanggal API tahun {{ $tahun }} yang tercatat sebagai baseline nasional.
                     </div>
                 @endif
             </x-data-table>

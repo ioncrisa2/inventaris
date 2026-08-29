@@ -227,6 +227,7 @@ class TransaksiGajiService
                 $kunci,
                 $row,
                 $gajiPokok,
+                $karyawan->koperasi_id === null ? null : (int) $karyawan->koperasi_id,
                 $transaksiGaji,
                 $komponenById,
                 $detailCustomById,
@@ -273,6 +274,7 @@ class TransaksiGajiService
         string $kunci,
         array $row,
         string $gajiPokok,
+        ?int $koperasiId,
         ?TransaksiGaji $transaksiGaji,
         Collection $komponenById,
         Collection $detailCustomById,
@@ -378,7 +380,11 @@ class TransaksiGajiService
 
             $tanggalAwalSnapshot = $awalCarbon->toDateString();
             $tanggalAkhirSnapshot = $akhirCarbon->toDateString();
-            $jumlahHariSnapshot = $this->hariOperasionalService->jumlahHariOperasional($awalCarbon, $akhirCarbon);
+            $jumlahHariSnapshot = $this->hariOperasionalService->jumlahHariOperasional(
+                $awalCarbon,
+                $akhirCarbon,
+                $koperasiId,
+            );
         } elseif ($metode === 'harian_sehari') {
             try {
                 $tanggalCarbon = Carbon::parse($tanggalTunggal)->startOfDay();

@@ -9,8 +9,8 @@
         <x-page-header
             title="Hari Libur"
             :subtitle="$isSuperAdmin
-                ? 'Pilih tahun, lalu koperasi primer untuk melihat rincian hari libur.'
-                : 'Tanggal libur nasional — dasar hitung Uang Makan &amp; kalender Absensi.'"
+                ? 'Baseline hari libur nasional yang berlaku otomatis untuk seluruh koperasi primer.'
+                : 'Baseline nasional dan hari libur tambahan koperasi — dasar kalender Absensi dan perhitungan hari operasional.'"
         >
             <x-slot:actions>
                 @if($isSuperAdmin)
@@ -44,7 +44,7 @@
                 <thead>
                     <tr>
                         <th class="table-col-width-150">Tahun</th>
-                        <th>{{ $isSuperAdmin ? 'Total Entri Hari Libur' : 'Jumlah Hari Libur' }}</th>
+                        <th>Jumlah Hari Libur</th>
                         <th class="table-col-width-150">Aksi</th>
                     </tr>
                 </thead>
@@ -52,7 +52,7 @@
                     @forelse($tahunList as $data)
                         <tr>
                             <td><strong>{{ $data['tahun'] }}</strong></td>
-                            <td>{{ $data['jumlah'] }} {{ $isSuperAdmin ? 'entri hari libur' : 'hari libur' }}</td>
+                            <td>{{ $data['jumlah'] }} hari libur</td>
                             <td>
                                 <a
                                     href="{{ route('hari-libur.tahun', ['tahun' => $data['tahun']]) }}"
@@ -68,7 +68,7 @@
                         <x-empty-row :colspan="3">
                             Belum ada data hari libur.
                             @if($isSuperAdmin)
-                                Ambil data publik untuk koperasi primer yang dipilih.
+                                Sinkronkan data publik untuk membuat baseline nasional seluruh primer.
                                 <x-slot:action>
                                     <a href="{{ route('hari-libur.sinkronisasi.create') }}" class="btn btn-primary btn-sm">
                                         <i class="bi bi-cloud-download"></i>

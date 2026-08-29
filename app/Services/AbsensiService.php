@@ -55,7 +55,11 @@ class AbsensiService
         $today = today();
         $mulaiGrid = $awalBulan->copy()->startOfWeek(Carbon::MONDAY);
         $akhirGrid = $akhirBulan->copy()->endOfWeek(Carbon::SUNDAY);
-        $liburDalamGrid = $this->hariOperasionalService->liburDalamRentang($mulaiGrid, $akhirGrid);
+        $liburDalamGrid = $this->hariOperasionalService->liburDalamRentang(
+            $mulaiGrid,
+            $akhirGrid,
+            $karyawan->koperasi_id,
+        );
 
         $mingguKalender = [];
         $tanggalBerjalan = $mulaiGrid->copy();

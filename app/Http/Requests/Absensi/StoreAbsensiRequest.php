@@ -45,7 +45,10 @@ class StoreAbsensiRequest extends FormRequest
                 $tanggalAbsensi = Carbon::parse($this->input('tanggal'));
                 $statusDiizinkanDiHariLibur = in_array($this->input('status'), Absensi::LIBUR_ALLOWED_STATUSES, true);
 
-                if ($this->hariOperasionalService->isLiburPada($tanggalAbsensi) && ! $statusDiizinkanDiHariLibur) {
+                if ($this->hariOperasionalService->isLiburPada(
+                    $tanggalAbsensi,
+                    $this->route('karyawan')?->koperasi_id,
+                ) && ! $statusDiizinkanDiHariLibur) {
                     $validator->errors()->add('absensi', 'Hari libur (Minggu/libur nasional) hanya dapat dicatat dengan status Izin, Sakit, atau Dinas Luar Kota.');
                 }
             },

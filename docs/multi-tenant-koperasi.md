@@ -65,7 +65,8 @@ otomatis terikat ke koperasinya.
 ### 2.3 Isolasi data
 
 - Semua tabel domain tenant butuh kolom `koperasi_id` + global scope Eloquent
-  yang otomatis filter berdasarkan `koperasi_id` user yang login.
+  yang otomatis filter berdasarkan `koperasi_id` user yang login, kecuali
+  `hari_libur` yang memakai model dua lapis pada bagian 2.4.
 - `super_admin` bypass scope ini sepenuhnya (lihat semua koperasi).
 - Satu `admin_primer` **tidak pernah** boleh melihat data koperasi lain —
   ini persyaratan keras, harus diuji lewat automated test, bukan cuma
@@ -74,7 +75,29 @@ otomatis terikat ke koperasinya.
   custom milik tenantnya saja. Role sistem tampil terkunci; hanya role custom
   dengan `koperasi_id` yang sama yang dapat dibuka dan diperbarui.
 
-### 2.4 Masa aktif (expiry)
+### 2.4 Single source of truth hari libur
+
+- Baris `hari_libur.koperasi_id = null` adalah **baseline nasional global**.
+  Baseline hanya disinkronkan satu kali oleh `super_admin` dan otomatis
+  berlaku pada kalender absensi serta perhitungan hari operasional seluruh
+  koperasi primer; tidak ada lagi proses assign/sinkron per primer.
+- Baris `hari_libur.koperasi_id = <id primer>` adalah **hari libur tambahan**
+  milik primer tersebut. Pengguna primer dapat menambah, mengubah, menghapus,
+  atau mengimpor data tambahan hanya jika memiliki permission
+  `hari-libur.create/update/delete`.
+- Daftar efektif untuk satu primer adalah `baseline global + tambahan primer
+  sendiri`. Tambahan primer lain tidak pernah ikut terbaca. Baseline tampil
+  read-only bagi pengguna primer dan tanggal baseline tidak dapat dibuat ulang
+  sebagai tambahan.
+- Kolom teknis non-null `cakupan_id` menjaga unique `(cakupan_id, tanggal)`:
+  nilai `0` untuk baseline dan nilai `koperasi_id` untuk tambahan primer.
+  Kolom ini diperlukan karena unique composite dengan kolom nullable tidak
+  menjamin satu tanggal global tetap unik di MySQL.
+- Jika data tenant lama memiliki tanggal yang kemudian juga masuk baseline,
+  baris lama tidak dihapus. Pada pembacaan efektif baseline diprioritaskan dan
+  tanggal hanya dihitung satu kali.
+
+### 2.5 Masa aktif (expiry)
 
 - `expires_at` disimpan **per koperasi** (bukan per user) — satu tanggal
   berlaku untuk seluruh akun (`admin_primer` + role lain) di koperasi itu.
@@ -103,7 +126,7 @@ otomatis terikat ke koperasinya.
 - `karyawan`
 - `barang`
 - `absensi`
-- `hari_libur`
+- `hari_libur` (`null` = baseline nasional global; terisi = tambahan primer)
 - `komponen_gaji`
 - `transaksi_gaji`
 - `pengaturan`
@@ -122,8 +145,10 @@ otomatis terikat ke koperasinya.
 Mengikuti pola layered yang sudah dipakai di proyek ini (Request →
 Repository → Service → Controller, komponen Blade reusable):
 
-- **Trait/global scope** `BelongsToKoperasi` — dipasang di semua model tenant,
-  auto-filter `koperasi_id` dari user yang login, bypass untuk `super_admin`.
+- **Trait/global scope** `BelongsToKoperasi` — dipasang di semua model tenant
+  biasa, auto-filter `koperasi_id` dari user yang login, bypass untuk
+  `super_admin`. Model `HariLibur` memakai scope efektif khusus untuk
+  menggabungkan baseline nasional dan tambahan primer.
 - **Auto-assign `koperasi_id`** saat create — dilakukan di layer Service
   (bukan dari input form), ambil dari `auth()->user()->koperasi_id`.
 - **Middleware** `EnsureKoperasiActive` di grup route `auth` — cek
@@ -175,12 +200,15 @@ Repository → Service → Controller, komponen Blade reusable):
       role `admin_primer` dari Fase 2/4 dulu.
 
 > **Catatan implementasi (temuan saat migrasi):**
-> - `unit_kerja.nama_unit`, `karyawan.nik`, `barang.kode_barang`,
->   `hari_libur.tanggal`, dan `roles(name, guard_name)` diubah jadi unique
->   **composite** bareng `koperasi_id` — aman karena kode yang menulis ke
+> - `unit_kerja.nama_unit`, `karyawan.nik`, `barang.kode_barang`, dan
+>   `roles(name, guard_name)` diubah jadi unique **composite** bareng
+>   `koperasi_id` — aman karena kode yang menulis ke
 >   tabel-tabel ini (`firstOrCreate`, `Role::findOrCreate`, Form Request
 >   validation) selalu melakukan pengecekan eksistensi dulu, bukan blind
 >   insert, jadi tidak terpengaruh NULL-vs-NULL di unique index.
+> - Khusus `hari_libur`, constraint akhir menggunakan unique
+>   `(cakupan_id, tanggal)`. `cakupan_id = 0` mewakili baseline global dan
+>   `cakupan_id = koperasi_id` mewakili tambahan primer.
 > - `pengaturan.key` **sengaja TIDAK** diubah jadi composite unique di fase
 >   ini. `KodeBarangGenerator::pengaturanTerkunci()` memakai
 >   `Pengaturan::insertOrIgnore()` sebagai mutex yang mengandalkan `key`
@@ -204,7 +232,8 @@ Repository → Service → Controller, komponen Blade reusable):
       (hanya kalau belum diisi eksplisit — supaya alur super_admin bikin
       data untuk koperasi lain tetap bisa override manual)
 - [x] Pasang trait ke `UnitKerja`, `Karyawan`, `Barang`, `Absensi`,
-      `HariLibur`, `KomponenGaji`, `TransaksiGaji`, dan `User`
+      `KomponenGaji`, `TransaksiGaji`, dan `User`; `HariLibur` kemudian
+      memakai scope dua lapis khusus sesuai keputusan bagian 2.4.
 - [x] Update `User` model: relasi `koperasi()` (lewat trait) + helper
       `isSuperAdmin()` / `isAdminPrimer()` (cek `hasRole()`, role-nya baru
       benar-benar ada setelah Fase 4)
@@ -502,41 +531,43 @@ guard mengambil user dari DB).
       Primer tetap gagal menghapus role atau menetapkan `super_admin`/
       `admin_primer` kepada pengguna lain.
 
+**Baseline hari libur global:**
+
+- `super_admin` membuka menu Hari Libur tanpa memilih koperasi, memeriksa data
+  API berdasarkan tahun, lalu menerapkan tanggal terpilih sebagai baseline
+  nasional satu kali.
+- Pengguna primer melihat label sumber `Baseline nasional` dan `Tambahan
+  primer`. Aksi edit/hapus hanya tersedia pada tambahan milik primernya.
+- `HariOperasionalService`, kalender absensi, validasi input absensi, dan
+  pengali komponen gaji `per_hari` menerima koperasi target secara eksplisit,
+  lalu memakai gabungan baseline + tambahan primer tersebut.
+- Migration `2026_08_29_000028_make_hari_libur_baseline_global.php` tidak
+  menghapus data lama. Setelah deployment jalankan `php artisan migrate
+  --force`, kemudian sinkronkan baseline dari akun `super_admin`.
+- Regression test utama ada di `HariLiburSinkronisasiTest`,
+  `HariLiburHierarchyTest`, dan `HariOperasionalServiceTest`; test absensi,
+  payroll, isolasi tenant, bulk delete, serta seeder juga tetap dijalankan.
+
 **Sinkronisasi seeder demo** (di luar checklist Fase 8 tertulis, tapi
-bagian wajar dari "testing merepresentasikan pemakaian nyata" — sekaligus
-menuntaskan item Fase 1 yang sengaja ditunda: *"Seeder: buat 1-2 koperasi
-contoh + akun admin_primer... dipindah ke Fase 8"*):
-- `DatabaseSeeder` sekarang benar-benar memprovisioning satu **"Koperasi
-  Demo"** lewat `KoperasiService::store()` yang sama persis dipakai
-  Super Admin sungguhan di UI (bukan jalan pintas terpisah) — bikin role
-  `admin_primer` + akun `admin.primer@example.com`.
-- Setelah koperasi dibuat, `Auth::setUser()` di-set ke akun admin_primer
-  tsb SEBELUM sisa seeder (unit kerja, karyawan, absensi, barang,
-  komponen gaji, transaksi gaji, dst) dijalankan — jadi seeder-seeder itu
-  **tidak perlu diubah sama sekali**, semua `koperasi_id`-nya ter-tag
-  otomatis lewat trait `BelongsToKoperasi` yang sama dengan pemakaian
-  nyata (persis simulasi "admin_primer login lalu isi data lewat UI").
-- Akun `admin@example.com` (super_admin) tetap dibuat terpisah SEBELUM
-  koperasi ada, jadi `koperasi_id`-nya tetap `null` (platform-level,
-  bukan milik tenant manapun) — sesuai desain.
-- `UserSeeder` disederhanakan (cuma bikin 6 akun ber-role "Staff" contoh,
-  entry "Administrator" lama sudah dipindah), `DemoStaffRoleSeeder` diisi
-  `koperasi_id` eksplisit dari aktor yang sedang aktif (Role tidak pakai
-  trait, lihat catatan Fase 6).
-- Idempotensi dijaga eksplisit: provisioning koperasi+admin_primer di-skip
-  kalau "Koperasi Demo" sudah ada (`KoperasiService::store()` sendiri
-  selalu insert baru tanpa existence check, jadi re-seed tanpa guard ini
-  akan gagal kena unique constraint email) — diverifikasi test re-seed
-  yang sudah ada (`database seeder is idempotent...`) tetap hijau.
-- `tests/Feature/DatabaseSeederTest.php` diperbarui: `roles` 2→3,
-  `users` 7→8, plus assertion baru: `admin_primer` benar py role &
-  permission (69 = 70 dikurangi `role.delete`) yang benar,
-  dan SEMUA data domain (`unit_kerja`, `karyawan`, `barang`) benar-benar
-  ter-tag ke koperasi demo (bukan `koperasi_id` null) — bukan cuma
-  jumlahnya cocok.
-- Diverifikasi juga langsung di MySQL sungguhan (`migrate:fresh --seed`):
-  8 user (7 dalam koperasi + super_admin di luar), 15/15 karyawan ter-tag,
-  3 role (`super_admin`, `admin_primer`, `Staff`).
+bagian wajar dari "testing merepresentasikan pemakaian nyata"):
+- `DatabaseSeeder` memakai `MultiPrimerUserSeeder` untuk memprovisioning
+  empat koperasi primer melalui `KoperasiService::store()`: Koperasi Rukun,
+  Koperasi Karya Jasa, Koperasi Abdi Sesama, dan Koperasi Sentosa.
+- Setiap primer memiliki tepat tiga akun yang terhubung lewat `koperasi_id`:
+  satu `admin_primer` dan dua `Staff`. Role `admin_primer` maupun `Staff`
+  dibuat per tenant, sehingga role primer lain tidak dapat ikut terpasang.
+- Data operasional lengkap bawaan (unit kerja, karyawan, absensi, barang,
+  komponen gaji, transaksi gaji, dan media) tetap dibuat sekali di Koperasi
+  Rukun. Untuk data operasional lengkap pada keempat primer, jalankan
+  `php artisan db:seed --class=MultiPrimerDemoSeeder`.
+- Akun `admin@example.com` (`super_admin`) tetap global dengan
+  `koperasi_id = null`. Akun `system_owner` yang telah diprovisikan melalui
+  command tidak dibuat ulang maupun diubah oleh seeder.
+- Seeder tetap idempotent: re-seed tidak menggandakan koperasi, user, atau
+  role dan tidak mengganti password akun global yang sudah ada.
+- `tests/Feature/DatabaseSeederTest.php` mengunci hasil utama: 4 primer,
+  12 user tenant (3 per primer), 1 super admin global, 10 role total, serta
+  kesesuaian `koperasi_id` user dengan role tenant masing-masing.
 
 ### Fase 9 — Rollout
 - [ ] Jalankan migration & seeder di environment staging, verifikasi manual

@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\HariLibur\BandingkanHariLiburRequest;
 use App\Http\Requests\HariLibur\SinkronisasiHariLiburRequest;
-use App\Models\Koperasi;
 use App\Services\HariLiburSinkronisasiService;
 
 class HariLiburSinkronisasiController extends Controller
@@ -14,17 +13,13 @@ class HariLiburSinkronisasiController extends Controller
     public function create(BandingkanHariLiburRequest $request)
     {
         $tahun = $request->validated('tahun');
-        $koperasiId = $request->validated('koperasi_id');
         $tahun = $tahun !== null ? (int) $tahun : null;
-        $koperasiId = $koperasiId !== null ? (int) $koperasiId : null;
-        $koperasis = Koperasi::query()->select(['id', 'nama'])->orderBy('nama')->get();
-        $koperasi = $koperasiId !== null ? $koperasis->firstWhere('id', $koperasiId) : null;
         $hasil = null;
         $errorPesan = null;
 
-        if ($tahun !== null && $koperasiId !== null) {
+        if ($tahun !== null) {
             try {
-                $hasil = $this->hariLiburSinkronisasiService->bandingkan($koperasiId, $tahun);
+                $hasil = $this->hariLiburSinkronisasiService->bandingkan($tahun);
             } catch (\RuntimeException $exception) {
                 $errorPesan = $exception->getMessage();
             }
@@ -32,9 +27,6 @@ class HariLiburSinkronisasiController extends Controller
 
         return view('hari-libur.sinkronisasi', compact(
             'tahun',
-            'koperasiId',
-            'koperasis',
-            'koperasi',
             'hasil',
             'errorPesan',
         ));
@@ -43,12 +35,10 @@ class HariLiburSinkronisasiController extends Controller
     public function store(SinkronisasiHariLiburRequest $request)
     {
         $tahun = (int) $request->validated('tahun');
-        $koperasiId = (int) $request->validated('koperasi_id');
 
         try {
             $jumlah = $this->hariLiburSinkronisasiService->terapkan(
                 $request->user(),
-                $koperasiId,
                 $tahun,
                 $request->validated('pilihan') ?? [],
                 $request->validated('snapshot'),
@@ -61,9 +51,6 @@ class HariLiburSinkronisasiController extends Controller
             ? "{$jumlah} hari libur berhasil ditambahkan dari API."
             : 'Tidak ada hari libur baru yang ditambahkan.';
 
-        return redirect()->route('hari-libur.koperasi', [
-            'tahun' => $tahun,
-            'koperasi' => $koperasiId,
-        ])->with('success', $pesan);
+        return redirect()->route('hari-libur.tahun', ['tahun' => $tahun])->with('success', $pesan);
     }
 }

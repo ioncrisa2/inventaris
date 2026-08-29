@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\HariLibur;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class HariLiburSeeder extends Seeder
 {
@@ -18,9 +18,17 @@ class HariLiburSeeder extends Seeder
         ];
 
         foreach ($hariLiburs as $hariLibur) {
-            HariLibur::updateOrCreate(
-                ['tanggal' => $hariLibur['tanggal']],
-                $hariLibur,
+            DB::table('hari_libur')->updateOrInsert(
+                [
+                    'cakupan_id' => 0,
+                    'tanggal' => $hariLibur['tanggal'],
+                ],
+                [
+                    'koperasi_id' => null,
+                    'keterangan' => $hariLibur['keterangan'],
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
             );
         }
     }

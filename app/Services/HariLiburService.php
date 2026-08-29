@@ -4,13 +4,14 @@ namespace App\Services;
 
 use App\Imports\HariLiburImport;
 use App\Models\HariLibur;
-use App\Models\Koperasi;
 use App\Repositories\HariLiburRepository;
 use App\Support\PerPage;
+use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
 
 class HariLiburService
@@ -43,12 +44,6 @@ class HariLiburService
             : $this->hariLiburRepository->tahunList();
     }
 
-    /** @return Collection<int, Koperasi> */
-    public function koperasiListUntukTahun(int $tahun): Collection
-    {
-        return $this->hariLiburRepository->koperasiListUntukTahun($tahun);
-    }
-
     public function listForTahun(int $tahun, ?string $search, int $perPage = PerPage::DEFAULT, ?int $koperasiId = null): LengthAwarePaginator
     {
         return $koperasiId
@@ -58,11 +53,27 @@ class HariLiburService
 
     public function store(array $data): HariLibur
     {
-        return DB::transaction(fn () => $this->hariLiburRepository->create($data), 3);
+        return DB::transaction(function () use ($data) {
+            $koperasiId = auth()->user()?->koperasi_id;
+
+            if ($koperasiId === null) {
+                throw new \DomainException('Hari libur tambahan hanya dapat dibuat oleh pengguna koperasi primer.');
+            }
+
+            if ($this->hariLiburRepository->ada(Carbon::parse($data['tanggal']), (int) $koperasiId)) {
+                throw ValidationException::withMessages([
+                    'tanggal' => 'Tanggal tersebut sudah tercatat sebagai baseline nasional atau hari libur tambahan.',
+                ]);
+            }
+
+            return $this->hariLiburRepository->create($data);
+        }, 3);
     }
 
     public function update(HariLibur $hariLibur, array $data): HariLibur
     {
+        $this->pastikanDapatDiubah($hariLibur);
+
         return DB::transaction(fn () => $this->hariLiburRepository->update($hariLibur, $data), 3);
     }
 
@@ -81,9 +92,23 @@ class HariLiburService
                 throw new \DomainException('Sebagian hari libur sudah tidak tersedia. Muat ulang halaman lalu coba lagi.');
             }
 
+            $hariLiburs->each(fn (HariLibur $hariLibur) => $this->pastikanDapatDiubah($hariLibur));
             $hariLiburs->each(fn (HariLibur $hariLibur) => $this->hariLiburRepository->delete($hariLibur));
 
             return $hariLiburs->count();
         }, 3);
+    }
+
+    private function pastikanDapatDiubah(HariLibur $hariLibur): void
+    {
+        $koperasiId = auth()->user()?->koperasi_id;
+
+        if ($hariLibur->isBaselineNasional()) {
+            throw new \DomainException('Baseline hari libur nasional tidak dapat diubah dari menu primer.');
+        }
+
+        if ($koperasiId === null || (int) $hariLibur->koperasi_id !== (int) $koperasiId) {
+            throw new \DomainException('Hari libur tambahan tidak berada dalam koperasi aktif Anda.');
+        }
     }
 }

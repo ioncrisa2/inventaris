@@ -3,9 +3,10 @@
 namespace App\Repositories;
 
 use App\Models\HariLibur;
-use App\Models\Koperasi;
+use App\Support\CurrentTenant;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -13,10 +14,13 @@ class HariLiburRepository
 {
     public function paginateForTahun(int $tahun, ?string $search, int $perPage = 10, ?int $koperasiId = null): LengthAwarePaginator
     {
-        return HariLibur::query()
+        $query = $koperasiId !== null
+            ? $this->queryEfektifUntukKoperasi($koperasiId)
+            : $this->queryUntukAktorAktif();
+
+        return $query
             ->with('koperasi:id,nama')
             ->whereYear('tanggal', $tahun)
-            ->when($koperasiId, fn ($query) => $query->where('koperasi_id', $koperasiId))
             ->when($search, function ($query, $search) {
                 $query->where('keterangan', 'like', '%'.$search.'%');
             })
@@ -33,25 +37,19 @@ class HariLiburRepository
      */
     public function tahunList(?int $koperasiId = null): Collection
     {
-        return HariLibur::query()
-            ->when($koperasiId, fn ($query) => $query->where('koperasi_id', $koperasiId))
+        $query = $koperasiId !== null
+            ? $this->queryEfektifUntukKoperasi($koperasiId)
+            : $this->queryUntukAktorAktif();
+
+        return $query
             ->get(['tanggal'])
             ->groupBy(fn (HariLibur $hariLibur) => $hariLibur->tanggal->year)
-            ->map(fn (Collection $group, int $tahun) => ['tahun' => $tahun, 'jumlah' => $group->count()])
+            ->map(fn (Collection $group, int $tahun) => [
+                'tahun' => $tahun,
+                'jumlah' => $group->unique(fn (HariLibur $hariLibur) => $hariLibur->tanggal->toDateString())->count(),
+            ])
             ->sortByDesc('tahun')
             ->values();
-    }
-
-    /** @return Collection<int, Koperasi> */
-    public function koperasiListUntukTahun(int $tahun): Collection
-    {
-        return Koperasi::query()
-            ->select(['id', 'nama', 'is_active'])
-            ->withCount([
-                'hariLibur as jumlah_hari_libur' => fn ($query) => $query->whereYear('tanggal', $tahun),
-            ])
-            ->orderBy('nama')
-            ->get();
     }
 
     public function find(int $id): ?HariLibur
@@ -68,9 +66,11 @@ class HariLiburRepository
             ->get();
     }
 
-    public function ada(Carbon $tanggal): bool
+    public function ada(Carbon $tanggal, ?int $koperasiId = null): bool
     {
-        return HariLibur::query()->whereDate('tanggal', $tanggal->toDateString())->exists();
+        return $this->queryEfektif($koperasiId)
+            ->whereDate('tanggal', $tanggal->toDateString())
+            ->exists();
     }
 
     /**
@@ -80,23 +80,19 @@ class HariLiburRepository
      *
      * @return Collection<string, string> tanggal (Y-m-d) => keterangan
      */
-    public function tanggalDalamRentang(Carbon $awal, Carbon $akhir): Collection
+    public function tanggalDalamRentang(Carbon $awal, Carbon $akhir, ?int $koperasiId = null): Collection
     {
-        return HariLibur::query()
+        return $this->queryEfektif($koperasiId)
             ->whereBetween('tanggal', [$awal->toDateString(), $akhir->toDateString()])
+            ->orderByRaw('koperasi_id IS NOT NULL')
             ->get()
             ->mapWithKeys(fn (HariLibur $hariLibur) => [$hariLibur->tanggal->toDateString() => $hariLibur->keterangan]);
     }
 
-    /**
-     * Query control-plane wajib menyebut koperasi tujuan secara eksplisit.
-     *
-     * @return Collection<string, string> tanggal (Y-m-d) => keterangan
-     */
-    public function tanggalDalamRentangUntukKoperasi(Carbon $awal, Carbon $akhir, int $koperasiId): Collection
+    /** @return Collection<string, string> tanggal (Y-m-d) => keterangan */
+    public function tanggalBaselineDalamRentang(Carbon $awal, Carbon $akhir): Collection
     {
-        return HariLibur::query()
-            ->where('koperasi_id', $koperasiId)
+        return $this->queryBaseline()
             ->whereBetween('tanggal', [$awal->toDateString(), $akhir->toDateString()])
             ->get()
             ->mapWithKeys(fn (HariLibur $hariLibur) => [$hariLibur->tanggal->toDateString() => $hariLibur->keterangan]);
@@ -104,11 +100,11 @@ class HariLiburRepository
 
     /**
      * Pengecualian tulis control-plane yang sempit untuk sinkronisasi API.
-     * Setiap baris diberi koperasi_id eksplisit dan konflik tanggal diabaikan.
+     * Setiap baris menjadi baseline global dan konflik tanggal diabaikan.
      *
      * @param  list<array{tanggal: string, keterangan: string, jenis: string}>  $items
      */
-    public function insertMissingUntukKoperasi(int $koperasiId, array $items): int
+    public function insertMissingBaseline(array $items): int
     {
         if ($items === []) {
             return 0;
@@ -117,7 +113,8 @@ class HariLiburRepository
         $sekarang = now();
         $rows = collect($items)
             ->map(fn (array $item) => [
-                'koperasi_id' => $koperasiId,
+                'koperasi_id' => null,
+                'cakupan_id' => 0,
                 'tanggal' => $item['tanggal'],
                 'keterangan' => $item['keterangan'],
                 'created_at' => $sekarang,
@@ -143,5 +140,43 @@ class HariLiburRepository
     public function delete(HariLibur $hariLibur): void
     {
         $hariLibur->delete();
+    }
+
+    private function queryUntukAktorAktif(): Builder
+    {
+        return auth()->user()?->isSuperAdmin()
+            ? $this->queryBaseline()
+            : HariLibur::query();
+    }
+
+    private function queryEfektif(?int $koperasiId): Builder
+    {
+        $koperasiId ??= CurrentTenant::id();
+
+        return $koperasiId !== null
+            ? $this->queryEfektifUntukKoperasi($koperasiId)
+            : $this->queryBaseline();
+    }
+
+    private function queryBaseline(): Builder
+    {
+        return HariLibur::withoutGlobalScopes()->whereNull('koperasi_id');
+    }
+
+    private function queryEfektifUntukKoperasi(int $koperasiId): Builder
+    {
+        return HariLibur::withoutGlobalScopes()
+            ->where(function (Builder $query) use ($koperasiId) {
+                $query->whereNull('hari_libur.koperasi_id')
+                    ->orWhere(function (Builder $query) use ($koperasiId) {
+                        $query->where('hari_libur.koperasi_id', $koperasiId)
+                            ->whereNotExists(function ($subquery) {
+                                $subquery->selectRaw('1')
+                                    ->from('hari_libur as baseline_hari_libur')
+                                    ->whereNull('baseline_hari_libur.koperasi_id')
+                                    ->whereColumn('baseline_hari_libur.tanggal', 'hari_libur.tanggal');
+                            });
+                    });
+            });
     }
 }

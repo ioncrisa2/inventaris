@@ -35,9 +35,15 @@ class HariOperasionalService
     /**
      * @return list<int>
      */
-    public function hariOperasional(): array
+    public function hariOperasional(?int $koperasiId = null): array
     {
-        $mentah = json_decode(Pengaturan::get(self::SETTING_KEY) ?? '', true);
+        $nilai = $koperasiId === null
+            ? Pengaturan::get(self::SETTING_KEY)
+            : Pengaturan::withoutGlobalScopes()
+                ->where('koperasi_id', $koperasiId)
+                ->where('key', self::SETTING_KEY)
+                ->value('value');
+        $mentah = json_decode($nilai ?? '', true);
 
         if (! is_array($mentah) || $mentah === []) {
             return self::DEFAULT_HARI;
@@ -70,9 +76,9 @@ class HariOperasionalService
      * nasional spesifik) — dipakai internal oleh liburDalamRentang() dan
      * tempat lain yang cuma perlu tahu jadwal mingguan.
      */
-    public function isOperasional(Carbon $tanggal): bool
+    public function isOperasional(Carbon $tanggal, ?int $koperasiId = null): bool
     {
-        return in_array($tanggal->dayOfWeekIso, $this->hariOperasional(), true);
+        return in_array($tanggal->dayOfWeekIso, $this->hariOperasional($koperasiId), true);
     }
 
     /**
@@ -80,9 +86,10 @@ class HariOperasionalService
      * mingguan) ATAU terdaftar sebagai hari libur nasional. Ini pemeriksaan
      * satu tanggal (dipakai validasi input Absensi per submit).
      */
-    public function isLiburPada(Carbon $tanggal): bool
+    public function isLiburPada(Carbon $tanggal, ?int $koperasiId = null): bool
     {
-        return ! $this->isOperasional($tanggal) || $this->hariLiburRepository->ada($tanggal);
+        return ! $this->isOperasional($tanggal, $koperasiId)
+            || $this->hariLiburRepository->ada($tanggal, $koperasiId);
     }
 
     /**
@@ -94,10 +101,10 @@ class HariOperasionalService
      * @return Collection<string, ?string> tanggal (Y-m-d) => keterangan libur
      *                                     nasional (null = libur mingguan biasa)
      */
-    public function liburDalamRentang(Carbon $awal, Carbon $akhir): Collection
+    public function liburDalamRentang(Carbon $awal, Carbon $akhir, ?int $koperasiId = null): Collection
     {
-        $hariOperasional = $this->hariOperasional();
-        $liburNasional = $this->hariLiburRepository->tanggalDalamRentang($awal, $akhir);
+        $hariOperasional = $this->hariOperasional($koperasiId);
+        $liburNasional = $this->hariLiburRepository->tanggalDalamRentang($awal, $akhir, $koperasiId);
         $hasil = collect();
 
         for ($tanggal = $awal->copy(); $tanggal->lte($akhir); $tanggal->addDay()) {
@@ -118,9 +125,9 @@ class HariOperasionalService
      * nasional) pada rentang tanggal inklusif, dipakai sebagai pengali
      * komponen gaji dengan metode_perhitungan = per_hari.
      */
-    public function jumlahHariOperasional(Carbon $awal, Carbon $akhir): int
+    public function jumlahHariOperasional(Carbon $awal, Carbon $akhir, ?int $koperasiId = null): int
     {
-        return ($awal->diffInDays($akhir) + 1) - $this->liburDalamRentang($awal, $akhir)->count();
+        return ($awal->diffInDays($akhir) + 1) - $this->liburDalamRentang($awal, $akhir, $koperasiId)->count();
     }
 
     /**

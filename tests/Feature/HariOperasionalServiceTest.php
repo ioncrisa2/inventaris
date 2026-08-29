@@ -1,9 +1,11 @@
 <?php
 
 use App\Models\HariLibur;
+use App\Models\Koperasi;
 use App\Services\HariOperasionalService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 uses(RefreshDatabase::class);
 
@@ -82,4 +84,37 @@ test('jumlah hari operasional ikut mengecualikan tanggal libur nasional pada har
     $jumlah = $service->jumlahHariOperasional(Carbon::parse('2026-07-01'), Carbon::parse('2026-07-20'));
 
     expect($jumlah)->toBe(16);
+});
+
+test('baseline berlaku untuk semua primer sementara libur tambahan tetap terisolasi', function () {
+    $koperasiA = Koperasi::create(['nama' => 'Primer Alfa']);
+    $koperasiB = Koperasi::create(['nama' => 'Primer Beta']);
+
+    DB::table('hari_libur')->insert([
+        'koperasi_id' => null,
+        'cakupan_id' => 0,
+        'tanggal' => '2026-07-15',
+        'keterangan' => 'Baseline Nasional',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $this->actingAs(adminPrimerUser($koperasiA));
+    HariLibur::create(['tanggal' => '2026-07-16', 'keterangan' => 'Tambahan Alfa']);
+
+    $this->actingAs(adminPrimerUser($koperasiB));
+    HariLibur::create(['tanggal' => '2026-07-17', 'keterangan' => 'Tambahan Beta']);
+
+    $service = app(HariOperasionalService::class);
+    $awal = Carbon::parse('2026-07-13');
+    $akhir = Carbon::parse('2026-07-18');
+    $liburA = $service->liburDalamRentang($awal, $akhir, $koperasiA->id);
+    $liburB = $service->liburDalamRentang($awal, $akhir, $koperasiB->id);
+
+    expect($liburA->get('2026-07-15'))->toBe('Baseline Nasional')
+        ->and($liburB->get('2026-07-15'))->toBe('Baseline Nasional')
+        ->and($liburA->get('2026-07-16'))->toBe('Tambahan Alfa')
+        ->and($liburB->has('2026-07-16'))->toBeFalse()
+        ->and($liburB->get('2026-07-17'))->toBe('Tambahan Beta')
+        ->and($liburA->has('2026-07-17'))->toBeFalse();
 });

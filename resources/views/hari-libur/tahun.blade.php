@@ -7,31 +7,30 @@
     $canUpdate = auth()->user()->can('hari-libur.update');
     $canDelete = auth()->user()->can('hari-libur.delete');
     $showActions = $canUpdate || $canDelete;
-    $detailRoute = $isSuperAdmin
-        ? route('hari-libur.koperasi', ['tahun' => $tahun, 'koperasi' => $koperasi])
-        : route('hari-libur.tahun', ['tahun' => $tahun]);
+    $detailRoute = route('hari-libur.tahun', ['tahun' => $tahun]);
 @endphp
 
 @section('content')
     <x-app-page long-footer>
         <x-page-header
             title="Hari Libur {{ $tahun }}"
-            subtitle="Daftar tanggal libur milik {{ $koperasi?->nama ?? 'koperasi Anda' }}."
+            :subtitle="$isSuperAdmin
+                ? 'Baseline nasional yang otomatis berlaku untuk seluruh koperasi primer.'
+                : 'Gabungan baseline nasional dan hari libur tambahan milik '.($koperasi?->nama ?? 'koperasi Anda').'.'"
         >
             <x-slot:actions>
                 <a
-                    href="{{ $isSuperAdmin ? route('hari-libur.tahun', ['tahun' => $tahun]) : route('hari-libur.index') }}"
+                    href="{{ route('hari-libur.index') }}"
                     class="btn btn-light"
                 >
                     <i class="bi bi-arrow-left"></i>
-                    {{ $isSuperAdmin ? 'Kembali ke Koperasi' : 'Kembali' }}
+                    Kembali
                 </a>
 
                 @if($isSuperAdmin)
                     <a
                         href="{{ route('hari-libur.sinkronisasi.create', [
                             'tahun' => $tahun,
-                            'koperasi_id' => $koperasi->id,
                         ]) }}"
                         class="btn btn-primary"
                     >
@@ -93,6 +92,7 @@
                             </th>
                         @endcan
                         <th class="table-col-width-180">Tanggal</th>
+                        <th class="table-col-width-150">Sumber</th>
                         <th>Keterangan</th>
                         @if($showActions)
                             <th class="table-col-width-100">Aksi</th>
@@ -104,10 +104,19 @@
                         <tr>
                             @can('hari-libur.delete')
                                 <td class="selection-column">
-                                    <x-table-checkbox group="hari-libur" :value="$data->id" :label="'Pilih '.$data->keterangan" />
+                                    @can('delete', $data)
+                                        <x-table-checkbox group="hari-libur" :value="$data->id" :label="'Pilih '.$data->keterangan" />
+                                    @endcan
                                 </td>
                             @endcan
                             <td><strong>{{ $data->tanggal->translatedFormat('d F Y') }}</strong></td>
+                            <td>
+                                @if($data->isBaselineNasional())
+                                    <span class="badge text-bg-primary">Baseline nasional</span>
+                                @else
+                                    <span class="badge text-bg-warning">Tambahan primer</span>
+                                @endif
+                            </td>
                             <td>{{ $data->keterangan }}</td>
                             @if($showActions)
                                 <td>
@@ -141,18 +150,17 @@
                             @endif
                         </tr>
                     @empty
-                        <x-empty-row :colspan="2 + ($canDelete ? 1 : 0) + ($showActions ? 1 : 0)">
+                        <x-empty-row :colspan="3 + ($canDelete ? 1 : 0) + ($showActions ? 1 : 0)">
                             @if(request()->filled('search'))
                                 Tidak ada hari libur yang cocok dengan pencarian.
                                 <a href="{{ $detailRoute }}">Hapus pencarian</a>.
                             @else
                                 @if($isSuperAdmin)
-                                    Belum ada hari libur untuk {{ $koperasi?->nama ?? 'koperasi ini' }} pada tahun {{ $tahun }}.
+                                    Belum ada baseline hari libur nasional untuk tahun {{ $tahun }}.
                                     <x-slot:action>
                                         <a
                                             href="{{ route('hari-libur.sinkronisasi.create', [
                                                 'tahun' => $tahun,
-                                                'koperasi_id' => $koperasi->id,
                                             ]) }}"
                                             class="btn btn-primary btn-sm"
                                         >

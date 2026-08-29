@@ -5,6 +5,7 @@ use App\Models\Koperasi;
 use App\Services\HariLiburSinkronisasiService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
 uses(RefreshDatabase::class);
@@ -32,9 +33,9 @@ function fakeTanggalMerahResponse(?array $data = null): array
     ];
 }
 
-function holidaySnapshot(int $koperasiId, int $tahun = 2026): string
+function holidaySnapshot(int $tahun = 2026): string
 {
-    return app(HariLiburSinkronisasiService::class)->bandingkan($koperasiId, $tahun)['snapshot'];
+    return app(HariLiburSinkronisasiService::class)->bandingkan($tahun)['snapshot'];
 }
 
 function fakeTanggalMerahApi(?array $payload = null, int $status = 200): void
@@ -44,8 +45,20 @@ function fakeTanggalMerahApi(?array $payload = null, int $status = 200): void
     ]);
 }
 
-test('only super admin sees and can open the holiday synchronization control plane', function () {
-    $koperasi = Koperasi::create(['nama' => 'Koperasi Aman']);
+function insertBaselineHoliday(string $tanggal, string $keterangan): int
+{
+    return DB::table('hari_libur')->insertGetId([
+        'koperasi_id' => null,
+        'cakupan_id' => 0,
+        'tanggal' => $tanggal,
+        'keterangan' => $keterangan,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+}
+
+test('only super admin sees and can open the global holiday synchronization control plane', function () {
+    Koperasi::create(['nama' => 'Koperasi Aman']);
     $superAdmin = superAdminUser();
 
     $this->actingAs($superAdmin)
@@ -56,15 +69,16 @@ test('only super admin sees and can open the holiday synchronization control pla
 
     $this->get(route('hari-libur.sinkronisasi.create'))
         ->assertOk()
-        ->assertSee('Koperasi Aman')
+        ->assertSee('baseline seluruh koperasi primer')
         ->assertSee('Periksa tanggal sebelum menerapkan.')
         ->assertSee('name="tahun"', false)
-        ->assertSee('name="koperasi_id"', false);
+        ->assertDontSee('name="koperasi_id"', false)
+        ->assertDontSee('Koperasi Aman');
 
     Http::assertNothingSent();
 });
 
-test('admin primer cannot access synchronization even though it can create holidays', function () {
+test('admin primer cannot access synchronization even though it can create additional holidays', function () {
     $koperasi = Koperasi::create(['nama' => 'Koperasi Primer']);
     $adminPrimer = adminPrimerUser($koperasi);
 
@@ -76,92 +90,87 @@ test('admin primer cannot access synchronization even though it can create holid
 
     $this->post(route('hari-libur.sinkronisasi.store'), [
         'tahun' => 2026,
-        'koperasi_id' => $koperasi->id,
         'snapshot' => str_repeat('a', 64),
         'pilihan' => ['2026-01-01'],
     ])->assertForbidden();
 });
 
-test('preview compares only against the explicitly selected cooperative without writing', function () {
-    $koperasiA = Koperasi::create(['nama' => 'Koperasi Alfa']);
-    $koperasiB = Koperasi::create(['nama' => 'Koperasi Beta']);
-    $adminB = adminPrimerUser($koperasiB);
+test('preview compares against the global baseline only without writing', function () {
+    $koperasi = Koperasi::create(['nama' => 'Koperasi Alfa']);
+    $admin = adminPrimerUser($koperasi);
 
-    $this->actingAs($adminB);
-    HariLibur::create(['tanggal' => '2026-01-01', 'keterangan' => 'Data milik Beta']);
+    $this->actingAs($admin);
+    HariLibur::create(['tanggal' => '2026-01-01', 'keterangan' => 'Tambahan milik Alfa']);
+    insertBaselineHoliday('2026-08-17', 'Baseline yang sudah ada');
 
     fakeTanggalMerahApi();
 
     $this->actingAs(superAdminUser())
-        ->get(route('hari-libur.sinkronisasi.create', [
-            'tahun' => 2026,
-            'koperasi_id' => $koperasiA->id,
-        ]))
+        ->get(route('hari-libur.sinkronisasi.create', ['tahun' => 2026]))
         ->assertOk()
-        ->assertViewHas('hasil', fn (array $hasil) => count($hasil['baru']) === 3 && count($hasil['sudahAda']) === 0)
-        ->assertSee('Koperasi Alfa');
+        ->assertViewHas('hasil', fn (array $hasil) => count($hasil['baru']) === 2
+            && count($hasil['sudahAda']) === 1)
+        ->assertSee('baseline nasional');
 
-    $this->assertDatabaseCount('hari_libur', 1);
+    $this->assertDatabaseCount('hari_libur', 2);
     Http::assertSent(fn (Request $request) => $request->url() === 'https://tanggalmerah.upset.dev/api/holidays?year=2026'
         && (int) $request['year'] === 2026);
 });
 
-test('apply inserts only API dates selected for the target cooperative and preserves manual data', function () {
+test('apply inserts selected API dates as global baseline and preserves primer additions', function () {
     $koperasiA = Koperasi::create(['nama' => 'Koperasi Alfa']);
     $koperasiB = Koperasi::create(['nama' => 'Koperasi Beta']);
     $adminA = adminPrimerUser($koperasiA);
     $adminB = adminPrimerUser($koperasiB);
 
     $this->actingAs($adminA);
-    HariLibur::create(['tanggal' => '2026-08-17', 'keterangan' => 'Keterangan manual Alfa']);
+    HariLibur::create(['tanggal' => '2026-04-21', 'keterangan' => 'Hari khusus Alfa']);
     $this->actingAs($adminB);
-    HariLibur::create(['tanggal' => '2026-01-01', 'keterangan' => 'Data Beta']);
+    HariLibur::create(['tanggal' => '2026-05-20', 'keterangan' => 'Hari khusus Beta']);
 
     fakeTanggalMerahApi();
-    $snapshot = holidaySnapshot($koperasiA->id);
+    $snapshot = holidaySnapshot();
 
     $this->actingAs(superAdminUser())
         ->post(route('hari-libur.sinkronisasi.store'), [
             'tahun' => 2026,
-            'koperasi_id' => $koperasiA->id,
             'snapshot' => $snapshot,
             'pilihan' => ['2026-01-01', '2026-08-17', '2026-12-31'],
         ])
-        ->assertRedirect(route('hari-libur.koperasi', [
-            'tahun' => 2026,
-            'koperasi' => $koperasiA,
-        ]))
-        ->assertSessionHas('success', '1 hari libur berhasil ditambahkan dari API.');
+        ->assertRedirect(route('hari-libur.tahun', ['tahun' => 2026]))
+        ->assertSessionHas('success', '2 hari libur berhasil ditambahkan dari API.');
 
     $this->assertDatabaseHas('hari_libur', [
-        'koperasi_id' => $koperasiA->id,
+        'koperasi_id' => null,
+        'cakupan_id' => 0,
         'tanggal' => '2026-01-01',
         'keterangan' => 'Tahun Baru 2026 Masehi',
     ]);
     $this->assertDatabaseHas('hari_libur', [
-        'koperasi_id' => $koperasiA->id,
+        'koperasi_id' => null,
+        'cakupan_id' => 0,
         'tanggal' => '2026-08-17',
-        'keterangan' => 'Keterangan manual Alfa',
+        'keterangan' => 'Proklamasi Kemerdekaan',
     ]);
-    $this->assertDatabaseMissing('hari_libur', [
+    $this->assertDatabaseMissing('hari_libur', ['tanggal' => '2026-12-31']);
+    $this->assertDatabaseHas('hari_libur', [
         'koperasi_id' => $koperasiA->id,
-        'tanggal' => '2026-12-31',
+        'tanggal' => '2026-04-21',
+        'keterangan' => 'Hari khusus Alfa',
     ]);
     $this->assertDatabaseHas('hari_libur', [
         'koperasi_id' => $koperasiB->id,
-        'tanggal' => '2026-01-01',
-        'keterangan' => 'Data Beta',
+        'tanggal' => '2026-05-20',
+        'keterangan' => 'Hari khusus Beta',
     ]);
 });
 
-test('synchronization is idempotent for the same cooperative and date', function () {
-    $koperasi = Koperasi::create(['nama' => 'Koperasi Idempoten']);
+test('global synchronization is idempotent for the same date', function () {
     $superAdmin = superAdminUser();
     fakeTanggalMerahApi();
-    $snapshot = holidaySnapshot($koperasi->id);
+    $snapshot = holidaySnapshot();
     $payload = [
         'tahun' => 2026,
-        'koperasi_id' => $koperasi->id,
         'snapshot' => $snapshot,
         'pilihan' => ['2026-02-16'],
     ];
@@ -172,16 +181,19 @@ test('synchronization is idempotent for the same cooperative and date', function
         ->assertSessionHas('success', 'Tidak ada hari libur baru yang ditambahkan.');
 
     $this->assertDatabaseCount('hari_libur', 1);
+    $this->assertDatabaseHas('hari_libur', [
+        'koperasi_id' => null,
+        'cakupan_id' => 0,
+        'tanggal' => '2026-02-16',
+    ]);
 });
 
 test('HTTP failure aborts synchronization without partial writes', function () {
-    $koperasi = Koperasi::create(['nama' => 'Koperasi Aman']);
     fakeTanggalMerahApi(['success' => false], 500);
 
     $this->actingAs(superAdminUser())
         ->post(route('hari-libur.sinkronisasi.store'), [
             'tahun' => 2026,
-            'koperasi_id' => $koperasi->id,
             'snapshot' => str_repeat('a', 64),
             'pilihan' => ['2026-01-01'],
         ])
@@ -192,13 +204,11 @@ test('HTTP failure aborts synchronization without partial writes', function () {
 });
 
 test('invalid API payload aborts synchronization without partial writes', function (array $payload) {
-    $koperasi = Koperasi::create(['nama' => 'Koperasi Aman']);
     fakeTanggalMerahApi($payload);
 
     $this->actingAs(superAdminUser())
         ->post(route('hari-libur.sinkronisasi.store'), [
             'tahun' => 2026,
-            'koperasi_id' => $koperasi->id,
             'snapshot' => str_repeat('a', 64),
             'pilihan' => ['2026-01-01'],
         ])
@@ -228,7 +238,6 @@ test('invalid API payload aborts synchronization without partial writes', functi
 ]);
 
 test('apply is rejected when API data changed after the preview', function () {
-    $koperasi = Koperasi::create(['nama' => 'Koperasi Konsisten']);
     $responsAwal = fakeTanggalMerahResponse();
     $dataBerubah = $responsAwal['data'];
     $dataBerubah[0]['name'] = 'Nama berubah setelah pratinjau';
@@ -240,12 +249,11 @@ test('apply is rejected when API data changed after the preview', function () {
             ->push($responsBerubah),
     ]);
 
-    $snapshot = holidaySnapshot($koperasi->id);
+    $snapshot = holidaySnapshot();
 
     $this->actingAs(superAdminUser())
         ->post(route('hari-libur.sinkronisasi.store'), [
             'tahun' => 2026,
-            'koperasi_id' => $koperasi->id,
             'snapshot' => $snapshot,
             'pilihan' => ['2026-01-01'],
         ])

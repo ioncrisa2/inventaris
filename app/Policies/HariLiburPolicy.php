@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Models\HariLibur;
 use App\Models\User;
 
 class HariLiburPolicy
@@ -16,13 +17,19 @@ class HariLiburPolicy
         return $user->can('hari-libur.create');
     }
 
-    public function update(User $user): bool
+    public function update(User $user, ?HariLibur $hariLibur = null): bool
     {
-        return $user->can('hari-libur.update');
+        return $user->can('hari-libur.update')
+            && ($hariLibur === null
+                || ($hariLibur->koperasi_id !== null
+                    && (int) $hariLibur->koperasi_id === (int) $user->koperasi_id));
     }
 
-    public function delete(User $user): bool
+    public function delete(User $user, ?HariLibur $hariLibur = null): bool
     {
-        return $user->can('hari-libur.delete');
+        return $user->can('hari-libur.delete')
+            && ($hariLibur === null
+                || ($hariLibur->koperasi_id !== null
+                    && (int) $hariLibur->koperasi_id === (int) $user->koperasi_id));
     }
 }
