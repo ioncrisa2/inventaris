@@ -121,6 +121,7 @@ describe('absensi show (kalender)', function () {
 
         $this->get(route('absensi.show', ['karyawan' => $karyawan, 'bulan' => 3, 'tahun' => 2026]))
             ->assertOk()
+            ->assertSee('>Cuti Bersama</span>', false)
             ->assertViewHas('mingguKalender', function ($mingguKalender) {
                 $selRabu = collect($mingguKalender)
                     ->flatten(1)

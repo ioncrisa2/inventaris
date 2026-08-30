@@ -104,6 +104,9 @@
                                     ->filter()
                                     ->implode(' ');
                                 $absensiHariIni = $cell['absensi'];
+                                $keteranganLibur = $cell['libur']
+                                    ? ($cell['libur_keterangan'] ?? $cell['tanggal']->translatedFormat('l'))
+                                    : null;
                                 $badgeStatus = $absensiHariIni
                                     ? \App\Models\Absensi::STATUS_COLORS[$absensiHariIni->status] ?? 'bg-secondary'
                                     : null;
@@ -117,12 +120,12 @@
                                         data-status="{{ $absensiHariIni->status ?? '' }}"
                                         data-catatan="{{ $absensiHariIni->catatan ?? '' }}"
                                         data-libur="{{ $cell['libur'] ? '1' : '0' }}"
-                                        aria-label="Isi absensi tanggal {{ $cell['tanggal']->translatedFormat('d F Y') }}">
+                                        aria-label="Isi absensi tanggal {{ $cell['tanggal']->translatedFormat('d F Y') }}{{ $keteranganLibur ? '. Hari libur: '.$keteranganLibur : '' }}">
                                         <span class="calendar-cell__top">
                                             <span class="calendar-cell-date">{{ $cell['tanggal']->day }}</span>
                                             @if ($cell['libur'])
                                                 <span class="calendar-cell-holiday"
-                                                    title="{{ $cell['libur_keterangan'] ?? 'Minggu' }}">Libur</span>
+                                                    title="{{ $keteranganLibur }}">{{ $keteranganLibur }}</span>
                                             @endif
                                         </span>
                                         @if ($badgeStatus)
@@ -135,7 +138,7 @@
                                         <span class="calendar-cell-date">{{ $cell['tanggal']->day }}</span>
                                         @if ($cell['libur'] && !$cell['di_luar_bulan'])
                                             <span class="calendar-cell-holiday"
-                                                title="{{ $cell['libur_keterangan'] ?? 'Minggu' }}">Libur</span>
+                                                title="{{ $keteranganLibur }}">{{ $keteranganLibur }}</span>
                                         @endif
                                     </span>
                                     @if ($badgeStatus)
