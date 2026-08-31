@@ -27,7 +27,7 @@ return [
         ],
         'my_salary_slips' => [
             'label' => 'Slip Gaji Saya',
-            'description' => 'Daftar dan rincian slip gaji pribadi pengguna.',
+            'description' => 'Portal slip gaji pribadi dan penerbitan slip kepada akun karyawan.',
             'icon' => 'bi-receipt',
             'category' => 'Produk & akun pribadi',
             'routes' => ['me.salary-slips.*'],

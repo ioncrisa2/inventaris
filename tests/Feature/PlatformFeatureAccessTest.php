@@ -1,7 +1,10 @@
 <?php
 
+use App\Models\Karyawan;
 use App\Models\PlatformFeatureAuditLog;
 use App\Models\ProductRequest;
+use App\Models\TransaksiGaji;
+use App\Models\UnitKerja;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -116,4 +119,41 @@ test('pengaturan aplikasi yang nonaktif juga hilang dari dropdown pengguna', fun
         ->assertDontSee('Pengaturan Aplikasi');
 
     $this->get(route('pengaturan.edit'))->assertNotFound();
+});
+
+test('fitur slip gaji pribadi mengendalikan tombol dan endpoint penerbitan slip', function () {
+    $owner = systemOwnerUser();
+    $this->actingAs($owner)
+        ->patch(route('owner.features.update', 'my_salary_slips'), ['enabled' => false])
+        ->assertRedirect();
+
+    $admin = adminPrimerUser();
+    $this->actingAs($admin);
+    $unit = UnitKerja::create(['nama_unit' => 'Keuangan']);
+    $karyawan = Karyawan::create([
+        'nik' => 'SLIP-001',
+        'nama_lengkap' => 'Penerima Slip',
+        'tanggal_lahir' => '1992-02-02',
+        'nomor_ktp' => '1671010202920001',
+        'unit_kerja_id' => $unit->id,
+        'tanggal_masuk_kerja' => '2021-01-01',
+        'jabatan' => 'Staf',
+        'status_karyawan' => 'PKWTT',
+        'gaji_pokok' => 5000000,
+    ]);
+    $transaksi = TransaksiGaji::create([
+        'karyawan_id' => $karyawan->id,
+        'bulan' => 8,
+        'tahun' => 2026,
+        'gaji_pokok' => 5000000,
+        'gaji_bersih' => 5000000,
+    ]);
+
+    $this->get(route('transaksi-gaji.show', $transaksi))
+        ->assertOk()
+        ->assertDontSee('Terbitkan Slip');
+
+    $this->patch(route('transaksi-gaji.publish', $transaksi))->assertNotFound();
+
+    expect($transaksi->fresh()->published_at)->toBeNull();
 });

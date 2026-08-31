@@ -10,6 +10,7 @@ use App\Http\Requests\TransaksiGaji\UpdateTransaksiGajiRequest;
 use App\Models\Karyawan;
 use App\Models\TransaksiGaji;
 use App\Repositories\KaryawanRepository;
+use App\Services\PlatformFeatureService;
 use App\Services\SlipGajiTemplateService;
 use App\Services\TransaksiGajiService;
 use App\Support\PerPage;
@@ -25,6 +26,7 @@ class TransaksiGajiController extends Controller
         private TransaksiGajiService $transaksiGajiService,
         private KaryawanRepository $karyawanRepository,
         private SlipGajiTemplateService $slipGajiTemplateService,
+        private PlatformFeatureService $platformFeatureService,
     ) {
         $this->authorizeResource(TransaksiGaji::class, 'transaksi_gaji');
     }
@@ -109,6 +111,7 @@ class TransaksiGajiController extends Controller
         $totalPotongan = $this->transaksiGajiService->totalPerJenis($transaksiGaji, 'Potongan');
         $penandaTangan = $this->karyawanRepository->activeOrderedList();
         $paperLayoutDefault = $this->slipGajiTemplateService->publishedPaperLayout();
+        $salarySlipPortalEnabled = $this->platformFeatureService->isEnabled('my_salary_slips');
 
         return view('transaksi-gaji.show', compact(
             'transaksiGaji',
@@ -116,11 +119,14 @@ class TransaksiGajiController extends Controller
             'totalPotongan',
             'penandaTangan',
             'paperLayoutDefault',
+            'salarySlipPortalEnabled',
         ));
     }
 
     public function publish(Request $request, TransaksiGaji $transaksiGaji)
     {
+        abort_unless($this->platformFeatureService->isEnabled('my_salary_slips'), 404);
+
         $this->authorize('publish', $transaksiGaji);
 
         try {

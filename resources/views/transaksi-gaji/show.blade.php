@@ -15,16 +15,18 @@
         <x-page-header title="Detail Transaksi Gaji" subtitle="{{ $transaksiGaji->karyawan->nama_lengkap }} — {{ $namaBulan[$transaksiGaji->bulan] }} {{ $transaksiGaji->tahun }}">
             <x-slot:actions>
                 <div class="d-flex gap-2">
-                    @can('publish', $transaksiGaji)
-                        <form method="POST" action="{{ route('transaksi-gaji.publish', $transaksiGaji) }}">
-                            @csrf
-                            @method('PATCH')
-                            <button class="btn btn-warning" type="submit">
-                                <i class="bi bi-send-check" aria-hidden="true"></i>
-                                Terbitkan Slip
-                            </button>
-                        </form>
-                    @endcan
+                    @if($salarySlipPortalEnabled)
+                        @can('publish', $transaksiGaji)
+                            <form method="POST" action="{{ route('transaksi-gaji.publish', $transaksiGaji) }}">
+                                @csrf
+                                @method('PATCH')
+                                <button class="btn btn-warning" type="submit">
+                                    <i class="bi bi-send-check" aria-hidden="true"></i>
+                                    Terbitkan Slip
+                                </button>
+                            </form>
+                        @endcan
+                    @endif
                     @can('cetak', $transaksiGaji)
                     <button
                         class="btn btn-success"
