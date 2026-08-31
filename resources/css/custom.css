@@ -2595,6 +2595,170 @@ input[data-date-range] {
     background: var(--bs-body-bg);
 }
 
+.platform-feature-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+    padding: 1rem 1.1rem;
+    border: var(--bs-border-width) solid var(--bs-border-color);
+    border-radius: var(--app-radius);
+    background: var(--bs-body-bg);
+}
+
+.platform-feature-summary__status {
+    display: flex;
+    align-items: center;
+    gap: .85rem;
+}
+
+.platform-feature-summary__icon,
+.platform-feature-row__icon {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--app-radius-sm);
+    color: var(--bs-primary);
+    background: var(--bs-primary-bg-subtle);
+}
+
+.platform-feature-summary__icon {
+    width: 2.65rem;
+    height: 2.65rem;
+    font-size: 1.1rem;
+}
+
+.platform-feature-summary strong {
+    color: var(--bs-emphasis-color);
+    font-size: .92rem;
+}
+
+.platform-feature-summary p {
+    max-width: 72ch;
+    margin: .15rem 0 0;
+    color: var(--bs-secondary-color);
+    font-size: .75rem;
+}
+
+.platform-feature-summary dl {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 1.25rem;
+    margin: 0;
+}
+
+.platform-feature-summary dl > div {
+    min-width: 3.5rem;
+    text-align: center;
+}
+
+.platform-feature-summary dt {
+    color: var(--bs-secondary-color);
+    font-size: .67rem;
+    font-weight: 650;
+}
+
+.platform-feature-summary dd {
+    margin: .1rem 0 0;
+    color: var(--bs-emphasis-color);
+    font-size: 1.05rem;
+    font-weight: 750;
+}
+
+.platform-feature-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.platform-feature-section {
+    overflow: hidden;
+    border: var(--bs-border-width) solid var(--bs-border-color);
+    border-radius: var(--app-radius);
+    background: var(--bs-body-bg);
+}
+
+.platform-feature-section > header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: .75rem 1rem;
+    background: var(--bs-tertiary-bg);
+}
+
+.platform-feature-section h2 {
+    margin: 0;
+    color: var(--bs-emphasis-color);
+    font-size: .82rem;
+    font-weight: 750;
+}
+
+.platform-feature-section > header > span {
+    color: var(--bs-secondary-color);
+    font-size: .68rem;
+    font-weight: 650;
+}
+
+.platform-feature-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: .85rem;
+    padding: .9rem 1rem;
+}
+
+.platform-feature-row + .platform-feature-row {
+    border-top: var(--bs-border-width) solid var(--bs-border-color);
+}
+
+.platform-feature-row.is-disabled {
+    background: var(--bs-tertiary-bg);
+}
+
+.platform-feature-row__icon {
+    width: 2.35rem;
+    height: 2.35rem;
+    font-size: .95rem;
+}
+
+.platform-feature-row.is-disabled .platform-feature-row__icon {
+    color: var(--bs-secondary-color);
+    background: var(--bs-secondary-bg);
+}
+
+.platform-feature-row__title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem;
+}
+
+.platform-feature-row h3 {
+    margin: 0;
+    color: var(--bs-emphasis-color);
+    font-size: .82rem;
+    font-weight: 700;
+}
+
+.platform-feature-row p {
+    margin: .18rem 0 0;
+    color: var(--bs-secondary-color);
+    font-size: .73rem;
+}
+
+.platform-feature-row small {
+    display: block;
+    margin-top: .25rem;
+    color: var(--bs-secondary-color);
+    font-size: .65rem;
+}
+
+.platform-feature-row form {
+    justify-self: end;
+}
+
 .owner-filter {
     display: flex;
     align-items: end;
@@ -3320,6 +3484,26 @@ input[data-date-range] {
 
     .owner-storage-summary .progress {
         width: 100%;
+    }
+
+    .platform-feature-summary {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .platform-feature-summary dl {
+        width: 100%;
+        justify-content: flex-start;
+        padding-left: 3.5rem;
+    }
+
+    .platform-feature-row {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .platform-feature-row form {
+        grid-column: 2;
+        justify-self: start;
     }
 }
 

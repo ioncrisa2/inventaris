@@ -10,20 +10,21 @@ use App\Http\Controllers\DokumenKaryawanController;
 use App\Http\Controllers\FotoBarangController;
 use App\Http\Controllers\HariLiburController;
 use App\Http\Controllers\HariLiburSinkronisasiController;
-use App\Http\Controllers\KaryawanController;
 use App\Http\Controllers\KaryawanAccountController;
+use App\Http\Controllers\KaryawanController;
 use App\Http\Controllers\KomponenGajiController;
 use App\Http\Controllers\KoperasiController;
 use App\Http\Controllers\KoperasiExpiredController;
+use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\MyAttendanceController;
 use App\Http\Controllers\MyProfileController;
 use App\Http\Controllers\MySalarySlipController;
-use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OnboardingTourController;
-use App\Http\Controllers\OwnerAnalyticsController;
-use App\Http\Controllers\Owner\MaintenanceController;
 use App\Http\Controllers\Owner\AnnouncementController as OwnerAnnouncementController;
+use App\Http\Controllers\Owner\MaintenanceController;
+use App\Http\Controllers\Owner\PlatformFeatureController;
+use App\Http\Controllers\OwnerAnalyticsController;
 use App\Http\Controllers\OwnerProductRequestAttachmentController;
 use App\Http\Controllers\OwnerProductRequestController;
 use App\Http\Controllers\OwnerProductRequestMessageController;
@@ -63,6 +64,10 @@ Route::middleware(['auth', 'system_owner', AuditSystemOwnerAccess::class])
         Route::get('maintenance', [MaintenanceController::class, 'edit'])->name('maintenance.edit');
         Route::put('maintenance', [MaintenanceController::class, 'update'])->name('maintenance.update');
         Route::delete('maintenance', [MaintenanceController::class, 'destroy'])->name('maintenance.destroy');
+        Route::get('features', [PlatformFeatureController::class, 'index'])->name('features.index');
+        Route::patch('features/{feature}', [PlatformFeatureController::class, 'update'])
+            ->where('feature', '[a-z_]+')
+            ->name('features.update');
         Route::get('announcements', [OwnerAnnouncementController::class, 'index'])->name('announcements.index');
         Route::post('announcements', [OwnerAnnouncementController::class, 'store'])->name('announcements.store');
         Route::patch('announcements/{announcement}/publish', [OwnerAnnouncementController::class, 'publish'])->name('announcements.publish');

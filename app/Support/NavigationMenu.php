@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\User;
+use App\Services\PlatformFeatureService;
 
 class NavigationMenu
 {
@@ -31,15 +32,16 @@ class NavigationMenu
                 'route' => 'product-requests.index',
                 'active_routes' => ['product-requests.*'],
                 'permission' => 'product-request.view',
+                'feature' => 'product_requests',
             ],
             [
                 'type' => 'group',
                 'key' => 'akun-saya',
                 'label' => 'Akun Saya',
                 'items' => [
-                    ['label' => 'Data Saya', 'icon' => 'bi-person-vcard', 'route' => 'me.profile', 'active_routes' => ['me.profile'], 'permission' => null, 'tenant_only' => true],
-                    ['label' => 'Absensi Saya', 'icon' => 'bi-calendar-check', 'route' => 'me.attendance', 'active_routes' => ['me.attendance'], 'permission' => null, 'tenant_only' => true],
-                    ['label' => 'Slip Gaji Saya', 'icon' => 'bi-receipt', 'route' => 'me.salary-slips.index', 'active_routes' => ['me.salary-slips.*'], 'permission' => null, 'tenant_only' => true],
+                    ['label' => 'Data Saya', 'icon' => 'bi-person-vcard', 'route' => 'me.profile', 'active_routes' => ['me.profile'], 'permission' => null, 'tenant_only' => true, 'feature' => 'my_profile'],
+                    ['label' => 'Absensi Saya', 'icon' => 'bi-calendar-check', 'route' => 'me.attendance', 'active_routes' => ['me.attendance'], 'permission' => null, 'tenant_only' => true, 'feature' => 'my_attendance'],
+                    ['label' => 'Slip Gaji Saya', 'icon' => 'bi-receipt', 'route' => 'me.salary-slips.index', 'active_routes' => ['me.salary-slips.*'], 'permission' => null, 'tenant_only' => true, 'feature' => 'my_salary_slips'],
                 ],
             ],
             [
@@ -47,12 +49,12 @@ class NavigationMenu
                 'key' => 'sdm-kehadiran',
                 'label' => 'SDM & Kehadiran',
                 'items' => [
-                    ['label' => 'Unit Kerja', 'icon' => 'bi-building', 'route' => 'unit-kerja.index', 'active_routes' => ['unit-kerja.*'], 'permission' => 'unit-kerja.view'],
-                    ['label' => 'Karyawan', 'icon' => 'bi-people', 'route' => 'karyawan.index', 'active_routes' => ['karyawan.*'], 'permission' => 'karyawan.view'],
-                    ['label' => 'Absensi', 'icon' => 'bi-calendar3', 'route' => 'absensi.index', 'active_routes' => ['absensi.*'], 'permission' => 'absensi.view'],
-                    ['label' => 'Hari Libur', 'icon' => 'bi-calendar-x', 'route' => 'hari-libur.index', 'active_routes' => ['hari-libur.*'], 'permission' => 'hari-libur.view'],
-                    ['label' => 'Laporan Kepegawaian', 'icon' => 'bi-bar-chart-line', 'route' => 'laporan.kepegawaian', 'active_routes' => ['laporan.kepegawaian'], 'permission' => 'laporan.kepegawaian.view'],
-                    ['label' => 'Laporan Absensi', 'icon' => 'bi-calendar-check', 'route' => 'laporan.absensi', 'active_routes' => ['laporan.absensi'], 'permission' => 'laporan.absensi.view'],
+                    ['label' => 'Unit Kerja', 'icon' => 'bi-building', 'route' => 'unit-kerja.index', 'active_routes' => ['unit-kerja.*'], 'permission' => 'unit-kerja.view', 'feature' => 'work_units'],
+                    ['label' => 'Karyawan', 'icon' => 'bi-people', 'route' => 'karyawan.index', 'active_routes' => ['karyawan.*'], 'permission' => 'karyawan.view', 'feature' => 'employees'],
+                    ['label' => 'Absensi', 'icon' => 'bi-calendar3', 'route' => 'absensi.index', 'active_routes' => ['absensi.*'], 'permission' => 'absensi.view', 'feature' => 'attendance'],
+                    ['label' => 'Hari Libur', 'icon' => 'bi-calendar-x', 'route' => 'hari-libur.index', 'active_routes' => ['hari-libur.*'], 'permission' => 'hari-libur.view', 'feature' => 'holidays'],
+                    ['label' => 'Laporan Kepegawaian', 'icon' => 'bi-bar-chart-line', 'route' => 'laporan.kepegawaian', 'active_routes' => ['laporan.kepegawaian'], 'permission' => 'laporan.kepegawaian.view', 'feature' => 'employee_reports'],
+                    ['label' => 'Laporan Absensi', 'icon' => 'bi-calendar-check', 'route' => 'laporan.absensi', 'active_routes' => ['laporan.absensi'], 'permission' => 'laporan.absensi.view', 'feature' => 'attendance_reports'],
                 ],
             ],
             [
@@ -60,9 +62,9 @@ class NavigationMenu
                 'key' => 'penggajian',
                 'label' => 'Penggajian',
                 'items' => [
-                    ['label' => 'Komponen Gaji', 'icon' => 'bi-sliders', 'route' => 'komponen-gaji.index', 'active_routes' => ['komponen-gaji.*'], 'permission' => 'komponen-gaji.view'],
-                    ['label' => 'Transaksi Gaji', 'icon' => 'bi-cash-stack', 'route' => 'transaksi-gaji.index', 'active_routes' => ['transaksi-gaji.*'], 'permission' => 'transaksi-gaji.view'],
-                    ['label' => 'Laporan Penggajian', 'icon' => 'bi-cash-coin', 'route' => 'laporan.penggajian', 'active_routes' => ['laporan.penggajian'], 'permission' => 'laporan.penggajian.view'],
+                    ['label' => 'Komponen Gaji', 'icon' => 'bi-sliders', 'route' => 'komponen-gaji.index', 'active_routes' => ['komponen-gaji.*'], 'permission' => 'komponen-gaji.view', 'feature' => 'salary_components'],
+                    ['label' => 'Transaksi Gaji', 'icon' => 'bi-cash-stack', 'route' => 'transaksi-gaji.index', 'active_routes' => ['transaksi-gaji.*'], 'permission' => 'transaksi-gaji.view', 'feature' => 'salary_transactions'],
+                    ['label' => 'Laporan Penggajian', 'icon' => 'bi-cash-coin', 'route' => 'laporan.penggajian', 'active_routes' => ['laporan.penggajian'], 'permission' => 'laporan.penggajian.view', 'feature' => 'payroll_reports'],
                 ],
             ],
             [
@@ -70,9 +72,9 @@ class NavigationMenu
                 'key' => 'manajemen-aset',
                 'label' => 'Manajemen Aset',
                 'items' => [
-                    ['label' => 'Inventaris Barang', 'icon' => 'bi-box-seam', 'route' => 'barang.index', 'active_routes' => ['barang.*'], 'permission' => 'barang.view'],
-                    ['label' => 'Penyusutan Aset', 'icon' => 'bi-graph-down', 'route' => 'laporan.penyusutan', 'active_routes' => ['laporan.penyusutan'], 'permission' => 'laporan.penyusutan.view'],
-                    ['label' => 'Laporan Inventaris', 'icon' => 'bi-clipboard-data', 'route' => 'laporan.inventaris', 'active_routes' => ['laporan.inventaris'], 'permission' => 'laporan.inventaris.view'],
+                    ['label' => 'Inventaris Barang', 'icon' => 'bi-box-seam', 'route' => 'barang.index', 'active_routes' => ['barang.*'], 'permission' => 'barang.view', 'feature' => 'inventory'],
+                    ['label' => 'Penyusutan Aset', 'icon' => 'bi-graph-down', 'route' => 'laporan.penyusutan', 'active_routes' => ['laporan.penyusutan'], 'permission' => 'laporan.penyusutan.view', 'feature' => 'depreciation_reports'],
+                    ['label' => 'Laporan Inventaris', 'icon' => 'bi-clipboard-data', 'route' => 'laporan.inventaris', 'active_routes' => ['laporan.inventaris'], 'permission' => 'laporan.inventaris.view', 'feature' => 'inventory_reports'],
                 ],
             ],
             [
@@ -80,10 +82,10 @@ class NavigationMenu
                 'key' => 'administrasi',
                 'label' => 'Administrasi',
                 'items' => [
-                    ['label' => 'Manajemen Pengguna', 'icon' => 'bi-person-gear', 'route' => 'pengguna.index', 'active_routes' => ['pengguna.*'], 'permission' => 'pengguna.view'],
-                    ['label' => 'Role & Hak Akses', 'icon' => 'bi-shield-lock', 'route' => 'role.index', 'active_routes' => ['role.*'], 'permission' => 'role.view'],
-                    ['label' => 'Pengaturan Aplikasi', 'icon' => 'bi-gear', 'route' => 'pengaturan.edit', 'active_routes' => ['pengaturan.*'], 'permission' => 'pengaturan.view'],
-                    ['label' => 'Manajemen Koperasi', 'icon' => 'bi-building-gear', 'route' => 'koperasi.index', 'active_routes' => ['koperasi.*'], 'permission' => null, 'super_admin_only' => true],
+                    ['label' => 'Manajemen Pengguna', 'icon' => 'bi-person-gear', 'route' => 'pengguna.index', 'active_routes' => ['pengguna.*'], 'permission' => 'pengguna.view', 'feature' => 'users'],
+                    ['label' => 'Role & Hak Akses', 'icon' => 'bi-shield-lock', 'route' => 'role.index', 'active_routes' => ['role.*'], 'permission' => 'role.view', 'feature' => 'roles'],
+                    ['label' => 'Pengaturan Aplikasi', 'icon' => 'bi-gear', 'route' => 'pengaturan.edit', 'active_routes' => ['pengaturan.*'], 'permission' => 'pengaturan.view', 'feature' => 'app_settings'],
+                    ['label' => 'Manajemen Koperasi', 'icon' => 'bi-building-gear', 'route' => 'koperasi.index', 'active_routes' => ['koperasi.*'], 'permission' => null, 'super_admin_only' => true, 'feature' => 'cooperatives'],
                 ],
             ],
         ];
@@ -137,6 +139,7 @@ class NavigationMenu
                     ['label' => 'Kesehatan Sistem', 'icon' => 'bi-heart-pulse', 'route' => 'owner.system-health', 'active_routes' => ['owner.system-health'], 'permission' => null],
                     ['label' => 'Penyimpanan', 'icon' => 'bi-device-ssd', 'route' => 'owner.storage', 'active_routes' => ['owner.storage'], 'permission' => null],
                     ['label' => 'Maintenance', 'icon' => 'bi-tools', 'route' => 'owner.maintenance.edit', 'active_routes' => ['owner.maintenance.*'], 'permission' => null],
+                    ['label' => 'Akses Fitur', 'icon' => 'bi-toggles', 'route' => 'owner.features.index', 'active_routes' => ['owner.features.*'], 'permission' => null],
                     ['label' => 'Pengumuman', 'icon' => 'bi-megaphone', 'route' => 'owner.announcements.index', 'active_routes' => ['owner.announcements.*'], 'permission' => null],
                 ],
             ],
@@ -193,6 +196,10 @@ class NavigationMenu
      */
     private static function isVisibleTo(User $user, array $item): bool
     {
+        if (isset($item['feature']) && ! app(PlatformFeatureService::class)->isEnabled($item['feature'])) {
+            return false;
+        }
+
         if (($item['tenant_only'] ?? false) && ! $user->isTenantUser()) {
             return false;
         }

@@ -4,6 +4,7 @@ use App\Http\Middleware\EnsureIsSuperAdmin;
 use App\Http\Middleware\EnsureIsSystemOwner;
 use App\Http\Middleware\EnsureKoperasiActive;
 use App\Http\Middleware\EnsurePlatformAvailable;
+use App\Http\Middleware\EnsurePlatformFeatureEnabled;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -22,7 +23,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
 
         $middleware->trustProxies(at: '*');
-        $middleware->web(append: [EnsurePlatformAvailable::class]);
+        $middleware->web(append: [
+            EnsurePlatformAvailable::class,
+            EnsurePlatformFeatureEnabled::class,
+        ]);
 
         $middleware->alias([
             'role' => RoleMiddleware::class,
