@@ -59,9 +59,9 @@ document.addEventListener('DOMContentLoaded', () => {
         syncLayoutButtons();
     }
 
-    const colorModeButtons = document.querySelectorAll('[data-color-mode-option]');
+    const themeSwitches = document.querySelectorAll('[data-theme-switch]');
 
-    if (colorModeButtons.length) {
+    if (themeSwitches.length) {
         const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)');
         const getStoredColorMode = () => localStorage.getItem('color-mode') || 'auto';
         const resolveColorMode = (mode) => mode === 'auto'
@@ -70,28 +70,36 @@ document.addEventListener('DOMContentLoaded', () => {
         const applyColorMode = (mode) => {
             document.documentElement.dataset.bsTheme = resolveColorMode(mode);
         };
-        const syncColorModeButtons = () => {
-            const current = getStoredColorMode();
-            colorModeButtons.forEach((button) => {
-                button.classList.toggle('is-active', button.dataset.colorModeOption === current);
+        const syncThemeSwitches = () => {
+            const isDark = document.documentElement.dataset.bsTheme === 'dark';
+            const actionLabel = isDark ? 'Aktifkan tema terang' : 'Aktifkan tema gelap';
+
+            themeSwitches.forEach((themeSwitch) => {
+                themeSwitch.setAttribute('aria-checked', isDark ? 'true' : 'false');
+                themeSwitch.setAttribute('aria-label', actionLabel);
+                themeSwitch.title = actionLabel;
             });
         };
 
-        colorModeButtons.forEach((button) => {
-            button.addEventListener('click', () => {
-                const mode = button.dataset.colorModeOption;
+        themeSwitches.forEach((themeSwitch) => {
+            themeSwitch.addEventListener('click', () => {
+                const mode = document.documentElement.dataset.bsTheme === 'dark' ? 'light' : 'dark';
 
                 localStorage.setItem('color-mode', mode);
                 applyColorMode(mode);
-                syncColorModeButtons();
+                syncThemeSwitches();
                 showSettingsSaveToast();
             });
         });
 
-        syncColorModeButtons();
+        applyColorMode(getStoredColorMode());
+        syncThemeSwitches();
 
         systemPrefersDark.addEventListener('change', () => {
-            if (getStoredColorMode() === 'auto') applyColorMode('auto');
+            if (getStoredColorMode() === 'auto') {
+                applyColorMode('auto');
+                syncThemeSwitches();
+            }
         });
     }
 });

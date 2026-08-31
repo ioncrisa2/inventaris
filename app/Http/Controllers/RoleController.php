@@ -68,7 +68,9 @@ class RoleController extends Controller
     {
         $this->authorize('role.update');
         $this->abortIfOtherTenant($role);
-        abort_if($role->isSystem(), 403, 'Role sistem tidak dapat diubah.');
+
+        $canEditSystemPermissions = auth()->user()->isSuperAdmin() && $role->isAdminPrimerRole();
+        abort_if($role->isSystem() && ! $canEditSystemPermissions, 403, 'Role sistem tidak dapat diubah.');
 
         $permissionGroups = PermissionCatalog::groups();
         $selectedPermissions = $role->permissions->pluck('name')->all();

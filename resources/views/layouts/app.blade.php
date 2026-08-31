@@ -37,7 +37,7 @@
                 @include('partials.topbar-menu')
                 <div class="app-topbar-account mt-3 mt-lg-0">
                     <x-tenant-context />
-                    @include('partials.user-dropdown')
+                    @include('partials.topbar-actions')
                 </div>
             </div>
         </div>
@@ -60,7 +60,7 @@
 
                 <div class="app-topbar-account ms-auto">
                     <x-tenant-context />
-                    @include('partials.user-dropdown')
+                    @include('partials.topbar-actions')
                 </div>
             </header>
 

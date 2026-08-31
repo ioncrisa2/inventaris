@@ -13,7 +13,11 @@ class StoreRoleRequest extends FormRequest
     {
         $user = $this->user();
 
-        return $user->can('role.create')
+        if ($this->routeIs('owner.roles.store')) {
+            return $user?->isSystemOwner() === true;
+        }
+
+        return $user?->can('role.create')
             && ($user->isSuperAdmin() || $user->isAdminPrimer());
     }
 

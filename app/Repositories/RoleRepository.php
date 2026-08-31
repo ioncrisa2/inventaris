@@ -10,21 +10,23 @@ use Illuminate\Support\Collection;
 class RoleRepository
 {
     /**
-     * Super Admin melihat seluruh role. Aktor tenant hanya melihat role yang
-     * koperasi_id-nya sama persis dengan koperasi miliknya; role global dan
-     * role tenant lain tidak pernah masuk ke hasil query.
+     * System Owner dan Super Admin melihat role lintas koperasi. Identitas
+     * internal system_owner tidak pernah menjadi bagian dari UI manajemen
+     * role; role tersebut hanya diprovisikan dari server. Aktor tenant hanya
+     * melihat role yang koperasi_id-nya sama persis dengan miliknya.
      */
     public function paginateFor(User $actor, int $perPage = 10): LengthAwarePaginator
     {
         $query = Role::query();
 
-        if (! $actor->isSuperAdmin()) {
+        if (! $actor->isSystemOwner() && ! $actor->isSuperAdmin()) {
             $actor->koperasi_id === null
                 ? $query->whereRaw('1 = 0')
                 : $query->where('koperasi_id', (int) $actor->koperasi_id);
         }
 
         return $query
+            ->where('name', '!=', 'system_owner')
             ->with('koperasi:id,nama')
             ->withCount(['users', 'permissions'])
             ->orderBy('name')

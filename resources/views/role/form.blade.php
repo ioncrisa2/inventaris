@@ -3,11 +3,22 @@
 @section('title', $role->exists ? 'Edit Role' : 'Tambah Role')
 
 @section('content')
+@php
+    $routePrefix = $routePrefix ?? 'role';
+    $isOwnerRoleManager = $isOwnerRoleManager ?? false;
+    $isProtectedSystemRole = $role->exists
+        && $role->isSystem()
+        && ($isOwnerRoleManager || (auth()->user()->isSuperAdmin() && $role->isAdminPrimerRole()));
+    $pageTitle = $isProtectedSystemRole
+        ? 'Atur Hak Akses '.$role->displayName()
+        : ($role->exists ? 'Edit Role' : 'Tambah Role');
+@endphp
 <x-form-page
-    :title="$role->exists ? 'Edit Role' : 'Tambah Role'"
-    :action="$role->exists ? route('role.update', $role) : route('role.store')"
+    :title="$pageTitle"
+    :subtitle="$isProtectedSystemRole ? 'Nama role sistem dikunci; hanya susunan permission yang dapat diubah.' : null"
+    :action="$role->exists ? route($routePrefix.'.update', $role) : route($routePrefix.'.store')"
     :method="$role->exists ? 'PUT' : 'POST'"
-    :cancel-route="route('role.index')"
+    :cancel-route="route($routePrefix.'.index')"
     :submit-label="$role->exists ? 'Simpan Perubahan' : 'Simpan Role'"
     class="is-wide"
 >
@@ -15,9 +26,14 @@
 
     <div class="row g-3 mb-4">
         <div class="col-md-6">
-            <x-form.input name="name" label="Nama Role" :value="$role->name" required autofocus maxlength="255" />
+            @if($isProtectedSystemRole)
+                <input type="hidden" name="name" value="{{ $role->name }}">
+                <x-form.input name="name_display" label="Nama Role" :value="$role->displayName()" disabled />
+            @else
+                <x-form.input name="name" label="Nama Role" :value="$role->name" required autofocus maxlength="255" />
+            @endif
         </div>
-        @if(! $role->exists && auth()->user()->isSuperAdmin())
+        @if(! $role->exists && ($isOwnerRoleManager || auth()->user()->isSuperAdmin()))
         <div class="col-md-6">
             <x-form.select
                 name="koperasi_id"

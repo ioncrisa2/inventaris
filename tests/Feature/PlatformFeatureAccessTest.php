@@ -102,3 +102,18 @@ test('panel akses fitur hanya dapat dibuka system owner', function () {
     $this->actingAs($admin)->get(route('owner.features.index'))->assertForbidden();
     $this->patch(route('owner.features.update', 'not_registered'), ['enabled' => false])->assertForbidden();
 });
+
+test('pengaturan aplikasi yang nonaktif juga hilang dari dropdown pengguna', function () {
+    $owner = systemOwnerUser();
+    $this->actingAs($owner)
+        ->patch(route('owner.features.update', 'app_settings'), ['enabled' => false])
+        ->assertRedirect();
+
+    $admin = adminPrimerUser();
+    $this->actingAs($admin)
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertDontSee('Pengaturan Aplikasi');
+
+    $this->get(route('pengaturan.edit'))->assertNotFound();
+});

@@ -19,7 +19,7 @@ class RoleService
     }
 
     /**
-     * @throws \DomainException Jika aktor bukan super_admin/admin_primer.
+     * @throws \DomainException Jika aktor bukan pengelola role yang sah.
      */
     public function store(User $actor, array $data): Role
     {
@@ -43,7 +43,7 @@ class RoleService
      */
     private function resolveKoperasiIdForCreate(User $actor, ?int $requestedKoperasiId): int
     {
-        if ($actor->isSuperAdmin()) {
+        if ($actor->isSystemOwner() || $actor->isSuperAdmin()) {
             if ($requestedKoperasiId === null) {
                 throw new \DomainException('Koperasi tujuan wajib dipilih.');
             }
@@ -55,7 +55,7 @@ class RoleService
             return (int) $actor->koperasi_id;
         }
 
-        throw new \DomainException('Hanya super admin atau admin primer yang dapat membuat role.');
+        throw new \DomainException('Hanya system owner, super admin, atau admin primer yang dapat membuat role.');
     }
 
     public function update(User $actor, Role $role, array $data): Role
@@ -63,7 +63,11 @@ class RoleService
         $this->ensureActorCanUpdate($actor, $role);
 
         return DB::transaction(function () use ($role, $data) {
-            $this->roleRepository->update($role, $data['name']);
+            // Nama role sistem adalah jangkar identitas. System Owner boleh
+            // mengatur permission-nya, tetapi tidak boleh mengganti namanya.
+            if (! $role->isSystem()) {
+                $this->roleRepository->update($role, $data['name']);
+            }
             $role->syncPermissions($data['permissions']);
 
             return $role;
@@ -85,7 +89,7 @@ class RoleService
      */
     public function destroyMany(User $actor, array $ids): int
     {
-        $this->ensureActorIsSuperAdmin($actor);
+        $this->ensureActorCanDelete($actor);
 
         return DB::transaction(function () use ($ids) {
             $ids = array_values(array_unique(array_map('intval', $ids)));
@@ -118,25 +122,34 @@ class RoleService
      *
      * @throws \DomainException
      */
-    private function ensureActorIsSuperAdmin(User $actor): void
+    private function ensureActorCanDelete(User $actor): void
     {
-        if (! $actor->isSuperAdmin()) {
-            throw new \DomainException('Hanya super admin yang dapat menghapus role.');
+        if (! $actor->isSystemOwner() && ! $actor->isSuperAdmin()) {
+            throw new \DomainException('Hanya system owner atau super admin yang dapat menghapus role.');
         }
     }
 
     /**
-     * Role sistem adalah jangkar identitas keamanan dan tidak boleh diedit
-     * lewat UI. Role tenant biasa hanya dapat diubah oleh aktor tenant yang
-     * sama atau oleh super admin global.
+     * Nama role sistem tetap menjadi jangkar identitas. System owner dapat
+     * mengatur permission role sistem selain miliknya sendiri; super admin
+     * hanya dapat mengatur permission Admin Primer. Role custom mengikuti
+     * lingkup tenant aktor atau akses global platform.
      */
     private function ensureActorCanUpdate(User $actor, Role $role): void
     {
+        if ($role->name === 'system_owner') {
+            throw new \DomainException('Role system owner tidak dapat dikelola dari aplikasi.');
+        }
+
         if ($role->isSystem()) {
+            if ($actor->isSystemOwner() || ($actor->isSuperAdmin() && $role->isAdminPrimerRole())) {
+                return;
+            }
+
             throw new \DomainException('Role sistem tidak dapat diubah.');
         }
 
-        if (! $actor->isSuperAdmin() && (int) $role->koperasi_id !== (int) $actor->koperasi_id) {
+        if (! $actor->isSystemOwner() && ! $actor->isSuperAdmin() && (int) $role->koperasi_id !== (int) $actor->koperasi_id) {
             throw new \DomainException('Role tidak berada dalam koperasi Anda.');
         }
     }

@@ -1,11 +1,7 @@
 @php
     $user = auth()->user();
-    if (! request()->attributes->has('unread_notification_count')) {
-        request()->attributes->set('unread_notification_count', $user->unreadNotifications()->count());
-    }
-    $unreadNotificationCount = (int) request()->attributes->get('unread_notification_count');
 @endphp
-<div class="dropdown {{ $class ?? '' }}">
+<div class="dropdown {{ $class ?? '' }}" data-user-menu>
     <button type="button" class="app-topbar-user dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
         <span class="app-topbar-avatar">{{ $user->initials() }}</span>
         <span class="app-topbar-username">{{ $user->name }}</span>
@@ -20,18 +16,6 @@
         </div>
 
         <div class="user-menu-section">
-            <div class="user-menu-icon-group" role="group" aria-label="Pilih tema warna">
-                <button type="button" class="user-menu-icon-btn" data-color-mode-option="light" title="Terang" aria-label="Tema terang">
-                    <i class="bi bi-sun" aria-hidden="true"></i>
-                </button>
-                <button type="button" class="user-menu-icon-btn" data-color-mode-option="dark" title="Gelap" aria-label="Tema gelap">
-                    <i class="bi bi-moon-stars" aria-hidden="true"></i>
-                </button>
-                <button type="button" class="user-menu-icon-btn" data-color-mode-option="auto" title="Sistem" aria-label="Ikuti tema sistem">
-                    <i class="bi bi-display" aria-hidden="true"></i>
-                </button>
-            </div>
-
             <div class="user-menu-icon-group" role="group" aria-label="Pilih tampilan menu">
                 <button type="button" class="user-menu-icon-btn" data-app-layout-option="sidebar" title="Sidebar" aria-label="Tampilan sidebar">
                     <i class="bi bi-layout-sidebar-inset" aria-hidden="true"></i>
@@ -47,17 +31,11 @@
         <a class="dropdown-item" href="{{ route('profile.show') }}">
             <i class="bi bi-person me-2"></i>Profil
         </a>
-        <a class="dropdown-item d-flex align-items-center" href="{{ route('notifications.index') }}">
-            <i class="bi bi-bell me-2"></i>Notifikasi
-            @if($unreadNotificationCount > 0)
-                <span class="badge text-bg-danger ms-auto">{{ $unreadNotificationCount > 99 ? '99+' : $unreadNotificationCount }}</span>
-            @endif
-        </a>
-        @unless ($user->isSystemOwner())
+        @if (! $user->isSystemOwner() && app(\App\Services\PlatformFeatureService::class)->isEnabled('app_settings'))
             <a class="dropdown-item" href="{{ route('pengaturan.edit') }}">
                 <i class="bi bi-gear me-2"></i>Pengaturan Aplikasi
             </a>
-        @endunless
+        @endif
 
         @if ($user->isAdminPrimer())
             <a class="dropdown-item" href="{{ route('dashboard') }}#onboarding-tour" data-onboarding-restart>

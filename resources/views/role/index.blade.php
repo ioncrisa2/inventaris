@@ -3,14 +3,23 @@
 @section('title', 'Role & Hak Akses - Sistem Inventaris & Kepegawaian')
 
 @section('content')
+@php
+    $routePrefix = $routePrefix ?? 'role';
+    $isOwnerRoleManager = $isOwnerRoleManager ?? false;
+    $showTenant = $isOwnerRoleManager || auth()->user()->isSuperAdmin();
+    $canCreate = $isOwnerRoleManager
+        || (auth()->user()->can('role.create') && (auth()->user()->isSuperAdmin() || auth()->user()->isAdminPrimer()));
+@endphp
 <x-app-page>
         <x-page-header
             title="Role & Hak Akses"
-            subtitle="Atur role tambahan per koperasi dan lihat akun yang menggunakan setiap role."
+            :subtitle="$isOwnerRoleManager
+                ? 'Atur permission role lintas koperasi dari control-plane platform.'
+                : 'Atur role tambahan per koperasi dan lihat akun yang menggunakan setiap role.'"
         >
             <x-slot:actions>
-                @if(auth()->user()->can('role.create') && (auth()->user()->isSuperAdmin() || auth()->user()->isAdminPrimer()))
-                <a class="btn btn-primary" href="{{ route('role.create') }}">
+                @if($canCreate)
+                <a class="btn btn-primary" href="{{ route($routePrefix.'.create') }}">
                     <i class="bi bi-shield-plus"></i>
                     Tambah Role
                 </a>
@@ -20,7 +29,7 @@
 
         <x-flash-alert />
 
-        @unless(auth()->user()->isSuperAdmin())
+        @if(! $showTenant)
         <div class="alert alert-primary app-alert" role="note">
             <i class="bi bi-building-lock" aria-hidden="true"></i>
             <div>
@@ -29,14 +38,22 @@
                 Role Admin Primer tetap ditampilkan sebagai role sistem, sedangkan role custom dapat Anda buat dan ubah.
             </div>
         </div>
-        @endunless
+        @endif
 
         <div class="alert alert-info app-alert" role="note">
             <i class="bi bi-lock" aria-hidden="true"></i>
             <div>
                 <strong>Role sistem dilindungi.</strong>
-                Super Admin dan Admin Primer menjadi jangkar identitas sehingga tidak dapat diubah atau dihapus dari halaman ini.
-                Klik jumlah pengguna untuk mengelola akun pemegang role tersebut.
+                @if($isOwnerRoleManager)
+                    Nama Super Admin dan Admin Primer tetap dikunci sebagai jangkar identitas, tetapi permission keduanya dapat Anda atur.
+                    Identitas pemilik platform sengaja tidak ditampilkan di halaman ini.
+                @elseif(auth()->user()->isSuperAdmin())
+                    Role Super Admin tidak dapat diubah. Untuk Admin Primer, nama role tetap dikunci tetapi permission dapat Anda atur.
+                    Semua role sistem tidak dapat dihapus.
+                @else
+                    Super Admin dan Admin Primer menjadi jangkar identitas sehingga tidak dapat diubah atau dihapus dari halaman ini.
+                    Klik jumlah pengguna untuk mengelola akun pemegang role tersebut.
+                @endif
             </div>
         </div>
 
@@ -45,7 +62,7 @@
                     <thead>
                         <tr>
                             <th>Nama Role</th>
-                            @if(auth()->user()->isSuperAdmin())
+                            @if($showTenant)
                             <th>Koperasi</th>
                             @endif
                             <th class="text-end table-col-width-120">Jumlah Permission</th>
@@ -70,12 +87,12 @@
                                         @endif
                                     </div>
                                 </td>
-                                @if(auth()->user()->isSuperAdmin())
+                                @if($showTenant)
                                 <td>{{ $role->koperasi?->nama ?? 'Global' }}</td>
                                 @endif
                                 <td class="text-end">{{ $role->permissions_count }}</td>
                                 <td class="text-end">
-                                    @can('pengguna.view')
+                                    @if(! $isOwnerRoleManager && auth()->user()->can('pengguna.view'))
                                         <a
                                             class="btn btn-sm btn-link p-0 fw-semibold text-decoration-none"
                                             href="{{ route('pengguna.index', array_filter([
@@ -90,27 +107,35 @@
                                         </a>
                                     @else
                                         {{ $role->users_count }}
-                                    @endcan
+                                    @endif
                                 </td>
                                 <td class="text-nowrap">
                                     <div class="table-actions">
                                         @if(
-                                            auth()->user()->can('role.update')
-                                            && ! $role->isSystem()
-                                            && (auth()->user()->isSuperAdmin() || (int) $role->koperasi_id === (int) auth()->user()->koperasi_id)
+                                            ($isOwnerRoleManager && ! $role->isSystemOwnerRole())
+                                            || (
+                                                auth()->user()->isSuperAdmin()
+                                                && auth()->user()->can('role.update')
+                                                && $role->isAdminPrimerRole()
+                                            )
+                                            || (
+                                                auth()->user()->can('role.update')
+                                                && ! $role->isSystem()
+                                                && (auth()->user()->isSuperAdmin() || (int) $role->koperasi_id === (int) auth()->user()->koperasi_id)
+                                            )
                                         )
                                         <a
                                             class="btn btn-sm btn-action btn-action-neutral"
-                                            href="{{ route('role.edit', $role) }}"
-                                            aria-label="Edit {{ $role->displayName() }}"
-                                            title="Edit"
+                                            href="{{ route($routePrefix.'.edit', $role) }}"
+                                            aria-label="{{ $role->isSystem() ? 'Atur permission' : 'Edit' }} {{ $role->displayName() }}"
+                                            title="{{ $role->isSystem() ? 'Atur permission' : 'Edit' }}"
                                         >
                                             <i class="bi bi-pencil"></i>
                                         </a>
                                         @endif
-                                        @if(auth()->user()->isSuperAdmin() && ! $role->isSystem())
+                                        @if(($isOwnerRoleManager || auth()->user()->isSuperAdmin()) && ! $role->isSystem())
                                         <x-delete-button
-                                            :url="route('role.destroy', $role)"
+                                            :url="route($routePrefix.'.destroy', $role)"
                                             :message="'Yakin ingin menghapus role &quot;'.$role->displayName().'&quot;?'"
                                             :label="'Hapus '.$role->displayName()"
                                         />
@@ -119,7 +144,7 @@
                                 </td>
                             </tr>
                         @empty
-                            <x-empty-row :colspan="auth()->user()->isSuperAdmin() ? 5 : 4">Belum ada role terdaftar.</x-empty-row>
+                            <x-empty-row :colspan="$showTenant ? 5 : 4">Belum ada role terdaftar.</x-empty-row>
                         @endforelse
                     </tbody>
                 </table>

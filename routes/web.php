@@ -24,6 +24,7 @@ use App\Http\Controllers\OnboardingTourController;
 use App\Http\Controllers\Owner\AnnouncementController as OwnerAnnouncementController;
 use App\Http\Controllers\Owner\MaintenanceController;
 use App\Http\Controllers\Owner\PlatformFeatureController;
+use App\Http\Controllers\Owner\RoleController as OwnerRoleController;
 use App\Http\Controllers\OwnerAnalyticsController;
 use App\Http\Controllers\OwnerProductRequestAttachmentController;
 use App\Http\Controllers\OwnerProductRequestController;
@@ -71,6 +72,8 @@ Route::middleware(['auth', 'system_owner', AuditSystemOwnerAccess::class])
         Route::get('announcements', [OwnerAnnouncementController::class, 'index'])->name('announcements.index');
         Route::post('announcements', [OwnerAnnouncementController::class, 'store'])->name('announcements.store');
         Route::patch('announcements/{announcement}/publish', [OwnerAnnouncementController::class, 'publish'])->name('announcements.publish');
+        Route::delete('roles/bulk', [OwnerRoleController::class, 'bulkDestroy'])->name('roles.bulk-destroy');
+        Route::resource('roles', OwnerRoleController::class)->except(['show']);
         Route::get('analytics', [OwnerAnalyticsController::class, 'index'])->name('analytics');
         Route::get('analytics/koperasi/{koperasi}', [OwnerAnalyticsController::class, 'koperasi'])
             ->whereNumber('koperasi')

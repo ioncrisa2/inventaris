@@ -98,3 +98,51 @@ test('super admin can still create and delete roles normally', function () {
 
     $this->assertDatabaseMissing('roles', ['id' => $role->id]);
 });
+
+test('super admin can only edit admin primer permissions without renaming or deleting the role', function () {
+    $koperasi = Koperasi::create(['nama' => 'Koperasi Permission Primer']);
+    adminPrimerUser($koperasi);
+    $superAdmin = superAdminUser();
+    $adminPrimerRole = Role::query()
+        ->where('name', 'admin_primer')
+        ->where('koperasi_id', $koperasi->id)
+        ->firstOrFail();
+
+    $this->actingAs($superAdmin)
+        ->get(route('role.index'))
+        ->assertOk()
+        ->assertSee(route('role.edit', $adminPrimerRole), false);
+
+    $this->get(route('role.edit', $adminPrimerRole))
+        ->assertOk()
+        ->assertSeeText('Atur Hak Akses Admin Primer')
+        ->assertSee('name="name" value="admin_primer"', false);
+
+    $this->put(route('role.update', $adminPrimerRole), [
+        'name' => 'admin_primer',
+        'permissions' => ['transaksi-gaji.view', 'transaksi-gaji.publish'],
+    ])->assertRedirect(route('role.index'));
+
+    expect($adminPrimerRole->fresh()->permissions->pluck('name')->all())
+        ->toEqualCanonicalizing(['transaksi-gaji.view', 'transaksi-gaji.publish']);
+
+    $this->from(route('role.edit', $adminPrimerRole))
+        ->put(route('role.update', $adminPrimerRole), [
+            'name' => 'Admin Primer Diubah',
+            'permissions' => ['barang.view'],
+        ])
+        ->assertRedirect(route('role.edit', $adminPrimerRole))
+        ->assertSessionHasErrors('name');
+
+    expect($adminPrimerRole->fresh()->name)->toBe('admin_primer');
+
+    $this->from(route('role.index'))
+        ->delete(route('role.destroy', $adminPrimerRole))
+        ->assertRedirect(route('role.index'))
+        ->assertSessionHas('error', 'Role sistem tidak dapat dihapus.');
+
+    $this->assertDatabaseHas('roles', ['id' => $adminPrimerRole->id]);
+
+    $superAdminRole = $superAdmin->roles()->firstOrFail();
+    $this->get(route('role.edit', $superAdminRole))->assertForbidden();
+});

@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests\Role;
 
+use Illuminate\Validation\Rule;
+
 class UpdateRoleRequest extends StoreRoleRequest
 {
     public function authorize(): bool
@@ -9,9 +11,21 @@ class UpdateRoleRequest extends StoreRoleRequest
         $user = $this->user();
         $role = $this->route('role');
 
-        return $user->can('role.update')
-            && $role !== null
-            && ! $role->isSystem()
+        if ($this->routeIs('owner.roles.update')) {
+            return $user?->isSystemOwner() === true
+                && $role !== null
+                && $role->name !== 'system_owner';
+        }
+
+        if (! $user->can('role.update') || $role === null) {
+            return false;
+        }
+
+        if ($user->isSuperAdmin() && $role->isAdminPrimerRole()) {
+            return true;
+        }
+
+        return ! $role->isSystem()
             && ($user->isSuperAdmin() || (int) $role->koperasi_id === (int) $user->koperasi_id);
     }
 
@@ -32,6 +46,17 @@ class UpdateRoleRequest extends StoreRoleRequest
 
     public function rules(): array
     {
-        return collect(parent::rules())->except('koperasi_id')->all();
+        $rules = collect(parent::rules())->except('koperasi_id')->all();
+        $role = $this->route('role');
+
+        $isPermissionOnlySystemUpdate = $role?->isSystem()
+            && ($this->routeIs('owner.roles.update')
+                || ($this->user()?->isSuperAdmin() && $role->isAdminPrimerRole()));
+
+        if ($isPermissionOnlySystemUpdate) {
+            $rules['name'] = ['required', 'string', Rule::in([$role->name])];
+        }
+
+        return $rules;
     }
 }

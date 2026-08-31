@@ -25,15 +25,20 @@ test('app header offers sidebar and topbar layout options in user menu', functio
     $response->assertSee('data-app-layout-option="topbar"', false);
 });
 
-test('app header offers system, light, and dark color modes in user menu', function () {
+test('app header exposes notification then theme switch then user menu', function () {
     $this->actingAs(adminUser());
 
     $response = $this->get(route('dashboard'));
 
     $response->assertOk();
-    $response->assertSee('data-color-mode-option="auto"', false);
-    $response->assertSee('data-color-mode-option="light"', false);
-    $response->assertSee('data-color-mode-option="dark"', false);
+    $response->assertSeeInOrder([
+        'data-topbar-notifications',
+        'data-theme-switch',
+        'data-user-menu',
+    ], false);
+    $response->assertDontSee('data-color-mode-option', false);
+    $response->assertSee('role="switch"', false);
+    $response->assertSee('href="'.route('notifications.index').'"', false);
 });
 
 test('topbar navigation mirrors the same permission-gated menu as the sidebar', function () {

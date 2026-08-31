@@ -107,7 +107,9 @@ class NavigationMenu
     }
 
     /**
-     * Navigasi owner sengaja tidak memuat satupun route CRUD operasional.
+     * Navigasi owner hanya memuat control-plane platform. Pengelolaan role
+     * ditempatkan di jalur owner tersendiri agar tidak membuka CRUD data
+     * operasional tenant kepada identitas system_owner.
      *
      * @return list<array<string, mixed>>
      */
@@ -129,6 +131,14 @@ class NavigationMenu
                 'route' => 'owner.product-requests.index',
                 'active_routes' => ['owner.product-requests.*'],
                 'permission' => null,
+            ],
+            [
+                'type' => 'group',
+                'key' => 'keamanan-akses-platform',
+                'label' => 'Keamanan & Akses',
+                'items' => [
+                    ['label' => 'Role & Hak Akses', 'icon' => 'bi-shield-lock', 'route' => 'owner.roles.index', 'active_routes' => ['owner.roles.*'], 'permission' => null],
+                ],
             ],
             [
                 'type' => 'group',
