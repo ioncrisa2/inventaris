@@ -7,6 +7,7 @@ import './components/localized-inputs';
 import './components/mobile-tables';
 import './components/modals';
 import './components/password-peek';
+import './components/role-access-notice';
 import './pages/absensi';
 import './pages/barang';
 import './pages/dashboard';

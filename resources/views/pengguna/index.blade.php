@@ -25,6 +25,19 @@
 
         <x-flash-alert />
 
+        @if(auth()->user()->isAdminPrimer())
+            <x-role-access-notice
+                id="admin-primer-role-access"
+                title="Batasan Role & Akses"
+                :items="[
+                    ['before' => 'Anda hanya bisa melihat dan mengubah data yang terkait dengan ', 'emphasis' => 'koperasi Anda', 'after' => '.'],
+                    ['before' => 'Role Admin Primer bersifat ', 'emphasis' => 'referensi (read-only)', 'after' => ' dan tidak bisa diedit atau dihapus.'],
+                    ['before' => 'Anda bisa ', 'emphasis' => 'membuat dan mengubah role custom', 'after' => ' sesuai kebutuhan.'],
+                    ['before' => 'Pembuatan akun Admin Primer baru ', 'emphasis' => 'tidak tersedia melalui halaman ini', 'after' => '.'],
+                ]"
+            />
+        @endif
+
         <x-data-table :paginator="$users">
             <x-slot:toolbar>
                 <x-filter-form

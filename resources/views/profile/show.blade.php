@@ -136,6 +136,19 @@
                     <div class="card-body">
                         <x-flash-alert success="password_success" :error="null" />
 
+                        @if($user->isAdminPrimer())
+                            <x-role-access-notice
+                                id="admin-primer-account-security"
+                                title="Keamanan Akun"
+                                icon="bi-shield-lock"
+                                class="mt-0 mb-4"
+                                :items="[
+                                    ['before' => '', 'emphasis' => 'Jangan bagikan kata sandi Anda', 'after' => ' ke siapa pun.'],
+                                    ['before' => '', 'emphasis' => 'Segera perbarui profil', 'after' => ' jika email atau identitas akun berubah.'],
+                                ]"
+                            />
+                        @endif
+
                         <form method="POST" action="{{ route('profile.password.update') }}">
                             @csrf
                             @method('PUT')

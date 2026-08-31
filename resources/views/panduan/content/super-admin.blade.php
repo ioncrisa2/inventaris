@@ -57,13 +57,15 @@
     </ol>
 </section>
 
-<aside class="guide-boundaries" aria-labelledby="super-boundaries-title">
-    <h2 id="super-boundaries-title">Batas akses yang perlu diketahui</h2>
-    <ul>
-        <li>Akses data operasional lintas koperasi bersifat baca untuk pengawasan dan dukungan.</li>
-        <li>Mutasi unit kerja, karyawan, barang, absensi, dan transaksi gaji dilakukan oleh pengelola tenant.</li>
-        <li>Role sistem dilindungi dan tidak dapat diubah atau dihapus dari halaman Role & Hak Akses.</li>
-        <li>Koperasi dinonaktifkan melalui status atau masa aktif, bukan dengan menghapus data tenant.</li>
-        <li>Selalu gunakan filter koperasi saat meninjau laporan atau pengguna agar konteks tidak tertukar.</li>
-    </ul>
-</aside>
+<x-role-access-notice
+    id="super-admin-cross-tenant"
+    title="Batas akses yang perlu diketahui"
+    :interactive="! ($isPrint ?? false)"
+    :items="[
+        ['before' => 'Akses data operasional lintas koperasi bersifat ', 'emphasis' => 'baca', 'after' => ' untuk pengawasan dan dukungan.'],
+        ['before' => 'Mutasi unit kerja, karyawan, barang, absensi, dan transaksi gaji dilakukan ', 'emphasis' => 'oleh pengelola tenant', 'after' => '.'],
+        ['before' => 'Nama dan keberadaan role sistem tetap dilindungi; permission Admin Primer hanya diatur melalui ', 'emphasis' => 'Role & Hak Akses', 'after' => ', tanpa mengubah nama atau menghapus role.'],
+        ['before' => 'Koperasi dinonaktifkan melalui ', 'emphasis' => 'status atau masa aktif', 'after' => ', bukan dengan menghapus data tenant.'],
+        ['before' => 'Selalu gunakan ', 'emphasis' => 'filter koperasi', 'after' => ' saat meninjau laporan atau pengguna agar konteks tidak tertukar.'],
+    ]"
+/>

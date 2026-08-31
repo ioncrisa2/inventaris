@@ -70,14 +70,3 @@
         </li>
     </ol>
 </section>
-
-<aside class="guide-boundaries" aria-labelledby="primer-boundaries-title">
-    <h2 id="primer-boundaries-title">Batas akses yang perlu diketahui</h2>
-    <ul>
-        <li>Anda hanya dapat melihat dan mengubah data yang terikat ke koperasi Anda.</li>
-        <li>Role sistem <strong>Admin Primer</strong> ditampilkan sebagai referensi, tetapi tidak dapat diedit.</li>
-        <li>Role custom dapat dibuat dan diubah; penghapusan role tidak tersedia dari akun Admin Primer.</li>
-        <li>Akun Admin Primer lain tidak dapat dibuat melalui Manajemen Pengguna.</li>
-        <li>Jangan berbagi kata sandi. Segera perbarui profil jika identitas atau email akun berubah.</li>
-    </ul>
-</aside>

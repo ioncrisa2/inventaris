@@ -23,9 +23,11 @@
     .quick-guide-list p { margin: 0 0 3px; color: #475569; }
     .quick-guide-points { margin: 3px 0 0; padding-left: 16px; color: #475569; }
     .quick-guide-points li { margin-bottom: 2px; }
-    .guide-boundaries { margin-top: 16px; padding: 10px 12px; border: 1px solid #bfdbfe; border-radius: 6px; background: #eff6ff; break-inside: avoid; }
-    .guide-boundaries h2 { margin: 0 0 5px; color: #1e3a8a; font-size: 11px; }
-    .guide-boundaries ul { margin: 0; padding-left: 16px; }
+    .role-access-notice { margin-top: 16px; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; break-inside: avoid; }
+    .role-access-notice__heading { display: flex; align-items: center; gap: 5px; margin: 0 0 5px; color: #1f2937; font-size: 11px; font-weight: 700; }
+    .role-access-notice__heading h2 { margin: 0; font: inherit; }
+    .role-access-notice__content { padding: 0; }
+    .role-access-notice__content ul { margin: 0; padding-left: 16px; }
     .quick-guide-footer { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-top: 24px; padding-top: 8px; border-top: 1px solid #cbd5e1; color: #64748b; font-size: 9px; }
     .quick-guide-footer__credit { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 3px 8px; text-align: right; }
     .quick-guide-footer__item { display: inline-flex; gap: 8px; }
@@ -45,6 +47,7 @@
         <span><strong>Tanggal:</strong> {{ now()->translatedFormat('d F Y') }}</span>
     </div>
 
+    @php($isPrint = true)
     @include($guide['content_view'])
 
     @include('panduan.partials.footer')

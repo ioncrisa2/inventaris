@@ -4642,31 +4642,142 @@ input[data-date-range] {
     margin-bottom: .2rem;
 }
 
-.guide-boundaries {
+.role-access-notice {
     max-width: 76ch;
     margin: 2.25rem 0;
-    padding: 1rem 1.1rem;
-    border: 1px solid var(--bs-info-border-subtle);
+    border: 1px solid var(--bs-border-color);
     border-radius: var(--app-radius-md);
-    background: var(--bs-info-bg-subtle);
-    color: var(--bs-info-text-emphasis);
+    background: var(--bs-tertiary-bg);
+    color: var(--bs-body-color);
 }
 
-.guide-boundaries h2 {
-    margin: 0 0 .55rem;
+.role-access-notice__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: .85rem 1rem;
+}
+
+.role-access-notice__toggle {
+    display: inline-grid;
+    width: 28px;
+    height: 28px;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    border-radius: var(--app-radius-sm);
+    background: transparent;
+    color: var(--bs-secondary-color);
+}
+
+.role-access-notice__toggle:hover {
+    background: var(--bs-secondary-bg);
+    color: var(--bs-body-color);
+}
+
+.role-access-notice__toggle:focus-visible,
+.role-access-notice__dismiss:focus-visible,
+.role-access-notice__restore:focus-visible {
+    border-radius: var(--app-radius-sm);
+    outline: 3px solid color-mix(in srgb, var(--bs-primary) 28%, transparent);
+    outline-offset: 3px;
+}
+
+.role-access-notice__heading {
+    display: inline-flex;
+    align-items: center;
+    gap: .55rem;
+    margin: 0;
     font-size: .95rem;
     font-weight: 750;
 }
 
-.guide-boundaries ul {
-    margin: 0;
-    padding-left: 1.1rem;
-    font-size: .82rem;
-    line-height: 1.55;
+.role-access-notice__heading > i {
+    color: var(--bs-primary);
+    font-size: .95rem;
 }
 
-.guide-boundaries li + li {
-    margin-top: .25rem;
+.role-access-notice__heading h2 {
+    margin: 0;
+    font: inherit;
+}
+
+.role-access-notice__chevron {
+    color: var(--bs-secondary-color);
+    font-size: .8rem;
+    transition: transform 180ms ease-out;
+}
+
+.role-access-notice.is-collapsed .role-access-notice__chevron {
+    transform: rotate(180deg);
+}
+
+.role-access-notice__content {
+    padding: 0 1rem .9rem 2.5rem;
+    border-top: 1px solid var(--bs-border-color-translucent);
+}
+
+.role-access-notice__content ul {
+    margin: .8rem 0 0;
+    padding-left: 1rem;
+    color: var(--bs-secondary-color);
+    font-size: .82rem;
+    line-height: 1.6;
+}
+
+.role-access-notice__content strong {
+    color: var(--bs-body-color);
+    font-weight: 700;
+}
+
+.role-access-notice__content li + li {
+    margin-top: .3rem;
+}
+
+.role-access-notice__dismiss,
+.role-access-notice__restore {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--bs-secondary-color);
+    font-size: .76rem;
+    font-weight: 650;
+}
+
+.role-access-notice__dismiss {
+    margin-top: .75rem;
+}
+
+.role-access-notice__dismiss:hover,
+.role-access-notice__restore:hover {
+    color: var(--bs-body-color);
+}
+
+.role-access-notice__restore {
+    width: 100%;
+    padding: .75rem 1rem;
+    text-align: left;
+}
+
+.role-access-notice__restore[hidden] {
+    display: none;
+}
+
+.role-access-notice.is-dismissed {
+    display: inline-flex;
+    margin-block: 1rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .role-access-notice__chevron {
+        transition: none;
+    }
 }
 
 .quick-guide-footer {
