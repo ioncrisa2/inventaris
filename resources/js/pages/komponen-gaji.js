@@ -19,7 +19,7 @@ const perbaruiTampilanNilaiKomponen = (mode) => {
         suffix.textContent = '/hari';
         suffix.classList.remove('d-none');
         input.removeAttribute('max');
-        help.textContent = 'Nominal Rupiah per hari, otomatis dikalikan jumlah absensi berstatus Hadir pada bulan transaksi gaji.';
+        help.textContent = 'Nominal Rupiah per hari, dikalikan jumlah absensi berstatus Hadir dalam range tanggal yang diinput saat transaksi.';
     } else if (metode.value === 'harian_sehari') {
         prefix.classList.remove('d-none');
         suffix.textContent = '/hari';

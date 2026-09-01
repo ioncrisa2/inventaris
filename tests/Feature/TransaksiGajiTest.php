@@ -285,6 +285,8 @@ test('hasil per hari yang melebihi kapasitas database ditolak atomik', function 
         'baris' => [
             "master_{$uangHarian->id}" => [
                 'pakai' => '1',
+                'tanggal_awal' => '2026-07-01',
+                'tanggal_akhir' => '2026-07-02',
             ],
         ],
     ])->assertSessionHasErrors("baris.master_{$uangHarian->id}.nilai");
@@ -821,7 +823,7 @@ test('slip dengan rincian panjang memakai satu lembar penuh agar tanda tangan ti
     }
 });
 
-test('tunjangan per hari hanya menghitung absensi Hadir pada bulan transaksi', function () {
+test('tunjangan per hari hanya menghitung absensi Hadir di dalam range input', function () {
     $uangMakan = KomponenGaji::create([
         'nama_komponen' => 'Tunjangan Uang Makan',
         'jenis' => 'Tunjangan',
@@ -853,6 +855,8 @@ test('tunjangan per hari hanya menghitung absensi Hadir pada bulan transaksi', f
         'baris' => [
             "master_{$uangMakan->id}" => [
                 'pakai' => '1',
+                'tanggal_awal' => '2026-07-01',
+                'tanggal_akhir' => '2026-07-06',
             ],
         ],
     ]);
@@ -860,30 +864,41 @@ test('tunjangan per hari hanya menghitung absensi Hadir pada bulan transaksi', f
     $transaksi = TransaksiGaji::first();
     $response->assertRedirect(route('transaksi-gaji.show', $transaksi));
 
-    // Hanya 2 dari 7 catatan absensi berstatus Hadir.
-    expect((string) $transaksi->gaji_bersih)->toBe('5060000.00');
+    // Hadir tanggal 7 berada di luar range; status selain Hadir tidak dihitung.
+    expect((string) $transaksi->gaji_bersih)->toBe('5030000.00');
 
     $this->assertDatabaseHas('transaksi_gaji_detail', [
         'transaksi_gaji_id' => $transaksi->id,
         'komponen_gaji_id' => $uangMakan->id,
         'metode_perhitungan_snapshot' => 'per_hari',
         'nilai_snapshot' => 30000,
-        'jumlah_hari_snapshot' => 2,
-        'nominal_hasil' => 60000,
+        'jumlah_hari_snapshot' => 1,
+        'nominal_hasil' => 30000,
     ]);
 
     $detail = $transaksi->details()->where('komponen_gaji_id', $uangMakan->id)->first();
     expect($detail->tanggal_awal_snapshot->toDateString())->toBe('2026-07-01');
-    expect($detail->tanggal_akhir_snapshot->toDateString())->toBe('2026-07-31');
+    expect($detail->tanggal_akhir_snapshot->toDateString())->toBe('2026-07-06');
 });
 
-test('tunjangan per hari bernilai nol jika tidak ada absensi Hadir pada bulan transaksi', function () {
+test('tunjangan per hari bernilai nol jika tidak ada absensi Hadir di dalam range input', function () {
     $uangMakan = KomponenGaji::create([
         'nama_komponen' => 'Tunjangan Uang Makan',
         'jenis' => 'Tunjangan',
         'metode_perhitungan' => 'per_hari',
         'nilai_default' => 30000,
         'dasar_persentase' => null,
+    ]);
+
+    Absensi::create([
+        'karyawan_id' => $this->karyawan->id,
+        'tanggal' => '2026-07-03',
+        'status' => 'Izin',
+    ]);
+    Absensi::create([
+        'karyawan_id' => $this->karyawan->id,
+        'tanggal' => '2026-07-10',
+        'status' => 'Hadir',
     ]);
 
     $response = $this->post(route('transaksi-gaji.store'), [
@@ -893,6 +908,8 @@ test('tunjangan per hari bernilai nol jika tidak ada absensi Hadir pada bulan tr
         'baris' => [
             "master_{$uangMakan->id}" => [
                 'pakai' => '1',
+                'tanggal_awal' => '2026-07-01',
+                'tanggal_akhir' => '2026-07-05',
             ],
         ],
     ]);
@@ -932,6 +949,8 @@ test('satu absensi Hadir menghasilkan satu kali nominal harian', function () {
         'baris' => [
             "master_{$uangMakan->id}" => [
                 'pakai' => '1',
+                'tanggal_awal' => '2026-07-10',
+                'tanggal_akhir' => '2026-07-10',
             ],
         ],
     ]);
@@ -947,7 +966,7 @@ test('satu absensi Hadir menghasilkan satu kali nominal harian', function () {
     ]);
 });
 
-test('tunjangan per hari selalu memakai bulan transaksi dan mengabaikan rentang tanggal dari client', function () {
+test('tunjangan per hari wajib memakai range tanggal yang valid', function () {
     $uangMakan = KomponenGaji::create([
         'nama_komponen' => 'Tunjangan Uang Makan',
         'jenis' => 'Tunjangan',
@@ -956,18 +975,25 @@ test('tunjangan per hari selalu memakai bulan transaksi dan mengabaikan rentang 
         'dasar_persentase' => null,
     ]);
 
-    Absensi::create([
-        'karyawan_id' => $this->karyawan->id,
-        'tanggal' => '2026-07-10',
-        'status' => 'Hadir',
-    ]);
-    Absensi::create([
-        'karyawan_id' => $this->karyawan->id,
-        'tanggal' => '2026-08-10',
-        'status' => 'Hadir',
-    ]);
+    $this->from(route('transaksi-gaji.create'))
+        ->post(route('transaksi-gaji.store'), [
+            'karyawan_id' => $this->karyawan->id,
+            'bulan' => 7,
+            'tahun' => 2026,
+            'baris' => [
+                "master_{$uangMakan->id}" => ['pakai' => '1'],
+            ],
+        ])
+        ->assertRedirect(route('transaksi-gaji.create'))
+        ->assertSessionHasErrors([
+            "baris.master_{$uangMakan->id}.tanggal_awal",
+            "baris.master_{$uangMakan->id}.tanggal_akhir",
+        ]);
 
-    $response = $this->post(route('transaksi-gaji.store'), [
+    expect(TransaksiGaji::count())->toBe(0);
+
+    $this->from(route('transaksi-gaji.create'))
+        ->post(route('transaksi-gaji.store'), [
             'karyawan_id' => $this->karyawan->id,
             'bulan' => 7,
             'tahun' => 2026,
@@ -978,19 +1004,11 @@ test('tunjangan per hari selalu memakai bulan transaksi dan mengabaikan rentang 
                     'tanggal_akhir' => '2026-07-10',
                 ],
             ],
-        ]);
+        ])
+        ->assertRedirect(route('transaksi-gaji.create'))
+        ->assertSessionHasErrors("baris.master_{$uangMakan->id}.tanggal_akhir");
 
-    $transaksi = TransaksiGaji::firstOrFail();
-    $response->assertRedirect(route('transaksi-gaji.show', $transaksi));
-
-    $this->assertDatabaseHas('transaksi_gaji_detail', [
-        'transaksi_gaji_id' => $transaksi->id,
-        'komponen_gaji_id' => $uangMakan->id,
-        'tanggal_awal_snapshot' => '2026-07-01',
-        'tanggal_akhir_snapshot' => '2026-07-31',
-        'jumlah_hari_snapshot' => 1,
-        'nominal_hasil' => 30000,
-    ]);
+    expect(TransaksiGaji::count())->toBe(0);
 });
 
 test('tunjangan harian sehari dihitung sekali untuk satu tanggal, bukan dikali jumlah hari', function () {
@@ -1540,6 +1558,22 @@ test('form only shows the component management link once', function () {
     $response = $this->get(route('transaksi-gaji.create'))->assertOk();
 
     expect(substr_count($response->getContent(), 'Ubah di Komponen Gaji'))->toBe(1);
+});
+
+test('form komponen Per Hari Hadir menampilkan input range tanggal', function () {
+    $uangMakan = KomponenGaji::create([
+        'nama_komponen' => 'Konsumsi',
+        'jenis' => 'Tunjangan',
+        'metode_perhitungan' => 'per_hari',
+        'nilai_default' => 30000,
+    ]);
+
+    $this->get(route('transaksi-gaji.create'))
+        ->assertOk()
+        ->assertSee('Per Hari Hadir (Periode Gaji)')
+        ->assertSee('Hanya absensi berstatus Hadir dalam periode ini yang dihitung.')
+        ->assertSee('name="baris[master_'.$uangMakan->id.'][tanggal_awal]"', false)
+        ->assertSee('name="baris[master_'.$uangMakan->id.'][tanggal_akhir]"', false);
 });
 
 test('detail menampilkan total gaji sebelum potongan lalu take home pay', function () {

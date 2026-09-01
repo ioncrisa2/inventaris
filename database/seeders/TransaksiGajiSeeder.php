@@ -28,9 +28,16 @@ class TransaksiGajiSeeder extends Seeder
         foreach ($karyawans as $karyawan) {
             foreach (range(0, 2) as $mundur) {
                 $periode = $periodeAwal->subMonths($mundur);
-                $baris = $komponenList->mapWithKeys(
-                    fn (KomponenGaji $komponen) => ["master_{$komponen->id}" => ['pakai' => '1']],
-                )->all();
+                $baris = $komponenList->mapWithKeys(function (KomponenGaji $komponen) use ($periode) {
+                    $row = ['pakai' => '1'];
+
+                    if ($komponen->metode_perhitungan === 'per_hari') {
+                        $row['tanggal_awal'] = $periode->copy()->startOfMonth()->toDateString();
+                        $row['tanggal_akhir'] = $periode->copy()->endOfMonth()->toDateString();
+                    }
+
+                    return ["master_{$komponen->id}" => $row];
+                })->all();
                 $header = [
                     'karyawan_id' => $karyawan->id,
                     'bulan' => $periode->month,

@@ -106,7 +106,7 @@
                                 @if(in_array($data->metode_perhitungan, ['persentase', 'persentase_pengali'], true))
                                     <span class="text-body-secondary small">(dasar: gaji pokok)</span>
                                 @elseif($data->metode_perhitungan === 'per_hari')
-                                    <span class="text-body-secondary small">(dikali jumlah absensi Hadir pada bulan transaksi)</span>
+                                    <span class="text-body-secondary small">(dikali jumlah absensi Hadir dalam range tanggal yang diinput saat transaksi)</span>
                                 @elseif($data->metode_perhitungan === 'harian_sehari')
                                     <span class="text-body-secondary small">(dipakai sekali untuk satu tanggal yang diinput saat transaksi dibuat)</span>
                                 @elseif($data->metode_perhitungan === 'harian_manual')

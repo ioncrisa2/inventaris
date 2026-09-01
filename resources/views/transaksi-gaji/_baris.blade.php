@@ -46,8 +46,15 @@
             >
             <span class="input-group-text d-none" id="{{ $idAwalan }}_suffix">%</span>
         </div>
-        <div class="salary-attendance-note form-text mt-2 {{ $baris['metode'] === 'per_hari' ? '' : 'd-none' }}" id="{{ $idAwalan }}_kehadiran">
-            Jumlah hari otomatis mengikuti absensi berstatus Hadir pada bulan transaksi.
+        <div class="salary-date-range mt-2 {{ $baris['metode'] === 'per_hari' ? '' : 'd-none' }}" id="{{ $idAwalan }}_rentang">
+            <x-form.date-range
+                name-awal="{{ $namaField }}[tanggal_awal]"
+                name-akhir="{{ $namaField }}[tanggal_akhir]"
+                label="Periode"
+                :value-awal="$baris['tanggal_awal'] ?? null"
+                :value-akhir="$baris['tanggal_akhir'] ?? null"
+            />
+            <span class="form-text d-block mt-1">Hanya absensi berstatus Hadir dalam periode ini yang dihitung.</span>
         </div>
         <div class="salary-single-date mt-2 {{ $baris['metode'] === 'harian_sehari' ? '' : 'd-none' }}" id="{{ $idAwalan }}_tanggal_tunggal">
             <x-form.input
@@ -85,7 +92,17 @@
             </div>
         @elseif($baris['metode'] === 'per_hari')
             Rp {{ number_format($baris['nilai'], 0, ',', '.') }} /hari
-            <span class="form-text d-block mt-1">Otomatis dikali jumlah absensi Hadir pada bulan transaksi.</span>
+            <div class="salary-date-range mt-2">
+                <x-form.date-range
+                    name-awal="{{ $namaField }}[tanggal_awal]"
+                    name-akhir="{{ $namaField }}[tanggal_akhir]"
+                    label="Periode"
+                    :value-awal="$baris['tanggal_awal'] ?? null"
+                    :value-akhir="$baris['tanggal_akhir'] ?? null"
+                    required
+                />
+                <span class="form-text d-block mt-1">Hanya absensi berstatus Hadir dalam periode ini yang dihitung.</span>
+            </div>
         @elseif($baris['metode'] === 'harian_sehari')
             Rp {{ number_format($baris['nilai'], 0, ',', '.') }} /hari
             <div class="salary-single-date mt-2">

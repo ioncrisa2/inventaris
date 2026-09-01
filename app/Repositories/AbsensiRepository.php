@@ -8,10 +8,10 @@ use Illuminate\Support\Collection;
 
 class AbsensiRepository
 {
-    public function jumlahHadirUntukBulan(int $karyawanId, int $bulan, int $tahun): int
+    public function jumlahHadirUntukRentang(int $karyawanId, Carbon $tanggalAwal, Carbon $tanggalAkhir): int
     {
-        $mulai = Carbon::create($tahun, $bulan, 1)->startOfDay();
-        $selesaiEksklusif = $mulai->copy()->addMonthNoOverflow();
+        $mulai = $tanggalAwal->copy()->startOfDay();
+        $selesaiEksklusif = $tanggalAkhir->copy()->startOfDay()->addDay();
 
         return Absensi::query()
             ->where('karyawan_id', $karyawanId)

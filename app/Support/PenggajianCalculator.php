@@ -11,7 +11,7 @@ class PenggajianCalculator
      * - persentase: nilai adalah angka persentase (mis. 5 = 5%), dihitung
      *   dari $gajiPokok.
      * - per_hari: nilai adalah nominal Rupiah per hari, dikalikan
-     *   $jumlahHari (jumlah absensi berstatus Hadir pada bulan transaksi).
+     *   $jumlahHari (jumlah absensi berstatus Hadir dalam range transaksi).
      * - harian_sehari: nilai adalah nominal Rupiah per hari, dipakai apa
      *   adanya (selalu 1 hari) — tanggalnya cuma snapshot untuk cetak/riwayat,
      *   tidak memengaruhi hitungan.

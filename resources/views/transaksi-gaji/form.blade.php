@@ -13,7 +13,7 @@
 @section('content')
 <x-form-page
     :title="$transaksiGaji->exists ? 'Edit Transaksi Gaji' : 'Buat Transaksi Gaji'"
-    subtitle="Pilih karyawan, periode, dan komponen yang berlaku. Komponen per hari otomatis memakai jumlah absensi Hadir pada bulan transaksi."
+    subtitle="Pilih karyawan, periode, dan komponen yang berlaku. Komponen Per Hari Hadir memakai jumlah absensi Hadir dalam range yang diinput."
     :action="$transaksiGaji->exists ? route('transaksi-gaji.update', $transaksiGaji) : route('transaksi-gaji.store')"
     :method="$transaksiGaji->exists ? 'PUT' : 'POST'"
     :cancel-route="route('transaksi-gaji.index')"

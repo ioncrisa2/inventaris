@@ -221,11 +221,6 @@ class TransaksiGajiService
         $totalTunjangan = '0.00';
         $totalPotongan = '0.00';
         $barisSiapSimpan = [];
-        $jumlahHadirPeriode = $this->absensiRepository->jumlahHadirUntukBulan(
-            $karyawan->id,
-            $bulan,
-            $tahun,
-        );
 
         foreach ($barisTerpilih as $kunci => $row) {
             $kunci = (string) $kunci;
@@ -233,9 +228,7 @@ class TransaksiGajiService
                 $kunci,
                 $row,
                 $gajiPokok,
-                $bulan,
-                $tahun,
-                $jumlahHadirPeriode,
+                $karyawan->id,
                 $transaksiGaji,
                 $komponenById,
                 $detailCustomById,
@@ -282,9 +275,7 @@ class TransaksiGajiService
         string $kunci,
         array $row,
         string $gajiPokok,
-        int $bulan,
-        int $tahun,
-        int $jumlahHadirPeriode,
+        int $karyawanId,
         ?TransaksiGaji $transaksiGaji,
         Collection $komponenById,
         Collection $detailCustomById,
@@ -303,12 +294,13 @@ class TransaksiGajiService
             $komponenGajiId = $komponen->id;
             // Baris master tidak boleh dikunci nilainya dari client: metode &
             // nilai selalu diambil dari Komponen Gaji saat ini, bukan dari
-            // $row. Pengecualian: tanggal untuk harian_sehari serta jumlah
-            // hari/pengali manual memang input per-transaksi dan hanya
-            // tersedia dari $row. Metode per_hari selalu mengikuti jumlah
-            // absensi Hadir pada periode transaksi.
+            // $row. Pengecualian: rentang tanggal per_hari, tanggal untuk
+            // harian_sehari, serta jumlah hari/pengali manual memang input
+            // per-transaksi dan hanya tersedia dari $row.
             $metode = $komponen->metode_perhitungan;
             $nilai = (string) $komponen->nilai_default;
+            $tanggalAwal = $row['tanggal_awal'] ?? null;
+            $tanggalAkhir = $row['tanggal_akhir'] ?? null;
             $tanggalTunggal = $row['tanggal'] ?? null;
             $jumlahHariManual = $row['jumlah_hari'] ?? null;
             $jumlahPengali = $row['jumlah_pengali'] ?? null;
@@ -326,6 +318,8 @@ class TransaksiGajiService
             $komponenGajiId = null;
             $metode = $row['metode_perhitungan'] ?? null;
             $nilai = Decimal15Two::normalizeNonNegative($row['nilai'] ?? null);
+            $tanggalAwal = $row['tanggal_awal'] ?? null;
+            $tanggalAkhir = $row['tanggal_akhir'] ?? null;
             $tanggalTunggal = $row['tanggal'] ?? null;
             $jumlahHariManual = $row['jumlah_hari'] ?? null;
             $jumlahPengali = $row['jumlah_pengali'] ?? null;
@@ -370,10 +364,28 @@ class TransaksiGajiService
         }
 
         if ($metode === 'per_hari') {
-            $awalPeriode = Carbon::create($tahun, $bulan, 1)->startOfMonth();
-            $tanggalAwalSnapshot = $awalPeriode->toDateString();
-            $tanggalAkhirSnapshot = $awalPeriode->copy()->endOfMonth()->toDateString();
-            $jumlahHariSnapshot = $jumlahHadirPeriode;
+            try {
+                $awalCarbon = Carbon::parse($tanggalAwal)->startOfDay();
+                $akhirCarbon = Carbon::parse($tanggalAkhir)->startOfDay();
+            } catch (\Exception) {
+                throw ValidationException::withMessages([
+                    "baris.{$kunci}.tanggal_awal" => 'Rentang tanggal tidak valid.',
+                ]);
+            }
+
+            if ($akhirCarbon->lt($awalCarbon)) {
+                throw ValidationException::withMessages([
+                    "baris.{$kunci}.tanggal_akhir" => 'Tanggal akhir tidak boleh sebelum tanggal awal.',
+                ]);
+            }
+
+            $tanggalAwalSnapshot = $awalCarbon->toDateString();
+            $tanggalAkhirSnapshot = $akhirCarbon->toDateString();
+            $jumlahHariSnapshot = $this->absensiRepository->jumlahHadirUntukRentang(
+                $karyawanId,
+                $awalCarbon,
+                $akhirCarbon,
+            );
         } elseif ($metode === 'harian_sehari') {
             try {
                 $tanggalCarbon = Carbon::parse($tanggalTunggal)->startOfDay();
