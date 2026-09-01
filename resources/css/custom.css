@@ -2310,11 +2310,13 @@ input[data-date-range] {
 }
 
 .slip-sample-payroll--columns .slip-sample-payroll__base,
+.slip-sample-payroll--columns .slip-sample-payroll__gross,
 .slip-sample-payroll--columns .slip-sample-payroll__net {
     grid-column: 1 / -1;
 }
 
 .slip-sample-payroll__base,
+.slip-sample-payroll__gross,
 .slip-sample-payroll__net,
 .slip-sample-payroll section > div {
     display: flex;
@@ -2325,6 +2327,13 @@ input[data-date-range] {
 .slip-sample-payroll__base {
     padding-bottom: 1mm;
     border-bottom: 1px solid #71717a;
+}
+
+.slip-sample-payroll__gross {
+    padding: 1mm 0;
+    border-top: 1px solid #71717a;
+    border-bottom: 1px solid #71717a;
+    font-weight: 700;
 }
 
 .slip-sample-payroll h4 {
@@ -4050,45 +4059,112 @@ input[data-date-range] {
     text-transform: uppercase;
 }
 
-.payroll-summary {
-    width: min(100%, 460px);
-    margin: 1.25rem 1.25rem 1.25rem auto;
-    border: var(--bs-border-width) solid var(--bs-border-color);
-    border-radius: .65rem;
-    background: var(--bs-tertiary-bg);
-    padding: .5rem 1rem;
+.payroll-accounting-row > * {
+    padding-top: .75rem;
+    padding-bottom: .75rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
 }
 
-.payroll-summary > div {
+.payroll-accounting-row--gross > * {
+    border-top: calc(var(--bs-border-width) * 2) solid var(--bs-emphasis-color);
+    border-bottom: var(--bs-border-width) solid var(--bs-border-color);
+    background: var(--bs-secondary-bg);
+}
+
+.payroll-accounting-row--deduction > * {
+    background: var(--bs-tertiary-bg);
+}
+
+.payroll-accounting-row--net > * {
+    border-top: calc(var(--bs-border-width) * 2) solid var(--bs-emphasis-color);
+    border-bottom: var(--bs-border-width) solid var(--bs-emphasis-color) !important;
+    color: var(--bs-emphasis-color);
+    background: var(--bs-primary-bg-subtle);
+    font-size: 1.05rem;
+}
+
+.salary-detail-breakdown {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.salary-detail-breakdown__heading {
+    margin: 0 0 .5rem;
+    color: var(--bs-secondary-color);
+    font-size: .75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.salary-detail-breakdown__list {
+    margin: 0;
+}
+
+.salary-detail-breakdown__list > div,
+.salary-detail-breakdown__subtotal,
+.salary-detail-breakdown__net {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
     gap: 1.5rem;
-    padding: .55rem 0;
 }
 
-.payroll-summary dt {
-    color: var(--bs-secondary-color);
+.salary-detail-breakdown__list > div {
+    padding: .5rem 0;
+    border-bottom: var(--bs-border-width) solid var(--bs-border-color);
+}
+
+.salary-detail-breakdown__list dt {
     font-weight: 500;
 }
 
-.payroll-summary dd {
+.salary-detail-breakdown__list dd {
     margin: 0;
-    font-weight: 600;
     text-align: right;
     font-variant-numeric: tabular-nums;
+    white-space: nowrap;
 }
 
-.payroll-summary__total {
-    border-top: var(--bs-border-width) solid var(--bs-border-color);
-    color: var(--bs-emphasis-color);
-    font-size: 1rem;
+.salary-detail-breakdown__empty {
+    color: var(--bs-secondary-color);
 }
 
-.payroll-summary__total dt,
-.payroll-summary__total dd {
-    color: inherit;
+.salary-detail-breakdown__subtotal {
+    padding: .75rem 0;
     font-weight: 700;
+}
+
+.salary-detail-breakdown__subtotal--gross {
+    border-bottom: calc(var(--bs-border-width) * 2) solid var(--bs-emphasis-color);
+}
+
+.salary-detail-breakdown__net {
+    padding: 1rem;
+    border-top: calc(var(--bs-border-width) * 2) solid var(--bs-emphasis-color);
+    border-bottom: var(--bs-border-width) solid var(--bs-emphasis-color);
+    color: var(--bs-emphasis-color);
+    background: var(--bs-primary-bg-subtle);
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.salary-detail-breakdown__net strong {
+    font-size: 1.15em;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.salary-detail-breakdown__subtotal strong {
+    white-space: nowrap;
+}
+
+@media (max-width: 575.98px) {
+    .salary-detail-breakdown__list > div,
+    .salary-detail-breakdown__subtotal,
+    .salary-detail-breakdown__net {
+        gap: .75rem;
+    }
 }
 
 .pagination {

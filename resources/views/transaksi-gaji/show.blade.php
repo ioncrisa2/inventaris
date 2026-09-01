@@ -83,7 +83,7 @@
         </div>
 
         <div class="content-narrow">
-            <x-data-table title="Rincian Komponen Gaji">
+            <x-data-table title="Rincian Perhitungan Gaji">
                 <table class="table align-middle mb-0">
                     <thead>
                         <tr>
@@ -95,75 +95,45 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @if($transaksiGaji->details->isEmpty())
-                            <x-empty-row :colspan="5">Tidak ada komponen pada transaksi ini.</x-empty-row>
-                        @else
-                            @foreach(['Tunjangan', 'Potongan'] as $jenisGrup)
-                                @php
-                                    $detailGrup = $transaksiGaji->details->where('jenis_snapshot', $jenisGrup);
-                                @endphp
-                                @if($detailGrup->isNotEmpty())
-                                    <tr class="payroll-component-group">
-                                        <th colspan="5" scope="rowgroup">{{ $jenisGrup }}</th>
-                                    </tr>
-                                    @foreach($detailGrup as $detail)
-                                        <tr>
-                                            <td>{{ $detail->nama_komponen_snapshot }}</td>
-                                            <td>
-                                                <x-badge :color="$detail->jenis_snapshot === 'Tunjangan' ? 'text-bg-success' : 'text-bg-secondary'">{{ $detail->jenis_snapshot }}</x-badge>
-                                            </td>
-                                            <td>{{ \App\Models\KomponenGaji::METODE_PERHITUNGAN[$detail->metode_perhitungan_snapshot] ?? $detail->metode_perhitungan_snapshot }}</td>
-                                            <td class="text-end">
-                                                @if($detail->metode_perhitungan_snapshot === 'persentase')
-                                                    {{ rtrim(rtrim($detail->nilai_snapshot, '0'), '.') }}%
-                                                @elseif($detail->metode_perhitungan_snapshot === 'persentase_pengali')
-                                                    {{ rtrim(rtrim($detail->nilai_snapshot, '0'), '.') }}% &times; {{ $detail->jumlah_pengali_snapshot ?? 0 }}
-                                                @elseif($detail->metode_perhitungan_snapshot === 'per_hari')
-                                                    Rp {{ number_format($detail->nilai_snapshot, 0, ',', '.') }} /hari &times; {{ $detail->jumlah_hari_snapshot ?? 0 }} hari
-                                                    @if($detail->tanggal_awal_snapshot && $detail->tanggal_akhir_snapshot)
-                                                        <span class="text-body-secondary small d-block">{{ $detail->tanggal_awal_snapshot->format('d/m/Y') }} s.d. {{ $detail->tanggal_akhir_snapshot->format('d/m/Y') }}</span>
-                                                    @endif
-                                                @elseif($detail->metode_perhitungan_snapshot === 'harian_sehari')
-                                                    Rp {{ number_format($detail->nilai_snapshot, 0, ',', '.') }} /hari
-                                                    @if($detail->tanggal_awal_snapshot)
-                                                        <span class="text-body-secondary small d-block">{{ $detail->tanggal_awal_snapshot->format('d/m/Y') }}</span>
-                                                    @endif
-                                                @elseif($detail->metode_perhitungan_snapshot === 'harian_manual')
-                                                    Rp {{ number_format($detail->nilai_snapshot, 0, ',', '.') }} /hari &times; {{ $detail->jumlah_hari_snapshot ?? 0 }} hari
-                                                @else
-                                                    Rp {{ number_format($detail->nilai_snapshot, 0, ',', '.') }}
-                                                @endif
-                                            </td>
-                                            <td class="text-end {{ $detail->jenis_snapshot === 'Tunjangan' ? 'text-success' : 'text-danger' }}">
-                                                {{ $detail->jenis_snapshot === 'Tunjangan' ? '+' : '-' }} Rp {{ number_format($detail->nominal_hasil, 0, ',', '.') }}
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                @endif
-                            @endforeach
-                        @endif
+                        <tr class="payroll-component-group">
+                            <th colspan="5" scope="rowgroup">Pendapatan</th>
+                        </tr>
+                        <tr>
+                            <td>Gaji Pokok</td>
+                            <td><x-badge color="text-bg-primary">Pendapatan</x-badge></td>
+                            <td>Nominal Tetap</td>
+                            <td class="text-end">Rp {{ number_format($transaksiGaji->gaji_pokok, 0, ',', '.') }}</td>
+                            <td class="text-end text-success">+ Rp {{ number_format($transaksiGaji->gaji_pokok, 0, ',', '.') }}</td>
+                        </tr>
+                        @foreach($transaksiGaji->details->where('jenis_snapshot', 'Tunjangan') as $detail)
+                            @include('transaksi-gaji._detail-row', ['detail' => $detail])
+                        @endforeach
+                        <tr class="payroll-accounting-row payroll-accounting-row--gross">
+                            <th colspan="4" scope="row">Total Gaji</th>
+                            <td class="text-end">Rp {{ number_format($totalGaji, 0, ',', '.') }}</td>
+                        </tr>
+
+                        <tr class="payroll-component-group">
+                            <th colspan="5" scope="rowgroup">Potongan</th>
+                        </tr>
+                        @forelse($transaksiGaji->details->where('jenis_snapshot', 'Potongan') as $detail)
+                            @include('transaksi-gaji._detail-row', ['detail' => $detail])
+                        @empty
+                            <tr>
+                                <td colspan="5" class="text-body-secondary">Tidak ada potongan pada transaksi ini.</td>
+                            </tr>
+                        @endforelse
+                        <tr class="payroll-accounting-row payroll-accounting-row--deduction">
+                            <th colspan="4" scope="row">Total Potongan</th>
+                            <td class="text-end text-danger">- Rp {{ number_format($totalPotongan, 0, ',', '.') }}</td>
+                        </tr>
+                        <tr class="payroll-accounting-row payroll-accounting-row--net">
+                            <th colspan="4" scope="row">Take Home Pay</th>
+                            <td class="text-end">Rp {{ number_format($transaksiGaji->gaji_bersih, 0, ',', '.') }}</td>
+                        </tr>
                     </tbody>
                 </table>
             </x-data-table>
-
-            <dl class="payroll-summary">
-                <div>
-                    <dt>Gaji Pokok</dt>
-                    <dd>Rp {{ number_format($transaksiGaji->gaji_pokok, 0, ',', '.') }}</dd>
-                </div>
-                <div>
-                    <dt>Total Tunjangan</dt>
-                    <dd class="text-success">+ Rp {{ number_format($totalTunjangan, 0, ',', '.') }}</dd>
-                </div>
-                <div>
-                    <dt>Total Potongan</dt>
-                    <dd class="text-danger">- Rp {{ number_format($totalPotongan, 0, ',', '.') }}</dd>
-                </div>
-                <div class="payroll-summary__total">
-                    <dt>Gaji Bersih</dt>
-                    <dd>Rp {{ number_format($transaksiGaji->gaji_bersih, 0, ',', '.') }}</dd>
-                </div>
-            </dl>
         </div>
 
 </x-app-page>

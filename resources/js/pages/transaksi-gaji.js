@@ -5,14 +5,14 @@ const perbaruiSuffixNilai = (select) => {
     const prefix = document.getElementById(`${idAwalan}_prefix`);
     const suffix = document.getElementById(`${idAwalan}_suffix`);
     const input = document.getElementById(`${idAwalan}_nilai`);
-    const rentang = document.getElementById(`${idAwalan}_rentang`);
+    const kehadiran = document.getElementById(`${idAwalan}_kehadiran`);
     const tanggalTunggal = document.getElementById(`${idAwalan}_tanggal_tunggal`);
     const jumlahHari = document.getElementById(`${idAwalan}_jumlah_hari`);
     const jumlahPengali = document.getElementById(`${idAwalan}_jumlah_pengali`);
     if (!prefix || !suffix || !input) return;
 
     const toggle = (perHari, harianSehari, harianManual, persentasePengali = false) => {
-        rentang?.classList.toggle('d-none', !perHari);
+        kehadiran?.classList.toggle('d-none', !perHari);
         tanggalTunggal?.classList.toggle('d-none', !harianSehari);
         jumlahHari?.classList.toggle('d-none', !harianManual);
         jumlahPengali?.classList.toggle('d-none', !persentasePengali);

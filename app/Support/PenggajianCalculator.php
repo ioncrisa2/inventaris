@@ -11,15 +11,13 @@ class PenggajianCalculator
      * - persentase: nilai adalah angka persentase (mis. 5 = 5%), dihitung
      *   dari $gajiPokok.
      * - per_hari: nilai adalah nominal Rupiah per hari, dikalikan
-     *   $jumlahHari (jumlah hari operasional pada rentang tanggal yang
-     *   diinput manual saat transaksi dibuat — hari libur sesuai setting
-     *   Hari Operasional tidak dihitung, lihat HariOperasionalService).
+     *   $jumlahHari (jumlah absensi berstatus Hadir pada bulan transaksi).
      * - harian_sehari: nilai adalah nominal Rupiah per hari, dipakai apa
      *   adanya (selalu 1 hari) — tanggalnya cuma snapshot untuk cetak/riwayat,
      *   tidak memengaruhi hitungan.
      * - harian_manual: nilai adalah nominal Rupiah per hari, dikalikan
-     *   $jumlahHari yang diketik manual oleh pengguna (bukan dari rentang
-     *   tanggal/kalender seperti per_hari).
+     *   $jumlahHari yang diketik manual oleh pengguna (bukan dari absensi
+     *   seperti per_hari).
      *
      * Seluruh operasi pakai bcmath (bukan float) supaya perhitungan uang
      * tidak kena masalah presisi floating-point.

@@ -13,7 +13,7 @@ class KomponenGaji extends Model
         'nominal_tetap' => 'Nominal Tetap',
         'persentase' => 'Persentase',
         'persentase_pengali' => 'Persentase × Pengali',
-        'per_hari' => 'Per Hari (Range Tanggal)',
+        'per_hari' => 'Per Hari Hadir (Periode Gaji)',
         'harian_sehari' => 'Harian (Sehari)',
         'harian_manual' => 'Harian (Dikali Jumlah Hari)',
     ];

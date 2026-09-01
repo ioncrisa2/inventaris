@@ -94,8 +94,7 @@ class HariOperasionalService
 
     /**
      * Satu sumber kebenaran "tanggal mana saja yang libur" pada rentang
-     * inklusif, dipakai bareng oleh kalender Absensi (AbsensiService::kalender())
-     * dan perhitungan jumlah hari komponen gaji per_hari (jumlahHariOperasional()).
+     * inklusif, dipakai oleh kalender dan validasi Absensi.
      * Satu query batch ke hari_libur, bukan query per hari.
      *
      * @return Collection<string, ?string> tanggal (Y-m-d) => keterangan libur
@@ -120,11 +119,7 @@ class HariOperasionalService
         return $hasil;
     }
 
-    /**
-     * Jumlah hari operasional (bukan hari libur mingguan maupun libur
-     * nasional) pada rentang tanggal inklusif, dipakai sebagai pengali
-     * komponen gaji dengan metode_perhitungan = per_hari.
-     */
+    /** Jumlah hari operasional pada rentang tanggal inklusif. */
     public function jumlahHariOperasional(Carbon $awal, Carbon $akhir, ?int $koperasiId = null): int
     {
         return ($awal->diffInDays($akhir) + 1) - $this->liburDalamRentang($awal, $akhir, $koperasiId)->count();

@@ -13,25 +13,52 @@
 
     <div class="card content-narrow">
         <div class="card-body">
-            <dl class="row g-3 mb-4">
-                <dt class="col-sm-5 text-body-secondary">Gaji Pokok</dt><dd class="col-sm-7 text-end">Rp {{ number_format($transaksiGaji->gaji_pokok, 0, ',', '.') }}</dd>
-                <dt class="col-sm-5 text-body-secondary">Total Tunjangan</dt><dd class="col-sm-7 text-end">Rp {{ number_format($totalTunjangan, 0, ',', '.') }}</dd>
-                <dt class="col-sm-5 text-body-secondary">Total Potongan</dt><dd class="col-sm-7 text-end">Rp {{ number_format($totalPotongan, 0, ',', '.') }}</dd>
-                <dt class="col-sm-5">Gaji Bersih</dt><dd class="col-sm-7 text-end fw-bold">Rp {{ number_format($transaksiGaji->gaji_bersih, 0, ',', '.') }}</dd>
-            </dl>
+            <div class="salary-detail-breakdown">
+                <section aria-labelledby="salary-income-heading">
+                    <h2 class="salary-detail-breakdown__heading" id="salary-income-heading">Pendapatan</h2>
+                    <dl class="salary-detail-breakdown__list">
+                        <div>
+                            <dt>Gaji Pokok</dt>
+                            <dd>Rp {{ number_format($transaksiGaji->gaji_pokok, 0, ',', '.') }}</dd>
+                        </div>
+                        @foreach($transaksiGaji->details->where('jenis_snapshot', 'Tunjangan') as $detail)
+                            <div>
+                                <dt>{{ $detail->nama_komponen_snapshot }}</dt>
+                                <dd>Rp {{ number_format($detail->nominal_hasil, 0, ',', '.') }}</dd>
+                            </div>
+                        @endforeach
+                    </dl>
+                    <div class="salary-detail-breakdown__subtotal salary-detail-breakdown__subtotal--gross">
+                        <span>Total Gaji</span>
+                        <strong>Rp {{ number_format($totalGaji, 0, ',', '.') }}</strong>
+                    </div>
+                </section>
 
-            <h2 class="h6">Rincian Komponen</h2>
-            <div class="table-responsive">
-                <table class="table align-middle mb-0">
-                    <thead><tr><th>Komponen</th><th>Jenis</th><th class="text-end">Nominal</th></tr></thead>
-                    <tbody>
-                        @forelse($transaksiGaji->details as $detail)
-                            <tr><td>{{ $detail->nama_komponen_snapshot }}</td><td>{{ $detail->jenis_snapshot }}</td><td class="text-end">Rp {{ number_format($detail->nominal_hasil, 0, ',', '.') }}</td></tr>
+                <section aria-labelledby="salary-deduction-heading">
+                    <h2 class="salary-detail-breakdown__heading" id="salary-deduction-heading">Potongan</h2>
+                    <dl class="salary-detail-breakdown__list">
+                        @forelse($transaksiGaji->details->where('jenis_snapshot', 'Potongan') as $detail)
+                            <div>
+                                <dt>{{ $detail->nama_komponen_snapshot }}</dt>
+                                <dd>- Rp {{ number_format($detail->nominal_hasil, 0, ',', '.') }}</dd>
+                            </div>
                         @empty
-                            <x-empty-row :colspan="3">Tidak ada rincian komponen.</x-empty-row>
+                            <div class="salary-detail-breakdown__empty">
+                                <dt>Tidak ada potongan</dt>
+                                <dd>Rp 0</dd>
+                            </div>
                         @endforelse
-                    </tbody>
-                </table>
+                    </dl>
+                    <div class="salary-detail-breakdown__subtotal">
+                        <span>Total Potongan</span>
+                        <strong class="text-danger">- Rp {{ number_format($totalPotongan, 0, ',', '.') }}</strong>
+                    </div>
+                </section>
+
+                <div class="salary-detail-breakdown__net">
+                    <span>Take Home Pay</span>
+                    <strong>Rp {{ number_format($transaksiGaji->gaji_bersih, 0, ',', '.') }}</strong>
+                </div>
             </div>
         </div>
     </div>

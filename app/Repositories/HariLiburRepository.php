@@ -75,8 +75,7 @@ class HariLiburRepository
 
     /**
      * Satu query batch untuk seluruh tanggal libur nasional pada rentang
-     * inklusif, dipakai kedua konsumen (Absensi & perhitungan Uang Makan)
-     * supaya tidak query per hari.
+     * inklusif supaya kalender absensi tidak query per hari.
      *
      * @return Collection<string, string> tanggal (Y-m-d) => keterangan
      */

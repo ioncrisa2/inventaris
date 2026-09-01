@@ -96,13 +96,14 @@ const sampleContent = (block) => {
                 <section>
                     <h4>Tunjangan</h4>
                     <div><span>Tunjangan Jabatan</span><strong>Rp 500.000</strong></div>
-                    <div><span>Uang Makan (20 hari)</span><strong>Rp 600.000</strong></div>
+                    <div><span>Uang Makan (20 hari Hadir)</span><strong>Rp 600.000</strong></div>
                 </section>
+                <div class="slip-sample-payroll__gross"><span>Total Gaji</span><strong>Rp 6.100.000</strong></div>
                 <section>
                     <h4>Potongan</h4>
                     <div><span>BPJS Kesehatan</span><strong>Rp 200.000</strong></div>
                 </section>
-                <div class="slip-sample-payroll__net"><span>Penerimaan Akhir</span><strong>Rp 5.900.000</strong></div>
+                <div class="slip-sample-payroll__net"><span>Take Home Pay</span><strong>Rp 5.900.000</strong></div>
             </div>`;
     }
 

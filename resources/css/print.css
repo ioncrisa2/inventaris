@@ -466,6 +466,7 @@ tfoot td { background: #f9fafb; font-weight: 700; }
 .salary-slip__brand,
 .salary-slip__component-group > header,
 .salary-slip__base,
+.salary-slip__gross,
 .salary-slip__net,
 .salary-slip__footer {
     display: flex;
@@ -562,6 +563,7 @@ tfoot td { background: #f9fafb; font-weight: 700; }
 }
 
 .salary-slip__base,
+.salary-slip__gross,
 .salary-slip__net {
     justify-content: space-between;
     gap: 4mm;
@@ -574,6 +576,7 @@ tfoot td { background: #f9fafb; font-weight: 700; }
 }
 
 .salary-slip__base strong,
+.salary-slip__gross strong,
 .salary-slip__net strong,
 .salary-slip__component-row strong,
 .salary-slip__component-group header strong {
@@ -583,15 +586,24 @@ tfoot td { background: #f9fafb; font-weight: 700; }
 
 .salary-slip__components {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
     align-items: start;
-    gap: 2mm;
+    gap: 1.2mm;
     padding: 2mm 0;
 }
 
-.salary-slip__components--stacked {
-    grid-template-columns: 1fr;
-    gap: 1.2mm;
+.salary-slip__components--columns .salary-slip__component-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 2mm;
+}
+
+.salary-slip__components--columns .salary-slip__empty-row {
+    grid-column: 1 / -1;
+}
+
+.salary-slip__components--columns .salary-slip__component-row:nth-child(2) {
+    border-top: 0;
 }
 
 .salary-slip__component-group {
@@ -642,6 +654,17 @@ tfoot td { background: #f9fafb; font-weight: 700; }
 
 .salary-slip__component-row strong {
     text-align: right;
+}
+
+.salary-slip__gross {
+    justify-content: space-between;
+    gap: 4mm;
+    padding: 2mm 0;
+    border-top: 1px solid #4b5563;
+    border-bottom: .45mm solid #111827;
+    color: #111827;
+    font-size: 1.03em;
+    font-weight: 700;
 }
 
 .salary-slip__empty-row {
@@ -755,6 +778,10 @@ tfoot td { background: #f9fafb; font-weight: 700; }
 .salary-slip-sheet--left-right:not(.salary-slip-sheet--single) .salary-slip__components {
     grid-template-columns: 1fr;
     gap: 1.2mm;
+}
+
+.salary-slip-sheet--left-right:not(.salary-slip-sheet--single) .salary-slip__component-list {
+    display: block;
 }
 
 .salary-slip-sheet--left-right:not(.salary-slip-sheet--single) .salary-slip__signatures {

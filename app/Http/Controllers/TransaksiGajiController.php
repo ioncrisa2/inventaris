@@ -109,6 +109,7 @@ class TransaksiGajiController extends Controller
 
         $totalTunjangan = $this->transaksiGajiService->totalPerJenis($transaksiGaji, 'Tunjangan');
         $totalPotongan = $this->transaksiGajiService->totalPerJenis($transaksiGaji, 'Potongan');
+        $totalGaji = bcadd((string) $transaksiGaji->gaji_pokok, $totalTunjangan, 2);
         $penandaTangan = $this->karyawanRepository->activeOrderedList();
         $paperLayoutDefault = $this->slipGajiTemplateService->publishedPaperLayout();
         $salarySlipPortalEnabled = $this->platformFeatureService->isEnabled('my_salary_slips');
@@ -116,6 +117,7 @@ class TransaksiGajiController extends Controller
         return view('transaksi-gaji.show', compact(
             'transaksiGaji',
             'totalTunjangan',
+            'totalGaji',
             'totalPotongan',
             'penandaTangan',
             'paperLayoutDefault',

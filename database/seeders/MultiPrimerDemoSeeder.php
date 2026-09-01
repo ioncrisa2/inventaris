@@ -263,16 +263,9 @@ class MultiPrimerDemoSeeder extends Seeder
                     continue;
                 }
 
-                $baris = $komponenList->mapWithKeys(function (KomponenGaji $komponen) use ($periode) {
-                    $row = ['pakai' => '1'];
-
-                    if ($komponen->metode_perhitungan === 'per_hari') {
-                        $row['tanggal_awal'] = $periode->startOfMonth()->toDateString();
-                        $row['tanggal_akhir'] = $periode->endOfMonth()->toDateString();
-                    }
-
-                    return ["master_{$komponen->id}" => $row];
-                })->all();
+                $baris = $komponenList->mapWithKeys(
+                    fn (KomponenGaji $komponen) => ["master_{$komponen->id}" => ['pakai' => '1']],
+                )->all();
 
                 $header = [
                     'karyawan_id' => $karyawan->id,

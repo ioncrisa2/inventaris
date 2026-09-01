@@ -91,6 +91,7 @@ test('database seeder creates a complete usable demo dataset', function () {
         ->and(UnitKerja::whereNull('kode')->count())->toBe(0)
         ->and(UnitKerja::where('koperasi_id', $koperasi->id)->count())->toBe(UnitKerja::count())
         ->and(Karyawan::where('koperasi_id', $koperasi->id)->count())->toBe(Karyawan::count())
+        ->and(Absensi::where('koperasi_id', $koperasi->id)->count())->toBe(Absensi::count())
         ->and(Barang::where('koperasi_id', $koperasi->id)->count())->toBe(Barang::count())
         ->and(Karyawan::whereNotNull('atasan_langsung_id')->count())->toBe(9)
         ->and(Karyawan::whereNotNull('foto_karyawan')->count())->toBe(12)

@@ -117,6 +117,7 @@ test('portal slip hanya menampilkan slip published milik user login', function (
 
     $this->get(route('me.salary-slips.show', $published))
         ->assertOk()
+        ->assertSeeInOrder(['Pendapatan', 'Gaji Pokok', 'Total Gaji', 'Potongan', 'Total Potongan', 'Take Home Pay'])
         ->assertSee('Rp 5.000.000');
     $this->assertDatabaseHas('salary_access_logs', [
         'actor_user_id' => $user->id,

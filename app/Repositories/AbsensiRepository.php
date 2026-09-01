@@ -8,6 +8,19 @@ use Illuminate\Support\Collection;
 
 class AbsensiRepository
 {
+    public function jumlahHadirUntukBulan(int $karyawanId, int $bulan, int $tahun): int
+    {
+        $mulai = Carbon::create($tahun, $bulan, 1)->startOfDay();
+        $selesaiEksklusif = $mulai->copy()->addMonthNoOverflow();
+
+        return Absensi::query()
+            ->where('karyawan_id', $karyawanId)
+            ->where('status', 'Hadir')
+            ->where('tanggal', '>=', $mulai->toDateString())
+            ->where('tanggal', '<', $selesaiEksklusif->toDateString())
+            ->count();
+    }
+
     public function forMonth(int $karyawanId, int $bulan, int $tahun): Collection
     {
         $mulai = Carbon::create($tahun, $bulan, 1)->startOfDay();

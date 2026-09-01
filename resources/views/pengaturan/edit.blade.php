@@ -42,7 +42,7 @@
                         <i class="bi bi-calendar-week" aria-hidden="true"></i>
                         <span>
                             <strong>Hari Operasional</strong>
-                            <small>Dasar hitung uang makan</small>
+                            <small>Kalender dan validasi absensi</small>
                         </span>
                     </a>
                     @endcan
@@ -295,7 +295,7 @@
             <x-section-card
                 id="hari-operasional"
                 title="Hari Operasional"
-                subtitle="Tentukan hari kerja yang jadi dasar hitung jumlah hari untuk komponen gaji bermetode &quot;Per Hari (Range Tanggal)&quot;, seperti Tunjangan Uang Makan."
+                subtitle="Tentukan hari kerja untuk kalender dan validasi absensi. Uang makan dihitung langsung dari absensi berstatus Hadir pada periode gaji."
                 class="settings-section"
             >
                 @if(auth()->user()->can('pengaturan.hari-operasional.update') && ! auth()->user()->isSuperAdmin())
@@ -307,7 +307,7 @@
                         <i class="bi bi-info-circle" aria-hidden="true"></i>
                         <div>
                             <strong>Hari yang tidak dicentang dianggap libur</strong>
-                            <p>Hari libur tidak dihitung saat menjumlahkan hari pada rentang tanggal komponen "Per Hari".</p>
+                            <p>Status Hadir hanya dapat dicatat pada hari operasional. Komponen per hari kemudian menghitung catatan Hadir yang benar-benar tersimpan.</p>
                         </div>
                     </div>
 

@@ -22,6 +22,11 @@
             </div>
         </section>
 
+        <div class="salary-slip__gross">
+            <span>Total Gaji</span>
+            <strong>Rp {{ number_format($slip['total_gaji'], 0, ',', '.') }}</strong>
+        </div>
+
         <section class="salary-slip__component-group salary-slip__component-group--deduction">
             <header>
                 <h3>Potongan</h3>
@@ -41,7 +46,7 @@
     </div>
 
     <div class="salary-slip__net">
-        <span>Penerimaan Akhir</span>
+        <span>Take Home Pay</span>
         <strong>Rp {{ number_format($transaksi->gaji_bersih, 0, ',', '.') }}</strong>
     </div>
 </div>

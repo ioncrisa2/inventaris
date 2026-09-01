@@ -43,6 +43,7 @@ class AbsensiSeeder extends Seeder
                 $status = $this->pilihStatus($karyawan, $tanggal);
 
                 $rows[] = [
+                    'koperasi_id' => $karyawan->koperasi_id,
                     'karyawan_id' => $karyawan->id,
                     'tanggal' => $tanggal->toDateString(),
                     'status' => $status,
@@ -57,7 +58,7 @@ class AbsensiSeeder extends Seeder
             DB::table('absensi')->upsert(
                 $chunk,
                 ['karyawan_id', 'tanggal'],
-                ['status', 'catatan', 'updated_at']
+                ['koperasi_id', 'status', 'catatan', 'updated_at']
             );
         }
     }

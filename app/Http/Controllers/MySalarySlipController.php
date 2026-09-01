@@ -47,13 +47,19 @@ class MySalarySlipController extends Controller
             'action' => 'viewed',
         ]);
 
-        $totalTunjangan = $transaksiGaji->details->where('jenis_snapshot', 'Tunjangan')->sum('nominal_hasil');
-        $totalPotongan = $transaksiGaji->details->where('jenis_snapshot', 'Potongan')->sum('nominal_hasil');
+        $totalTunjangan = $transaksiGaji->details
+            ->where('jenis_snapshot', 'Tunjangan')
+            ->reduce(fn ($total, $detail) => bcadd($total, (string) $detail->nominal_hasil, 2), '0.00');
+        $totalPotongan = $transaksiGaji->details
+            ->where('jenis_snapshot', 'Potongan')
+            ->reduce(fn ($total, $detail) => bcadd($total, (string) $detail->nominal_hasil, 2), '0.00');
+        $totalGaji = bcadd((string) $transaksiGaji->gaji_pokok, $totalTunjangan, 2);
 
         return view('me.salary-slips.show', compact(
             'karyawan',
             'transaksiGaji',
             'totalTunjangan',
+            'totalGaji',
             'totalPotongan',
         ));
     }
