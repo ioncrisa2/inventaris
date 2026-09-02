@@ -115,6 +115,7 @@ class StorageUsageService
     {
         $categories = [
             $this->measureCategory('item_photos', 'Foto barang', [
+                $this->registryReference(['asset_photo', 'asset_gallery']),
                 [
                     'table' => 'barang',
                     'path' => 'foto_sampul',
@@ -130,6 +131,7 @@ class StorageUsageService
                 ],
             ]),
             $this->measureCategory('item_documents', 'Dokumen barang', [
+                $this->registryReference(['business_documents'], ['dokumen_barang']),
                 [
                     'table' => 'dokumen_barang',
                     'path' => 'path',
@@ -139,6 +141,7 @@ class StorageUsageService
                 ],
             ]),
             $this->measureCategory('employee_photos', 'Foto karyawan', [
+                $this->registryReference(['employee_photo']),
                 [
                     'table' => 'karyawan',
                     'path' => 'foto_karyawan',
@@ -147,6 +150,10 @@ class StorageUsageService
                 ],
             ]),
             $this->measureCategory('employee_documents', 'Dokumen karyawan', [
+                $this->registryReference(
+                    ['business_documents'],
+                    ['dokumen_karyawan', 'dokumen_riwayat_karyawan'],
+                ),
                 [
                     'table' => 'dokumen_karyawan',
                     'path' => 'path',
@@ -167,6 +174,7 @@ class StorageUsageService
                 ],
             ]),
             $this->measureCategory('tenant_assets', 'Logo dan aset tenant', [
+                $this->registryReference(['logo']),
                 [
                     'table' => 'pengaturan',
                     'path' => 'value',
@@ -176,6 +184,7 @@ class StorageUsageService
                 ],
             ]),
             $this->measureCategory('request_attachments', 'Lampiran request produk', [
+                $this->registryReference(['product_attachments']),
                 [
                     'table' => 'product_request_attachments',
                     'path' => 'path',
@@ -271,6 +280,13 @@ class StorageUsageService
                 if (isset($reference['where']) && is_array($reference['where']) && count($reference['where']) === 3) {
                     $where = $reference['where'];
                     $query->where("{$reference['table']}.{$where[0]}", $where[1], $where[2]);
+                }
+                foreach ($reference['where_all'] ?? [] as $where) {
+                    if (($where[1] ?? null) === 'in') {
+                        $query->whereIn($where[0], $where[2]);
+                    } elseif (count($where) === 3) {
+                        $query->where($where[0], $where[1], $where[2]);
+                    }
                 }
 
                 $remaining = max(1, $limit - $referencesSeen);
@@ -379,6 +395,32 @@ class StorageUsageService
         return ! is_array($tenant)
             || (isset($tenant['table'], $tenant['column'])
                 && Schema::hasColumns($tenant['table'], [$tenant['column']]));
+    }
+
+    /**
+     * @param  list<string>  $policies
+     * @param  list<string>  $ownerTypes
+     * @return array<string,mixed>
+     */
+    private function registryReference(array $policies, array $ownerTypes = []): array
+    {
+        $where = [
+            ['stored_files.policy', 'in', $policies],
+            ['stored_files.status', '=', 'ready'],
+        ];
+        if ($ownerTypes !== []) {
+            $where[] = ['stored_files.owner_type', 'in', $ownerTypes];
+        }
+
+        return [
+            'table' => 'stored_file_variants',
+            'path' => 'path',
+            'disk_column' => 'disk',
+            'size' => 'size_bytes',
+            'joins' => [['stored_files', 'stored_files.id', '=', 'stored_file_variants.stored_file_id']],
+            'tenant' => ['table' => 'stored_files', 'column' => 'koperasi_id'],
+            'where_all' => $where,
+        ];
     }
 
     private function localFileSize(string $disk, string $path): ?int

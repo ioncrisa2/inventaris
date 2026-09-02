@@ -1,5 +1,6 @@
 <?php
 
+use App\Contracts\VirusScanner;
 use App\Services\SystemHealthService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -25,6 +26,8 @@ test('system health mengembalikan hasil terstruktur tanpa data sensitif', functi
             'database',
             'cache',
             'queue',
+            'antivirus',
+            'media_pipeline',
             'scheduler',
             'backup',
             'storage',
@@ -47,6 +50,27 @@ test('system health mengembalikan hasil terstruktur tanpa data sensitif', functi
         ->not->toContain(base_path())
         ->not->toContain('payload')
         ->not->toContain('exception');
+});
+
+test('health media melaporkan clamav dan scan tertahan tanpa membuka isi file', function () {
+    config()->set('uploads.features.scan_required', true);
+    $scanner = Mockery::mock(VirusScanner::class);
+    $scanner->shouldReceive('ping')->once()->andReturn(true);
+    app()->instance(VirusScanner::class, $scanner);
+
+    $health = app(SystemHealthService::class)->snapshot(true);
+
+    expect($health['checks']['antivirus']['status'])->toBe('healthy')
+        ->and($health['checks']['antivirus']['metrics']['reachable'])->toBeTrue()
+        ->and($health['checks']['media_pipeline']['metrics'])->toHaveKeys([
+            'pending_scan_files',
+            'oldest_pending_scan_age_seconds',
+            'failed_media_files',
+            'failed_media_jobs',
+            'staging_backlog',
+            'orphan_files',
+            'missing_files',
+        ]);
 });
 
 test('kegagalan satu pemeriksaan tidak menjatuhkan seluruh health snapshot', function () {

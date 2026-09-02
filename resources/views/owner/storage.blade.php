@@ -8,6 +8,13 @@
         $files = $storage['logical_application_files'];
         $database = $storage['database'];
         $volume = $storage['host_volume'];
+        $usedPercent = $volume['status'] === 'available' ? (float) $volume['used_percent'] : null;
+        $capacityLevel = match (true) {
+            $usedPercent !== null && $usedPercent >= 95 => 'critical',
+            $usedPercent !== null && $usedPercent >= 85 => 'high',
+            $usedPercent !== null && $usedPercent >= 75 => 'warning',
+            default => null,
+        };
     @endphp
 
     <x-app-page long-footer>
@@ -53,6 +60,19 @@
                 </div>
             </article>
         </div>
+
+        @if($capacityLevel)
+            <div class="alert {{ $capacityLevel === 'critical' ? 'alert-danger' : 'alert-warning' }} mt-4" role="alert">
+                <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>
+                @if($capacityLevel === 'critical')
+                    Kapasitas volume sudah mencapai 95%. Upload akan ditolak otomatis saat ruang bebas melewati batas darurat.
+                @elseif($capacityLevel === 'high')
+                    Kapasitas volume sudah mencapai 85%. Segera bersihkan file tidak terpakai atau tambah kapasitas VPS.
+                @else
+                    Kapasitas volume sudah mencapai 75%. Pantau pertumbuhan storage dan jadwalkan penambahan kapasitas.
+                @endif
+            </div>
+        @endif
 
         @unless ($files['is_complete'])
             <div class="alert alert-warning mt-4" role="status">

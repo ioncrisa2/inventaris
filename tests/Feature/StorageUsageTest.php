@@ -1,5 +1,6 @@
 <?php
 
+use App\Services\MediaBackfillService;
 use App\Services\StorageUsageService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -67,6 +68,19 @@ test('storage usage membedakan file aplikasi database dan volume host', function
         ->not->toContain('barang-sampul/utama.jpg')
         ->not->toContain('nota.pdf')
         ->not->toContain(base_path());
+});
+
+test('storage usage mendahulukan registry dan tidak menghitung canonical legacy dua kali', function () {
+    $ids = storageUsageFixture();
+    Storage::disk('public')->put('barang-sampul/registry.jpg', str_repeat('x', 17));
+    DB::table('barang')->where('id', $ids['barang'])->update(['foto_sampul' => 'barang-sampul/registry.jpg']);
+
+    app(MediaBackfillService::class)->run(chunk: 1);
+    $snapshot = app(StorageUsageService::class)->snapshot(true);
+    $category = collect($snapshot['logical_application_files']['categories'])->firstWhere('key', 'item_photos');
+
+    expect($category['bytes'])->toBe(17)
+        ->and($category['files_count'])->toBe(1);
 });
 
 test('path tidak aman dari database ditolak dan tidak pernah dikeluarkan', function () {

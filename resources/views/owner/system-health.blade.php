@@ -26,11 +26,24 @@
             'pending_jobs' => 'Job tertunda',
             'failed_jobs' => 'Job gagal',
             'oldest_pending_age_seconds' => 'Umur job tertua',
+            'scan_required' => 'Scan wajib',
+            'reachable' => 'Dapat dijangkau',
+            'pending_scan_files' => 'Menunggu scan',
+            'oldest_pending_scan_age_seconds' => 'Umur scan tertua',
+            'failed_media_files' => 'File gagal',
+            'failed_media_jobs' => 'Job media gagal',
+            'staging_backlog' => 'File di staging',
+            'orphan_files' => 'File tanpa owner',
+            'missing_files' => 'File hilang',
             'last_heartbeat_at' => 'Heartbeat terakhir',
             'age_seconds' => 'Usia heartbeat',
             'last_completed_at' => 'Backup terakhir',
             'age_hours' => 'Usia backup',
             'latest_size_bytes' => 'Ukuran backup',
+            'restic_check_status' => 'Integritas repository',
+            'restic_checked_at' => 'Pemeriksaan repository',
+            'restore_test_status' => 'Uji restore',
+            'restore_tested_at' => 'Uji restore terakhir',
             'total_bytes' => 'Kapasitas',
             'used_bytes' => 'Terpakai',
             'available_bytes' => 'Tersedia',
@@ -62,7 +75,7 @@
             if ($key === 'latency_ms') {
                 return number_format((float) $value, 2, ',', '.') . ' ms';
             }
-            if (in_array($key, ['uptime_seconds', 'oldest_pending_age_seconds', 'age_seconds'], true)) {
+            if (in_array($key, ['uptime_seconds', 'oldest_pending_age_seconds', 'oldest_pending_scan_age_seconds', 'age_seconds'], true)) {
                 return number_format((int) $value, 0, ',', '.') . ' detik';
             }
             if ($key === 'age_hours') {

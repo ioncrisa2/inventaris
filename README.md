@@ -23,3 +23,7 @@ Aplikasi web multi-koperasi untuk mengelola karyawan, absensi, inventaris, dan p
 ### Slip Gaji
 
 ![Format slip gaji](docs/screenshots/slip-gaji.png)
+
+## Dokumentasi Operasional
+
+- [Sistem upload terpadu](docs/upload-system.md)

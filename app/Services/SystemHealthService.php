@@ -2,17 +2,23 @@
 
 namespace App\Services;
 
+use App\Contracts\VirusScanner;
+use App\Models\StoredFile;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Throwable;
 
 class SystemHealthService
 {
     private const CACHE_KEY = 'owner-observability:v1:system-health';
 
-    public function __construct(private StorageUsageService $storageUsageService) {}
+    public function __construct(
+        private StorageUsageService $storageUsageService,
+        private VirusScanner $virusScanner,
+    ) {}
 
     /**
      * Snapshot hanya membawa status dan metrik yang telah dipilih. Exception,
@@ -62,6 +68,8 @@ class SystemHealthService
             'database' => $this->safely('Database', 'critical', fn (): array => $this->databaseCheck()),
             'cache' => $this->safely('Cache', 'warning', fn (): array => $this->cacheCheck()),
             'queue' => $this->safely('Queue', 'warning', fn (): array => $this->queueCheck()),
+            'antivirus' => $this->safely('Antivirus', 'warning', fn (): array => $this->antivirusCheck()),
+            'media_pipeline' => $this->safely('Pipeline media', 'warning', fn (): array => $this->mediaPipelineCheck()),
             'scheduler' => $this->safely('Scheduler', 'warning', fn (): array => $this->schedulerCheck()),
             'backup' => $this->safely('Backup', 'warning', fn (): array => $this->backupCheck()),
             'storage' => $this->safely('Storage', 'critical', fn (): array => $this->storageCheck()),
@@ -278,6 +286,143 @@ class SystemHealthService
         }
     }
 
+    /** @return array<string, mixed> */
+    private function antivirusCheck(): array
+    {
+        if (! (bool) config('uploads.features.scan_required', false)) {
+            return $this->result('unknown', 'Pemindaian antivirus belum diaktifkan.', [
+                'scan_required' => false,
+                'reachable' => null,
+            ]);
+        }
+
+        $reachable = $this->virusScanner->ping();
+
+        return $this->result(
+            $reachable ? 'healthy' : 'critical',
+            $reachable ? 'ClamAV dapat dijangkau.' : 'ClamAV tidak dapat dijangkau; file baru tetap dikunci.',
+            ['scan_required' => true, 'reachable' => $reachable],
+        );
+    }
+
+    /** @return array<string, mixed> */
+    private function mediaPipelineCheck(): array
+    {
+        if (! Schema::hasTable('stored_files')) {
+            return $this->result('unknown', 'Registry media belum tersedia.');
+        }
+
+        $pendingScan = StoredFile::query()->where('status', 'pending_scan')->count();
+        $oldestPendingAt = StoredFile::query()->where('status', 'pending_scan')->min('created_at');
+        $oldestPendingAge = $oldestPendingAt
+            ? max(0, CarbonImmutable::parse($oldestPendingAt)->diffInSeconds(now(), true))
+            : null;
+        $failed = StoredFile::query()->where('status', 'failed')->count();
+        $staging = StoredFile::query()->whereNotNull('staging_path')->count();
+        $orphaned = $this->orphanedMediaCount();
+        $missing = $this->missingMediaCount();
+        $failedJobs = $this->failedMediaJobsCount();
+
+        $warningAge = max(1, (int) config('owner_observability.media.warning_pending_age_seconds', 3600));
+        $criticalAge = max($warningAge, (int) config('owner_observability.media.critical_pending_age_seconds', 86400));
+        $warningBacklog = max(1, (int) config('owner_observability.media.warning_staging_backlog', 100));
+        $criticalBacklog = max($warningBacklog, (int) config('owner_observability.media.critical_staging_backlog', 500));
+        $status = match (true) {
+            $missing > 0,
+            $orphaned > 0,
+            $failedJobs >= 10,
+            $oldestPendingAge !== null && $oldestPendingAge >= $criticalAge,
+            $staging >= $criticalBacklog => 'critical',
+            $failed > 0,
+            $failedJobs > 0,
+            $oldestPendingAge !== null && $oldestPendingAge >= $warningAge,
+            $staging >= $warningBacklog => 'warning',
+            default => 'healthy',
+        };
+
+        return $this->result(
+            $status,
+            $status === 'healthy' ? 'Pipeline media tidak menunjukkan backlog bermasalah.' : 'Pipeline media membutuhkan perhatian.',
+            [
+                'pending_scan_files' => $pendingScan,
+                'oldest_pending_scan_age_seconds' => $oldestPendingAge,
+                'failed_media_files' => $failed,
+                'failed_media_jobs' => $failedJobs,
+                'staging_backlog' => $staging,
+                'orphan_files' => $orphaned,
+                'missing_files' => $missing,
+            ],
+        );
+    }
+
+    private function orphanedMediaCount(): int
+    {
+        $limit = max(1, (int) config('owner_observability.media.max_reference_checks', 1000));
+
+        return StoredFile::query()
+            ->whereNotNull('owner_type')
+            ->whereNotNull('owner_id')
+            ->with('owner')
+            ->limit($limit)
+            ->get()
+            ->filter(function (StoredFile $file): bool {
+                try {
+                    return $file->owner === null;
+                } catch (Throwable) {
+                    return true;
+                }
+            })
+            ->count();
+    }
+
+    private function missingMediaCount(): int
+    {
+        $knownMissing = StoredFile::query()->where('failure_code', 'stored_bytes_missing')->count();
+        $limit = max(1, (int) config('owner_observability.media.max_reference_checks', 1000));
+        $sampledMissing = 0;
+
+        StoredFile::query()
+            ->where('status', 'ready')
+            ->limit($limit)
+            ->get(['id', 'disk', 'path'])
+            ->each(function (StoredFile $file) use (&$sampledMissing): void {
+                try {
+                    if (! $file->disk || ! $file->path || ! Storage::disk($file->disk)->exists($file->path)) {
+                        $sampledMissing++;
+                    }
+                } catch (Throwable) {
+                    $sampledMissing++;
+                }
+            });
+
+        return $knownMissing + $sampledMissing;
+    }
+
+    private function failedMediaJobsCount(): int
+    {
+        try {
+            $driver = config('queue.failed.driver');
+            if (! in_array($driver, ['database', 'database-uuids'], true)) {
+                return 0;
+            }
+            $connection = config('queue.failed.database') ?: config('database.default');
+            $table = config('queue.failed.table', 'failed_jobs');
+            if (! $this->safeIdentifier($table) || ! Schema::connection($connection)->hasTable($table)) {
+                return 0;
+            }
+
+            return DB::connection($connection)->table($table)
+                ->where(function ($query): void {
+                    foreach (['ScanStoredFile', 'ProcessStoredImage', 'BuildDocumentPreview', 'ProcessCalendarImport'] as $job) {
+                        $query->orWhere('payload', 'like', '%'.$job.'%');
+                    }
+                })
+                ->count();
+        } catch (Throwable) {
+            return 0;
+        }
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -355,6 +500,10 @@ class SystemHealthService
 
         $completedAt = $this->safeDate($metadata['completed_at'] ?? null);
         $size = $this->numericValue($metadata['size_bytes'] ?? null);
+        $checkStatus = $metadata['restic_check_status'] ?? null;
+        $checkedAt = $this->safeDate($metadata['restic_checked_at'] ?? null);
+        $restoreStatus = $metadata['restore_test_status'] ?? null;
+        $restoreTestedAt = $this->safeDate($metadata['restore_tested_at'] ?? null);
 
         if (! $completedAt) {
             return $this->result('unknown', 'Waktu penyelesaian backup tidak tersedia.', [
@@ -367,8 +516,12 @@ class SystemHealthService
         $ageHours = round(max(0, $completedAt->diffInSeconds(now(), true)) / 3600, 2);
         $warning = max(1, (int) config('owner_observability.backup.warning_after_hours', 26));
         $critical = max($warning, (int) config('owner_observability.backup.critical_after_hours', 72));
+        $checkStale = ! $checkedAt || $checkedAt->diffInDays(now(), true) >= max(1, (int) config('owner_observability.backup.warning_check_after_days', 8));
+        $restoreStale = ! $restoreTestedAt || $restoreTestedAt->diffInDays(now(), true) >= max(1, (int) config('owner_observability.backup.warning_restore_after_days', 8));
         $status = match (true) {
+            $checkStatus === 'failed', $restoreStatus === 'failed' => 'critical',
             $ageHours >= $critical => 'critical',
+            $checkStale, $restoreStale => 'warning',
             $ageHours >= $warning => 'warning',
             default => 'healthy',
         };
@@ -380,6 +533,10 @@ class SystemHealthService
                 'last_completed_at' => $completedAt->toIso8601String(),
                 'age_hours' => $ageHours,
                 'latest_size_bytes' => $size,
+                'restic_check_status' => is_string($checkStatus) ? $checkStatus : null,
+                'restic_checked_at' => $checkedAt?->toIso8601String(),
+                'restore_test_status' => is_string($restoreStatus) ? $restoreStatus : null,
+                'restore_tested_at' => $restoreTestedAt?->toIso8601String(),
             ],
         );
     }

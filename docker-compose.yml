@@ -8,6 +8,7 @@ services:
     working_dir: /var/www/html
     volumes:
       - ./:/var/www/html
+      - app_storage:/var/www/html/storage/app
     environment:
       DB_CONNECTION: mysql
       DB_HOST: db
@@ -15,8 +16,15 @@ services:
       DB_DATABASE: ${DB_DATABASE:-inventaris}
       DB_USERNAME: ${DB_USERNAME:-inventaris_user}
       DB_PASSWORD: ${DB_PASSWORD:-secret}
+      QUEUE_CONNECTION: database
+      CLAMAV_HOST: clamav
+      CLAMAV_PORT: 3310
+      UPLOAD_ASYNC_ENABLED: ${UPLOAD_ASYNC_ENABLED:-false}
+      UPLOAD_SCAN_REQUIRED: ${UPLOAD_SCAN_REQUIRED:-false}
+      UPLOAD_X_ACCEL_ENABLED: ${UPLOAD_X_ACCEL_ENABLED:-false}
     depends_on:
       - db
+      - clamav
     networks:
       - inventaris_network
 
@@ -33,6 +41,19 @@ services:
     networks:
       - inventaris_network
 
+  browser-tests:
+    image: mcr.microsoft.com/playwright:v1.62.1-noble
+    profiles:
+      - tools
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+      - browser_node_modules:/var/www/html/node_modules
+      - npm_cache:/root/.npm
+    command: sh -c "npm ci && npm run test:browser"
+    networks:
+      - inventaris_network
+
   web:
     image: nginx:alpine
     container_name: inventaris_web
@@ -41,6 +62,7 @@ services:
       - "127.0.0.1:8081:80"
     volumes:
       - ./:/var/www/html
+      - app_storage:/var/www/html/storage/app:ro
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
     depends_on:
       - app
@@ -58,6 +80,83 @@ services:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootsecret}
     volumes:
       - dbdata:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - inventaris_network
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    working_dir: /var/www/html
+    command: php artisan queue:work database --queue=media-scan,media-process,default --sleep=3 --tries=3 --timeout=180 --max-time=3600
+    volumes:
+      - ./:/var/www/html
+      - app_storage:/var/www/html/storage/app
+    environment:
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: ${DB_DATABASE:-inventaris}
+      DB_USERNAME: ${DB_USERNAME:-inventaris_user}
+      DB_PASSWORD: ${DB_PASSWORD:-secret}
+      QUEUE_CONNECTION: database
+      CLAMAV_HOST: clamav
+      CLAMAV_PORT: 3310
+      UPLOAD_SCAN_REQUIRED: ${UPLOAD_SCAN_REQUIRED:-false}
+    depends_on:
+      db:
+        condition: service_healthy
+      clamav:
+        condition: service_started
+    networks:
+      - inventaris_network
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    working_dir: /var/www/html
+    command: php artisan schedule:work
+    volumes:
+      - ./:/var/www/html
+      - app_storage:/var/www/html/storage/app
+      - backup_repository:/backups
+    environment:
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: ${DB_DATABASE:-inventaris}
+      DB_USERNAME: ${DB_USERNAME:-inventaris_user}
+      DB_PASSWORD: ${DB_PASSWORD:-secret}
+      QUEUE_CONNECTION: database
+      LOCAL_BACKUP_ENABLED: ${LOCAL_BACKUP_ENABLED:-false}
+      RESTIC_REPOSITORY: /backups/restic
+      RESTIC_PASSWORD: ${RESTIC_PASSWORD:-}
+      OWNER_BACKUP_METADATA_PATH: /var/www/html/storage/app/health/backup.json
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - inventaris_network
+
+  clamav:
+    image: clamav/clamav:1.4
+    restart: unless-stopped
+    volumes:
+      - clamav_db:/var/lib/clamav
+    healthcheck:
+      test: ["CMD-SHELL", "clamdscan --ping 1 >/dev/null 2>&1"]
+      interval: 30s
+      timeout: 10s
+      retries: 20
+      start_period: 120s
     networks:
       - inventaris_network
 
@@ -70,5 +169,13 @@ volumes:
     driver: local
   node_modules:
     driver: local
+  browser_node_modules:
+    driver: local
   npm_cache:
+    driver: local
+  app_storage:
+    driver: local
+  backup_repository:
+    driver: local
+  clamav_db:
     driver: local

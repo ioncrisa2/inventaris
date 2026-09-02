@@ -22,6 +22,14 @@ return [
         'critical_failed_jobs' => (int) env('OWNER_QUEUE_CRITICAL_FAILED', 10),
     ],
 
+    'media' => [
+        'warning_pending_age_seconds' => (int) env('OWNER_MEDIA_WARNING_PENDING_AGE', 3600),
+        'critical_pending_age_seconds' => (int) env('OWNER_MEDIA_CRITICAL_PENDING_AGE', 86400),
+        'warning_staging_backlog' => (int) env('OWNER_MEDIA_WARNING_STAGING', 100),
+        'critical_staging_backlog' => (int) env('OWNER_MEDIA_CRITICAL_STAGING', 500),
+        'max_reference_checks' => (int) env('OWNER_MEDIA_MAX_REFERENCE_CHECKS', 1000),
+    ],
+
     'scheduler' => [
         'cache_key' => 'owner-observability:v1:scheduler-heartbeat',
         'heartbeat_ttl_seconds' => (int) env('OWNER_SCHEDULER_HEARTBEAT_TTL_SECONDS', 172800),
@@ -38,10 +46,12 @@ return [
     |  "total_size_bytes":456,"files_count":2}
     */
     'backup' => [
-        'metadata_path' => env('OWNER_BACKUP_METADATA_PATH'),
+        'metadata_path' => env('OWNER_BACKUP_METADATA_PATH', storage_path('app/health/backup.json')),
         'max_metadata_bytes' => 65536,
         'warning_after_hours' => (int) env('OWNER_BACKUP_WARNING_AFTER_HOURS', 26),
         'critical_after_hours' => (int) env('OWNER_BACKUP_CRITICAL_AFTER_HOURS', 72),
+        'warning_check_after_days' => (int) env('OWNER_BACKUP_WARNING_CHECK_AFTER_DAYS', 8),
+        'warning_restore_after_days' => (int) env('OWNER_BACKUP_WARNING_RESTORE_AFTER_DAYS', 8),
     ],
 
     'deployment' => [
@@ -61,7 +71,7 @@ return [
     'storage' => [
         'capacity_disk' => env('OWNER_CAPACITY_DISK', env('FILESYSTEM_DISK', 'local')),
         'max_references_per_category' => (int) env('OWNER_STORAGE_MAX_REFERENCES', 50000),
-        'warning_free_percent' => (float) env('OWNER_STORAGE_WARNING_FREE_PERCENT', 15),
+        'warning_free_percent' => (float) env('OWNER_STORAGE_WARNING_FREE_PERCENT', 25),
         'critical_free_percent' => (float) env('OWNER_STORAGE_CRITICAL_FREE_PERCENT', 5),
     ],
 ];
