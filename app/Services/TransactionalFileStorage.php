@@ -75,6 +75,72 @@ class TransactionalFileStorage
         }
     }
 
+    /** @param resource $stream */
+    public function putStream(string $disk, string $path, $stream): void
+    {
+        if (DB::transactionLevel() === 0) {
+            throw new \LogicException('Penulisan file wajib dijalankan di dalam transaksi database.');
+        }
+
+        if (! is_resource($stream)) {
+            throw new \InvalidArgumentException('Stream file tidak valid.');
+        }
+
+        $filesystem = Storage::disk($disk);
+        $sudahAda = $filesystem->exists($path);
+        $kontenLama = $sudahAda ? $filesystem->get($path) : null;
+
+        if (! $filesystem->writeStream($path, $stream)) {
+            throw new \RuntimeException("Gagal menulis stream pada disk {$disk}.");
+        }
+
+        try {
+            DB::afterRollBack(fn () => $this->rollbackPut($disk, $path, $sudahAda, $kontenLama));
+        } catch (\Throwable $exception) {
+            $this->rollbackPut($disk, $path, $sudahAda, $kontenLama);
+            throw $exception;
+        }
+    }
+
+    public function putFilePath(string $disk, string $path, string $sourcePath): void
+    {
+        $stream = @fopen($sourcePath, 'rb');
+        if (! is_resource($stream)) {
+            throw new \RuntimeException('File sumber tidak dapat dibaca.');
+        }
+
+        try {
+            $this->putStream($disk, $path, $stream);
+        } finally {
+            fclose($stream);
+        }
+    }
+
+    public function move(string $disk, string $from, string $to): void
+    {
+        if (DB::transactionLevel() === 0) {
+            throw new \LogicException('Pemindahan file wajib dijalankan di dalam transaksi database.');
+        }
+
+        $filesystem = Storage::disk($disk);
+        if (! $filesystem->move($from, $to)) {
+            throw new \RuntimeException("Gagal memindahkan file pada disk {$disk}.");
+        }
+
+        try {
+            DB::afterRollBack(function () use ($filesystem, $from, $to): void {
+                if ($filesystem->exists($to)) {
+                    $filesystem->move($to, $from);
+                }
+            });
+        } catch (\Throwable $exception) {
+            if ($filesystem->exists($to)) {
+                $filesystem->move($to, $from);
+            }
+            throw $exception;
+        }
+    }
+
     /**
      * Hapus file lama hanya setelah transaksi database terluar benar-benar commit.
      */

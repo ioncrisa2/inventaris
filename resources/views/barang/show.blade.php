@@ -47,6 +47,13 @@ $kondisi = $barang->kondisiTerakhir?->kondisi ?? 'Belum diperiksa';
                         alt="Foto {{ $barang->nama_barang }}"
                         class="mb-3"
                     />
+                    @php($fotoSampulRegistry = $barang->storedFiles->firstWhere('collection', 'foto_sampul'))
+                    @if($fotoSampulRegistry && ! $fotoSampulRegistry->isAvailable())
+                    <p class="small text-body-secondary mb-3" role="status">
+                        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                        Foto sedang dipindai atau diproses.
+                    </p>
+                    @endif
 
                     <x-detail-list class="detail-list--single">
                         <x-detail-item label="Kode Barang" :value="$barang->kode_barang" emphasis />
@@ -151,12 +158,20 @@ $kondisi = $barang->kondisiTerakhir?->kondisi ?? 'Belum diperiksa';
                     </x-slot:actions>
                     <div class="media-gallery">
                         @forelse($barang->fotoPendukung as $foto)
+                        @php($fotoRegistry = $foto->storedFiles->first())
                         <div class="media-gallery__item">
+                            @if(! $fotoRegistry || $fotoRegistry->isAvailable())
                             <x-image-preview
                                 :src="\Illuminate\Support\Facades\Storage::url($foto->path)"
                                 alt="Foto pendukung {{ $barang->nama_barang }}"
                                 size="square"
                             />
+                            @else
+                            <div class="small text-body-secondary py-4 text-center" role="status">
+                                <span class="spinner-border spinner-border-sm d-block mx-auto mb-2" aria-hidden="true"></span>
+                                Sedang diproses
+                            </div>
+                            @endif
                             @if($foto->keterangan)
                             <div class="small text-body-secondary text-truncate mt-2" title="{{ $foto->keterangan }}">{{ $foto->keterangan }}</div>
                             @endif
@@ -201,12 +216,14 @@ $kondisi = $barang->kondisiTerakhir?->kondisi ?? 'Belum diperiksa';
                         </thead>
                         <tbody>
                             @forelse($barang->dokumen as $dokumen)
+                            @php($dokumenRegistry = $dokumen->storedFiles->first())
                             <tr>
                                 <td>{{ $dokumen->jenis_dokumen }}</td>
                                 <td>{{ $dokumen->nama_asli }}</td>
                                 <td>{{ $dokumen->created_at->translatedFormat('d F Y') }}</td>
                                 <td class="text-nowrap">
                                     <div class="table-actions">
+                                        @if(! $dokumenRegistry || $dokumenRegistry->isAvailable())
                                         <a
                                             class="btn btn-sm btn-action btn-action-neutral"
                                             href="{{ route('barang.dokumen.download', [$barang, $dokumen]) }}"
@@ -215,6 +232,9 @@ $kondisi = $barang->kondisiTerakhir?->kondisi ?? 'Belum diperiksa';
                                             title="Lihat/Unduh">
                                             <i class="bi bi-eye"></i>
                                         </a>
+                                        @else
+                                        <span class="small text-body-secondary" role="status">Sedang diproses</span>
+                                        @endif
                                         @can('kelolaDokumen', $barang)
                                         <x-delete-button
                                             :url="route('barang.dokumen.destroy', [$barang, $dokumen])"
@@ -252,7 +272,7 @@ $kondisi = $barang->kondisiTerakhir?->kondisi ?? 'Belum diperiksa';
         />
     </div>
 
-    <x-form.file name="dokumen" label="File Dokumen" required accept=".pdf,image/*" help="PDF/JPG/PNG, maks. 5MB." />
+    <x-form.file name="dokumen" label="File Dokumen" policy="business_documents" required />
 </x-modal-form>
 
 <x-modal-form
@@ -261,7 +281,7 @@ $kondisi = $barang->kondisiTerakhir?->kondisi ?? 'Belum diperiksa';
     :action="route('barang.foto.store', $barang)"
     submit-label="Unggah"
 >
-    <x-form.file name="foto" label="File Foto" required accept="image/*" help="JPG/PNG/WEBP, maks. 2MB." />
+    <x-form.file name="foto" label="File Foto" policy="asset_photo" required />
     <div class="mt-3">
         <x-form.input name="keterangan" label="Keterangan" maxlength="255" help="Opsional." />
     </div>

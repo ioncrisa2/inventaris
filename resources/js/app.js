@@ -3,6 +3,7 @@ import './components/bulk-actions';
 import './components/date-range-picker';
 import './components/dokumen-repeater';
 import './components/filter-form';
+import './components/file-upload';
 import './components/localized-inputs';
 import './components/mobile-tables';
 import './components/modals';

@@ -43,10 +43,18 @@
                             @if($productRequest->initialAttachments->isNotEmpty())
                                 <div class="request-attachments">
                                     @foreach($productRequest->initialAttachments as $attachment)
+                                        @php($storedFile = $attachment->storedFiles->sortByDesc('id')->first())
+                                        @if($storedFile && !$storedFile->isAvailable())
+                                        <span class="d-inline-flex align-items-center gap-2 px-2 py-1 border rounded text-body-secondary small" role="status">
+                                            <i class="bi bi-hourglass-split" aria-hidden="true"></i><span>{{ $attachment->original_name }}</span>
+                                            <small>{{ $storedFile->status === 'infected' ? 'Ditolak' : ($storedFile->status === 'failed' ? 'Gagal diproses' : 'Sedang diproses') }}</small>
+                                        </span>
+                                        @else
                                         <a href="{{ route('owner.product-requests.attachments.download', [$productRequest->ticket_number, $attachment->id]) }}">
                                             <i class="bi bi-paperclip" aria-hidden="true"></i><span>{{ $attachment->original_name }}</span>
                                             <small>{{ number_format($attachment->size_bytes / 1024, 0, ',', '.') }} KB</small>
                                         </a>
+                                        @endif
                                     @endforeach
                                 </div>
                             @endif
@@ -75,10 +83,18 @@
                                 @if($entry->attachments->isNotEmpty())
                                     <div class="request-attachments">
                                         @foreach($entry->attachments as $attachment)
+                                            @php($storedFile = $attachment->storedFiles->sortByDesc('id')->first())
+                                            @if($storedFile && !$storedFile->isAvailable())
+                                            <span class="d-inline-flex align-items-center gap-2 px-2 py-1 border rounded text-body-secondary small" role="status">
+                                                <i class="bi bi-hourglass-split" aria-hidden="true"></i><span>{{ $attachment->original_name }}</span>
+                                                <small>{{ $storedFile->status === 'infected' ? 'Ditolak' : ($storedFile->status === 'failed' ? 'Gagal diproses' : 'Sedang diproses') }}</small>
+                                            </span>
+                                            @else
                                             <a href="{{ route('owner.product-requests.attachments.download', [$productRequest->ticket_number, $attachment->id]) }}">
                                                 <i class="bi bi-paperclip" aria-hidden="true"></i><span>{{ $attachment->original_name }}</span>
                                                 <small>{{ number_format($attachment->size_bytes / 1024, 0, ',', '.') }} KB</small>
                                             </a>
+                                            @endif
                                         @endforeach
                                     </div>
                                 @endif
@@ -98,7 +114,7 @@
                             <label class="form-label" for="public_body">Balasan</label>
                             <textarea class="form-control" id="public_body" name="body" rows="5" maxlength="10000" required>{{ old('visibility') === 'public' ? old('body') : '' }}</textarea>
                             <div class="mt-3">
-                                <x-form.file name="attachments" label="Lampiran publik" multiple accept=".pdf,.jpg,.jpeg,.png,.webp,.txt" help="Maksimal 3 file dan 5 MB per file." />
+                                <x-form.file name="attachments" id="public-attachments" label="Lampiran publik" policy="product_attachments" :tenant-id="$productRequest->koperasi_id" multiple />
                             </div>
                             @if(old('visibility') === 'public' && $errors->any())
                                 <div class="text-danger small mt-2">{{ $errors->first() }}</div>

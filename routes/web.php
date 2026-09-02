@@ -44,6 +44,7 @@ use App\Http\Controllers\SystemHealthController;
 use App\Http\Controllers\SystemOwnerDashboardController;
 use App\Http\Controllers\TransaksiGajiController;
 use App\Http\Controllers\UnitKerjaController;
+use App\Http\Controllers\UploadController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\AuditSystemOwnerAccess;
 use Illuminate\Support\Facades\Auth;
@@ -104,6 +105,16 @@ Route::middleware(['auth', 'system_owner', AuditSystemOwnerAccess::class])
     });
 
 Route::middleware(['auth', 'koperasi.active'])->group(function () {
+    Route::prefix('uploads')->name('uploads.')->group(function () {
+        Route::post('/', [UploadController::class, 'store'])
+            ->middleware('throttle:30,1')
+            ->name('store');
+        Route::get('{storedFile}', [UploadController::class, 'show'])->name('show');
+        Route::delete('{storedFile}', [UploadController::class, 'destroy'])->name('destroy');
+        Route::get('{storedFile}/preview', [UploadController::class, 'preview'])->name('preview');
+        Route::get('{storedFile}/download', [UploadController::class, 'download'])->name('download');
+    });
+
     Route::get('announcements/{announcement}', [AnnouncementController::class, 'show'])->name('announcements.show');
     Route::prefix('saya')->name('me.')->group(function () {
         Route::get('/', MyProfileController::class)->name('profile');

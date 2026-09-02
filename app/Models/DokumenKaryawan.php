@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasStoredFiles;
 use Illuminate\Database\Eloquent\Model;
 
 class DokumenKaryawan extends Model
 {
+    use HasStoredFiles;
+
     protected $table = 'dokumen_karyawan';
 
     protected $fillable = [

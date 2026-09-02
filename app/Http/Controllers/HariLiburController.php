@@ -9,6 +9,8 @@ use App\Http\Requests\HariLibur\StoreHariLiburRequest;
 use App\Http\Requests\HariLibur\UpdateHariLiburRequest;
 use App\Models\HariLibur;
 use App\Models\Koperasi;
+use App\Models\StoredFile;
+use App\Services\AsyncUploadService;
 use App\Services\HariLiburService;
 use App\Support\PerPage;
 use Illuminate\Http\Request;
@@ -16,8 +18,10 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class HariLiburController extends Controller
 {
-    public function __construct(private HariLiburService $hariLiburService)
-    {
+    public function __construct(
+        private HariLiburService $hariLiburService,
+        private AsyncUploadService $asyncUploads,
+    ) {
         $this->authorizeResource(HariLibur::class, 'hari_libur');
     }
 
@@ -117,6 +121,21 @@ class HariLiburController extends Controller
      */
     public function import(ImportHariLiburRequest $request)
     {
+        if ($request->filled('file_upload_uuid')) {
+            $token = StoredFile::query()->where('uuid', $request->string('file_upload_uuid')->value())->firstOrFail();
+            $this->asyncUploads->claim(
+                $token,
+                $request->user()->koperasi,
+                $request->user(),
+                'calendar_import',
+                'calendar_import',
+                $request,
+            );
+
+            return redirect()->route('hari-libur.index')
+                ->with('success', 'File kalender sedang dipindai dan diproses. Hasil import akan tersedia setelah proses selesai.');
+        }
+
         $hasil = $this->hariLiburService->import($request->file('file'));
 
         $pesan = $hasil['ditambahkan'] > 0

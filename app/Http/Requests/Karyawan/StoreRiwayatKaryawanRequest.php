@@ -6,6 +6,7 @@ use App\Models\Karyawan;
 use App\Rules\Decimal15Two;
 use App\Support\KaryawanPerubahanSchema;
 use App\Support\TenantRule;
+use App\Support\UploadPolicy;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -42,12 +43,17 @@ class StoreRiwayatKaryawanRequest extends FormRequest
             ],
             'alasan' => ['required', 'string', 'max:1000'],
             'dokumen_pendukung' => [
-                Rule::requiredIf($dokumenWajib),
+                Rule::requiredIf($dokumenWajib && empty($this->input('dokumen_pendukung_upload_uuids'))),
+                ...UploadPolicy::collectionRules('business_documents'),
+            ],
+            'dokumen_pendukung.*' => UploadPolicy::fileRules('business_documents', true),
+            'dokumen_pendukung_upload_uuids' => [
+                Rule::requiredIf($dokumenWajib && empty($this->file('dokumen_pendukung'))),
                 'nullable',
                 'array',
                 'max:5',
             ],
-            'dokumen_pendukung.*' => ['file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+            'dokumen_pendukung_upload_uuids.*' => UploadPolicy::tokenRules('business_documents'),
         ];
 
         return match ($jenis) {
@@ -81,7 +87,8 @@ class StoreRiwayatKaryawanRequest extends FormRequest
                 'tahun_lulus' => ['required', 'integer', 'min:1950', 'max:'.now()->year],
                 'nama_pasangan' => ['nullable', 'string', 'max:255'],
                 'jumlah_anak' => ['nullable', 'integer', 'min:0'],
-                'foto_karyawan' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+                'foto_karyawan' => UploadPolicy::fileRules('employee_photo'),
+                'foto_karyawan_upload_uuid' => UploadPolicy::tokenRules('employee_photo'),
             ],
             'hubungan_kerja' => [
                 ...$rules,

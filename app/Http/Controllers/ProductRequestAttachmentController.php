@@ -6,7 +6,7 @@ use App\Enums\ProductRequestMessageVisibility;
 use App\Repositories\ProductRequestRepository;
 use App\Services\ProductRequestAttachmentService;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 class ProductRequestAttachmentController extends Controller
 {
@@ -19,7 +19,7 @@ class ProductRequestAttachmentController extends Controller
         Request $request,
         string $productRequest,
         int $attachment,
-    ): StreamedResponse {
+    ): Response {
         $record = $this->repository->findFor($request->user(), $productRequest);
         $this->authorize('downloadAttachment', $record);
         $file = $this->repository->findAttachment($record, $attachment);

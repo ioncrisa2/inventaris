@@ -123,12 +123,12 @@
                 <div class="form-text">Foto saat ini — unggah file baru untuk mengganti.</div>
             </div>
             @endif
-            <x-form.file name="foto_sampul" label="Foto Sampul" accept="image/*" help="JPG/PNG/WEBP, maks. 2MB." />
+            <x-form.file name="foto_sampul" label="Foto Sampul" policy="asset_photo" />
         </div>
 
         @unless($barang->exists)
         <div class="col-md-6">
-            <x-form.file name="foto_pendukung" label="Foto Pendukung" accept="image/*" multiple help="Opsional, bisa pilih beberapa file sekaligus. JPG/PNG/WEBP, maks. 2MB per file." />
+            <x-form.file name="foto_pendukung" label="Foto Pendukung" policy="asset_gallery" multiple />
         </div>
         @endunless
     </div>

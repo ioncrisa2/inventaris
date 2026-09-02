@@ -38,12 +38,14 @@ class ProductRequestRepository
                 'assignedOwner:id,name',
                 'duplicateOf:id,koperasi_id,ticket_number,title,status',
                 'initialAttachments:id,product_request_id,message_id,original_name,mime_type,size_bytes,created_at',
+                'initialAttachments.storedFiles:id,uuid,owner_type,owner_id,status,scan_status,failure_code',
                 'publicMessages' => fn ($query) => $query
                     ->select(['id', 'product_request_id', 'author_user_id', 'visibility', 'body', 'created_at', 'updated_at'])
                     ->oldest(),
                 'publicMessages.author:id,name,koperasi_id',
                 'publicMessages.author.roles:id,name,guard_name,koperasi_id',
                 'publicMessages.attachments:id,product_request_id,message_id,original_name,mime_type,size_bytes,created_at',
+                'publicMessages.attachments.storedFiles:id,uuid,owner_type,owner_id,status,scan_status,failure_code',
                 'statusHistories' => fn ($query) => $query
                     ->select(['id', 'product_request_id', 'changed_by', 'from_status', 'to_status', 'reason', 'created_at'])
                     ->oldest('created_at')

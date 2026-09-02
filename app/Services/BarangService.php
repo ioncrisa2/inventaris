@@ -3,10 +3,12 @@
 namespace App\Services;
 
 use App\Models\Barang;
+use App\Models\StoredFile;
 use App\Models\UnitKerja;
 use App\Repositories\BarangRepository;
 use App\Repositories\RiwayatKondisiBarangRepository;
 use App\Support\PerPage;
+use App\Support\PreparedUpload;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Writer\SvgWriter;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -24,6 +26,8 @@ class BarangService
         private FotoBarangService $fotoBarangService,
         private DokumenBarangService $dokumenBarangService,
         private TransactionalFileStorage $fileStorage,
+        private StoredFileService $storedFiles,
+        private AsyncUploadService $asyncUploads,
         private DashboardCache $dashboardCache,
     ) {}
 
@@ -42,65 +46,148 @@ class BarangService
     public function store(array $data): Barang
     {
         $this->ensureUnitKerjaTersedia((int) $data['unit_kerja_id']);
+        $fotoSampul = null;
+        $fotoPendukung = [];
+        $dokumen = [];
 
-        return DB::transaction(function () use ($data) {
-            $kondisiAwal = $this->kondisiAwal((float) $data['harga_perolehan']);
-            $data['kode_barang'] = $this->kodeBarangGenerator->generate(
-                $data['kategori'],
-                (int) $data['unit_kerja_id'],
-                $data['tanggal_perolehan'],
+        try {
+            $fotoSampul = ($data['foto_sampul'] ?? null) instanceof UploadedFile
+                ? $this->storedFiles->prepare($data['foto_sampul'], 'asset_photo')
+                : null;
+            $fotoPendukung = $this->storedFiles->prepareMany(
+                array_values(array_filter($data['foto_pendukung'] ?? [], fn ($foto) => $foto instanceof UploadedFile)),
+                'asset_gallery',
             );
-            $data = $this->simpanFotoSampul($data);
-            $fotoPendukung = array_filter($data['foto_pendukung'] ?? [], fn ($foto) => $foto instanceof UploadedFile);
-            unset($data['foto_pendukung']);
-            $dokumenBaris = $this->dokumenTerisi($data);
-            unset($data['dokumen']);
+            $dokumen = $this->prepareDokumen($data);
+            $dokumenToken = $this->dokumenToken($data);
 
-            $barang = $this->barangRepository->create($data);
+            return DB::transaction(function () use ($data, $fotoSampul, $fotoPendukung, $dokumen, $dokumenToken) {
+                $kondisiAwal = $this->kondisiAwal((float) $data['harga_perolehan']);
+                $data['kode_barang'] = $this->kodeBarangGenerator->generate(
+                    $data['kategori'],
+                    (int) $data['unit_kerja_id'],
+                    $data['tanggal_perolehan'],
+                );
+                $fotoSampulToken = $data['foto_sampul_upload_uuid'] ?? null;
+                $fotoPendukungToken = array_values($data['foto_pendukung_upload_uuids'] ?? []);
+                unset(
+                    $data['foto_sampul'],
+                    $data['foto_sampul_upload_uuid'],
+                    $data['foto_pendukung'],
+                    $data['foto_pendukung_upload_uuids'],
+                    $data['dokumen'],
+                );
 
-            $this->riwayatKondisiBarangRepository->create($barang, [
-                'tanggal_pemeriksaan' => now()->toDateString(),
-                'kondisi' => $kondisiAwal,
-                'keterangan' => "Kondisi awal saat barang ditambahkan (otomatis: {$kondisiAwal}).",
-                'biaya_perbaikan' => null,
-            ]);
+                $barang = $this->barangRepository->create($data);
+                if ($fotoSampul) {
+                    $registry = $this->storedFiles->persist(
+                        $fotoSampul,
+                        (int) $barang->koperasi_id,
+                        'foto_sampul',
+                        $barang,
+                        auth()->id(),
+                    );
+                    $barang = $this->barangRepository->update($barang, ['foto_sampul' => $registry->path]);
+                } elseif ($fotoSampulToken) {
+                    $token = StoredFile::query()->where('uuid', $fotoSampulToken)->firstOrFail();
+                    $claimed = $this->asyncUploads->claim($token, $barang, auth()->user(), 'asset_photo', 'foto_sampul');
+                    if ($claimed->isAvailable()) {
+                        $this->storedFiles->syncLegacyOwner($claimed);
+                        $barang->refresh();
+                    }
+                }
 
+                $this->riwayatKondisiBarangRepository->create($barang, [
+                    'tanggal_pemeriksaan' => now()->toDateString(),
+                    'kondisi' => $kondisiAwal,
+                    'keterangan' => "Kondisi awal saat barang ditambahkan (otomatis: {$kondisiAwal}).",
+                    'biaya_perbaikan' => null,
+                ]);
+
+                foreach ($fotoPendukung as $foto) {
+                    $this->fotoBarangService->storePrepared($barang, $foto);
+                }
+                foreach ($fotoPendukungToken as $uuid) {
+                    $this->fotoBarangService->claimUpload($barang, $uuid, 'asset_gallery');
+                }
+                foreach ($dokumen as $baris) {
+                    $this->dokumenBarangService->storePrepared($barang, $baris['upload'], $baris['jenis']);
+                }
+                foreach ($dokumenToken as $baris) {
+                    $this->dokumenBarangService->claimUpload($barang, $baris['uuid'], $baris['jenis']);
+                }
+
+                $this->dashboardCache->invalidateAfterCommit();
+
+                return $barang;
+            }, 3);
+        } finally {
+            $fotoSampul?->cleanup();
             foreach ($fotoPendukung as $foto) {
-                $this->fotoBarangService->store($barang, ['foto' => $foto]);
+                $foto->cleanup();
             }
-
-            $this->simpanDokumen($barang, $dokumenBaris);
-            $this->dashboardCache->invalidateAfterCommit();
-
-            return $barang;
-        }, 3);
+            foreach ($dokumen as $baris) {
+                $baris['upload']->cleanup();
+            }
+        }
     }
 
     public function update(Barang $barang, array $data): Barang
     {
         $this->ensureUnitKerjaTersedia((int) $data['unit_kerja_id'], $barang->koperasi_id);
+        $fotoSampul = null;
+        $dokumen = [];
+        $dokumenToken = [];
 
-        return DB::transaction(function () use ($barang, $data) {
-            $fotoLama = null;
+        try {
+            $fotoSampul = ($data['foto_sampul'] ?? null) instanceof UploadedFile
+                ? $this->storedFiles->prepare($data['foto_sampul'], 'asset_photo')
+                : null;
+            $dokumen = $this->prepareDokumen($data);
+            $dokumenToken = $this->dokumenToken($data);
 
-            if (isset($data['foto_sampul']) && $data['foto_sampul'] instanceof UploadedFile) {
-                $fotoLama = $barang->foto_sampul;
-                $data = $this->simpanFotoSampul($data);
-            } else {
-                // Tidak ada file baru diupload: jangan timpa foto_sampul yang sudah tersimpan.
-                unset($data['foto_sampul']);
+            return DB::transaction(function () use ($barang, $data, $fotoSampul, $dokumen, $dokumenToken) {
+                $fotoLama = null;
+                $fotoSampulToken = $data['foto_sampul_upload_uuid'] ?? null;
+                unset($data['foto_sampul'], $data['foto_sampul_upload_uuid'], $data['dokumen']);
+
+                if ($fotoSampul || $fotoSampulToken) {
+                    $fotoLama = $barang->foto_sampul;
+                    $this->storedFiles->deleteForOwner($barang, 'foto_sampul', 'replace');
+                }
+                if ($fotoSampul) {
+                    $registry = $this->storedFiles->persist(
+                        $fotoSampul,
+                        (int) $barang->koperasi_id,
+                        'foto_sampul',
+                        $barang,
+                        auth()->id(),
+                    );
+                    $data['foto_sampul'] = $registry->path;
+                } elseif ($fotoSampulToken) {
+                    $token = StoredFile::query()->where('uuid', $fotoSampulToken)->firstOrFail();
+                    $claimed = $this->asyncUploads->claim($token, $barang, auth()->user(), 'asset_photo', 'foto_sampul');
+                    $data['foto_sampul'] = $claimed->isAvailable() ? $claimed->path : null;
+                }
+
+                $barang = $this->barangRepository->update($barang, $data);
+                foreach ($dokumen as $baris) {
+                    $this->dokumenBarangService->storePrepared($barang, $baris['upload'], $baris['jenis']);
+                }
+                foreach ($dokumenToken as $baris) {
+                    $this->dokumenBarangService->claimUpload($barang, $baris['uuid'], $baris['jenis']);
+                }
+                $this->fileStorage->deleteAfterCommit('public', $fotoLama);
+                $this->dashboardCache->invalidateAfterCommit();
+
+                return $barang;
+            }, 3);
+        } finally {
+            $fotoSampul?->cleanup();
+            foreach ($dokumen as $baris) {
+                $baris['upload']->cleanup();
             }
-
-            $dokumenBaris = $this->dokumenTerisi($data);
-            unset($data['dokumen']);
-            $barang = $this->barangRepository->update($barang, $data);
-
-            $this->simpanDokumen($barang, $dokumenBaris);
-            $this->fileStorage->deleteAfterCommit('public', $fotoLama);
-            $this->dashboardCache->invalidateAfterCommit();
-
-            return $barang;
-        }, 3);
+        }
     }
 
     public function destroy(Barang $barang): void
@@ -117,9 +204,8 @@ class BarangService
             $barangs->each(fn (Barang $barang) => $this->ensureCanDelete($barang));
 
             foreach ($barangs as $barang) {
-                $fotoSampul = $barang->foto_sampul;
+                $this->storedFiles->deleteForOwner($barang);
                 $this->barangRepository->delete($barang);
-                $this->fileStorage->deleteAfterCommit('public', $fotoSampul);
             }
 
             $this->dashboardCache->invalidateAfterCommit();
@@ -178,8 +264,50 @@ class BarangService
     {
         return array_filter(
             $data['dokumen'] ?? [],
-            fn ($baris) => isset($baris['dokumen']) && $baris['dokumen'] instanceof UploadedFile
+            fn ($baris) => (isset($baris['dokumen']) && $baris['dokumen'] instanceof UploadedFile)
+                || filled($baris['dokumen_upload_uuid'] ?? null)
         );
+    }
+
+    /** @return list<array{jenis:string,upload:PreparedUpload}> */
+    private function prepareDokumen(array $data): array
+    {
+        $prepared = [];
+
+        try {
+            foreach ($this->dokumenTerisi($data) as $baris) {
+                if (! isset($baris['dokumen']) || ! $baris['dokumen'] instanceof UploadedFile) {
+                    continue;
+                }
+                $prepared[] = [
+                    'jenis' => $baris['jenis_dokumen'],
+                    'upload' => $this->storedFiles->prepare($baris['dokumen'], 'business_documents'),
+                ];
+            }
+        } catch (\Throwable $exception) {
+            foreach ($prepared as $baris) {
+                $baris['upload']->cleanup();
+            }
+
+            throw $exception;
+        }
+
+        return $prepared;
+    }
+
+    /** @return list<array{jenis:string,uuid:string}> */
+    private function dokumenToken(array $data): array
+    {
+        return array_values(array_map(
+            fn (array $baris): array => [
+                'jenis' => $baris['jenis_dokumen'],
+                'uuid' => $baris['dokumen_upload_uuid'],
+            ],
+            array_filter(
+                $this->dokumenTerisi($data),
+                fn (array $baris): bool => filled($baris['dokumen_upload_uuid'] ?? null),
+            ),
+        ));
     }
 
     private function simpanDokumen(Barang $barang, array $dokumenBaris): void
@@ -190,17 +318,6 @@ class BarangService
                 'dokumen' => $baris['dokumen'],
             ]);
         }
-    }
-
-    private function simpanFotoSampul(array $data): array
-    {
-        if (isset($data['foto_sampul']) && $data['foto_sampul'] instanceof UploadedFile) {
-            $data['foto_sampul'] = $this->fileStorage->store('public', 'barang-sampul', $data['foto_sampul']);
-        } else {
-            unset($data['foto_sampul']);
-        }
-
-        return $data;
     }
 
     /**

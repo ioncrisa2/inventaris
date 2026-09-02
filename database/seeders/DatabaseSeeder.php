@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Services\MediaBackfillService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -46,6 +47,11 @@ class DatabaseSeeder extends Seeder
                     KomponenGajiSeeder::class,
                     TransaksiGajiSeeder::class,
                 ]);
+
+                $media = app(MediaBackfillService::class)->run(chunk: 200);
+                if (($media['unreadable'] + $media['invalid']) > 0) {
+                    throw new \RuntimeException('Sebagian file demo gagal dicatat ke registry media.');
+                }
 
                 Auth::forgetGuards();
             }, 3);

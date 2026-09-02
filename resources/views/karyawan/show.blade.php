@@ -106,6 +106,10 @@
                                     icon="bi-person"
                                     size="avatar"
                                 />
+                                @php($fotoKaryawanRegistry = $karyawan->storedFiles->firstWhere('collection', 'foto_karyawan'))
+                                @if($fotoKaryawanRegistry && ! $fotoKaryawanRegistry->isAvailable())
+                                <span class="small text-body-secondary" role="status">Foto sedang diproses</span>
+                                @endif
                                 <div>
                                     <strong>{{ $karyawan->nama_lengkap }}</strong>
                                     <small>{{ $karyawan->nik }} · {{ $karyawan->jabatan }}</small>
@@ -285,12 +289,14 @@
                                 </thead>
                                 <tbody>
                                     @forelse($karyawan->dokumen as $dokumen)
+                                    @php($dokumenRegistry = $dokumen->storedFiles->first())
                                     <tr>
                                         <td>{{ $dokumen->jenis_dokumen }}</td>
                                         <td>{{ $dokumen->nama_asli }}</td>
                                         <td>{{ $dokumen->created_at->translatedFormat('d F Y') }}</td>
                                         <td class="text-nowrap">
                                             <div class="table-actions">
+                                                @if(! $dokumenRegistry || $dokumenRegistry->isAvailable())
                                                 <a
                                                     class="btn btn-sm btn-action btn-action-neutral"
                                                     href="{{ route('karyawan.dokumen.download', [$karyawan, $dokumen]) }}"
@@ -299,6 +305,9 @@
                                                     title="Lihat/Unduh">
                                                     <i class="bi bi-eye"></i>
                                                 </a>
+                                                @else
+                                                <span class="small text-body-secondary" role="status">Sedang diproses</span>
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>

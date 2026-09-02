@@ -187,7 +187,7 @@
                         <div class="form-text">Foto saat ini — unggah file baru untuk mengganti.</div>
                     </div>
                     @endif
-                    <x-form.file name="foto_karyawan" label="Foto Karyawan" required accept="image/*" help="JPG/PNG/WEBP, maks. 2MB." />
+                    <x-form.file name="foto_karyawan" label="Foto Karyawan" policy="employee_photo" required />
                 </div>
             </div>
         </div>

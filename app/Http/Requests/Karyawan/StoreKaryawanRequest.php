@@ -4,7 +4,9 @@ namespace App\Http\Requests\Karyawan;
 
 use App\Models\Karyawan;
 use App\Rules\Decimal15Two;
+use App\Rules\ValidUploadFile;
 use App\Support\TenantRule;
+use App\Support\UploadPolicy;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -36,7 +38,8 @@ class StoreKaryawanRequest extends FormRequest
             'jumlah_anak' => ['nullable', 'integer', 'min:0'],
             'alamat_ktp' => ['required', 'string', 'max:2000'],
             'alamat_domisili' => ['required_without:alamat_sama_ktp', 'nullable', 'string', 'max:2000'],
-            'foto_karyawan' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'foto_karyawan' => UploadPolicy::fileOrTokenRules('employee_photo', 'foto_karyawan_upload_uuid', true),
+            'foto_karyawan_upload_uuid' => UploadPolicy::tokenRules('employee_photo', true, 'foto_karyawan'),
 
             // Data Kepegawaian
             'unit_kerja_id' => ['required', TenantRule::exists('unit_kerja')],
@@ -48,9 +51,19 @@ class StoreKaryawanRequest extends FormRequest
             'atasan_langsung_id' => ['nullable', TenantRule::exists('karyawan')],
             'gaji_pokok' => ['required', new Decimal15Two],
 
-            'dokumen' => ['nullable', 'array'],
-            'dokumen.*.jenis_dokumen' => ['nullable', 'required_with:dokumen.*.dokumen', Rule::in(config('kepegawaian.jenis_dokumen'))],
-            'dokumen.*.dokumen' => ['nullable', 'required_with:dokumen.*.jenis_dokumen', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+            'dokumen' => UploadPolicy::collectionRules('business_documents'),
+            'dokumen.*.jenis_dokumen' => ['nullable', 'required_with:dokumen.*.dokumen,dokumen.*.dokumen_upload_uuid', Rule::in(config('kepegawaian.jenis_dokumen'))],
+            'dokumen.*.dokumen' => [
+                'exclude_without:dokumen.*.jenis_dokumen',
+                'required_without:dokumen.*.dokumen_upload_uuid',
+                'file',
+                new ValidUploadFile('business_documents'),
+            ],
+            'dokumen.*.dokumen_upload_uuid' => [
+                'exclude_without:dokumen.*.jenis_dokumen',
+                'required_without:dokumen.*.dokumen',
+                'uuid',
+            ],
         ];
     }
 

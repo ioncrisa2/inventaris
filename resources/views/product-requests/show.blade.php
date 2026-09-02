@@ -69,11 +69,20 @@
                             @if($productRequest->initialAttachments->isNotEmpty())
                                 <div class="request-attachments" aria-label="Lampiran pengajuan">
                                     @foreach($productRequest->initialAttachments as $attachment)
+                                        @php($storedFile = $attachment->storedFiles->sortByDesc('id')->first())
+                                        @if($storedFile && !$storedFile->isAvailable())
+                                        <span class="d-inline-flex align-items-center gap-2 px-2 py-1 border rounded text-body-secondary small" role="status">
+                                            <i class="bi bi-hourglass-split" aria-hidden="true"></i>
+                                            <span>{{ $attachment->original_name }}</span>
+                                            <small>{{ $storedFile->status === 'infected' ? 'Ditolak' : ($storedFile->status === 'failed' ? 'Gagal diproses' : 'Sedang diproses') }}</small>
+                                        </span>
+                                        @else
                                         <a href="{{ route('product-requests.attachments.download', [$productRequest->ticket_number, $attachment->id]) }}">
                                             <i class="bi bi-paperclip" aria-hidden="true"></i>
                                             <span>{{ $attachment->original_name }}</span>
                                             <small>{{ number_format($attachment->size_bytes / 1024, 0, ',', '.') }} KB</small>
                                         </a>
+                                        @endif
                                     @endforeach
                                 </div>
                             @endif
@@ -99,11 +108,20 @@
                                 @if($message->attachments->isNotEmpty())
                                     <div class="request-attachments" aria-label="Lampiran balasan">
                                         @foreach($message->attachments as $attachment)
+                                            @php($storedFile = $attachment->storedFiles->sortByDesc('id')->first())
+                                            @if($storedFile && !$storedFile->isAvailable())
+                                            <span class="d-inline-flex align-items-center gap-2 px-2 py-1 border rounded text-body-secondary small" role="status">
+                                                <i class="bi bi-hourglass-split" aria-hidden="true"></i>
+                                                <span>{{ $attachment->original_name }}</span>
+                                                <small>{{ $storedFile->status === 'infected' ? 'Ditolak' : ($storedFile->status === 'failed' ? 'Gagal diproses' : 'Sedang diproses') }}</small>
+                                            </span>
+                                            @else
                                             <a href="{{ route('product-requests.attachments.download', [$productRequest->ticket_number, $attachment->id]) }}">
                                                 <i class="bi bi-paperclip" aria-hidden="true"></i>
                                                 <span>{{ $attachment->original_name }}</span>
                                                 <small>{{ number_format($attachment->size_bytes / 1024, 0, ',', '.') }} KB</small>
                                             </a>
+                                            @endif
                                         @endforeach
                                     </div>
                                 @endif
@@ -123,9 +141,7 @@
                                 maxlength="10000" required>{{ old('body') }}</textarea>
                             @error('body')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             <div class="mt-3">
-                                <x-form.file name="attachments" label="Lampiran" multiple
-                                    accept=".pdf,.jpg,.jpeg,.png,.webp,.txt"
-                                    help="Maksimal 3 file sekali kirim dan 5 MB per file." />
+                                <x-form.file name="attachments" label="Lampiran" policy="product_attachments" multiple />
                                 @error('attachments')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                             </div>
                             <div class="d-flex justify-content-end mt-3">

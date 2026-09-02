@@ -158,7 +158,7 @@ test('masa kerja dihitung dari tanggal masuk kerja', function () {
 
 test('dokumen repeater rows are uploaded when creating karyawan', function () {
     $ijazah = UploadedFile::fake()->create('ijazah.pdf', 200, 'application/pdf');
-    $ktp = UploadedFile::fake()->create('ktp.jpg', 100, 'image/jpeg');
+    $ktp = UploadedFile::fake()->image('ktp.jpg');
 
     $this->post(route('karyawan.store'), payloadKaryawan($this->unitKerja, [
         'dokumen' => [

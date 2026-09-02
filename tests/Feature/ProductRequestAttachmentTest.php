@@ -54,7 +54,7 @@ test('attachment validation rejects count size extension and mime mismatches', f
     ])->assertSessionHasErrors('attachments');
 
     $this->post(route('product-requests.store'), $base + [
-        'attachments' => [UploadedFile::fake()->create('terlalu-besar.pdf', 5121, 'application/pdf')],
+        'attachments' => [UploadedFile::fake()->create('terlalu-besar.pdf', 10241, 'application/pdf')],
     ])->assertSessionHasErrors('attachments.0');
 
     $this->post(route('product-requests.store'), $base + [

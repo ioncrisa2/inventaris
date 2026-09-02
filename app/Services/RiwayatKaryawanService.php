@@ -2,14 +2,17 @@
 
 namespace App\Services;
 
+use App\Models\DokumenRiwayatKaryawan;
 use App\Models\Karyawan;
 use App\Models\RiwayatKaryawan;
 use App\Models\RiwayatKaryawanPerubahan;
+use App\Models\StoredFile;
 use App\Models\User;
 use App\Repositories\KaryawanRepository;
 use App\Repositories\UnitKerjaRepository;
 use App\Rules\Decimal15Two;
 use App\Support\KaryawanPerubahanSchema;
+use App\Support\PreparedUpload;
 use Carbon\CarbonInterface;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -21,74 +24,124 @@ class RiwayatKaryawanService
         private KaryawanRepository $karyawanRepository,
         private UnitKerjaRepository $unitKerjaRepository,
         private TransactionalFileStorage $fileStorage,
+        private StoredFileService $storedFiles,
+        private AsyncUploadService $asyncUploads,
         private DashboardCache $dashboardCache,
     ) {}
 
     public function catat(Karyawan $karyawan, User $pelaku, array $data): RiwayatKaryawan
     {
-        return DB::transaction(function () use ($karyawan, $pelaku, $data) {
-            $karyawanTerkunci = $this->karyawanRepository->findOrFailForUpdate($karyawan->id);
-            $jenis = $data['jenis_perubahan'];
-            $schema = KaryawanPerubahanSchema::types()[$jenis];
-            $fields = $schema['fields'];
-            $fotoLama = null;
+        $foto = null;
+        $dokumen = [];
 
-            if (($data['foto_karyawan'] ?? null) instanceof UploadedFile) {
-                $fotoLama = $karyawanTerkunci->foto_karyawan;
-                $data['foto_karyawan'] = $this->fileStorage->store(
-                    'public',
-                    'karyawan-foto',
-                    $data['foto_karyawan'],
-                );
-            } else {
-                $fields = array_values(array_filter(
+        try {
+            $foto = ($data['foto_karyawan'] ?? null) instanceof UploadedFile
+                ? $this->storedFiles->prepare($data['foto_karyawan'], 'employee_photo')
+                : null;
+            $dokumen = $this->storedFiles->prepareMany(
+                array_values(array_filter($data['dokumen_pendukung'] ?? [], fn ($file) => $file instanceof UploadedFile)),
+                'business_documents',
+            );
+            $dokumenToken = array_values($data['dokumen_pendukung_upload_uuids'] ?? []);
+
+            return DB::transaction(function () use ($karyawan, $pelaku, $data, $foto, $dokumen, $dokumenToken) {
+                $karyawanTerkunci = $this->karyawanRepository->findOrFailForUpdate($karyawan->id);
+                $jenis = $data['jenis_perubahan'];
+                $schema = KaryawanPerubahanSchema::types()[$jenis];
+                $fields = $schema['fields'];
+                $fotoLama = null;
+
+                $fotoToken = $data['foto_karyawan_upload_uuid'] ?? null;
+                if ($foto || $fotoToken) {
+                    $fotoLama = $karyawanTerkunci->foto_karyawan;
+                    $this->storedFiles->deleteForOwner($karyawanTerkunci, 'foto_karyawan', 'replace');
+                }
+                if ($foto) {
+                    $registry = $this->storedFiles->persist(
+                        $foto,
+                        (int) $karyawanTerkunci->koperasi_id,
+                        'foto_karyawan',
+                        $karyawanTerkunci,
+                        $pelaku->id,
+                    );
+                    $data['foto_karyawan'] = $registry->path;
+                } elseif ($fotoToken) {
+                    $token = StoredFile::query()->where('uuid', $fotoToken)->firstOrFail();
+                    $claimed = $this->asyncUploads->claim(
+                        $token,
+                        $karyawanTerkunci,
+                        $pelaku,
+                        'employee_photo',
+                        'foto_karyawan',
+                    );
+                    $data['foto_karyawan'] = $claimed->isAvailable() ? $claimed->path : null;
+                } else {
+                    $fields = array_values(array_filter(
+                        $fields,
+                        fn (string $field) => $field !== 'foto_karyawan',
+                    ));
+                }
+
+                $nilaiBaru = collect($fields)
+                    ->mapWithKeys(fn (string $field) => [
+                        $field => $this->normalisasiNilai($field, $data[$field] ?? null),
+                    ])
+                    ->all();
+
+                $perubahan = $this->buatPerubahan(
+                    $karyawanTerkunci,
                     $fields,
-                    fn (string $field) => $field !== 'foto_karyawan',
-                ));
+                    fn (string $field) => $karyawanTerkunci->getAttribute($field),
+                    fn (string $field) => $nilaiBaru[$field] ?? null,
+                );
+
+                if ($perubahan === []) {
+                    throw ValidationException::withMessages([
+                        'jenis_perubahan' => 'Tidak ada nilai yang berubah. Periksa kembali data yang Anda masukkan.',
+                    ]);
+                }
+
+                $this->pastikanUrutanKronologis(
+                    $karyawanTerkunci,
+                    array_column($perubahan, 'field'),
+                    $data['tanggal_berlaku'],
+                );
+
+                $karyawanTerkunci = $this->karyawanRepository->update($karyawanTerkunci, $nilaiBaru);
+                $riwayat = $this->simpanRiwayat(
+                    $karyawanTerkunci,
+                    $pelaku,
+                    $jenis,
+                    $data['tanggal_berlaku'],
+                    $data['alasan'],
+                    'aksi_perubahan',
+                    $perubahan,
+                );
+
+                $this->simpanDokumen($riwayat, $dokumen, $pelaku->id, (int) $karyawanTerkunci->koperasi_id);
+                $this->simpanDokumenToken($riwayat, $dokumenToken, $pelaku);
+                $this->fileStorage->deleteAfterCommit('public', $fotoLama);
+                $this->dashboardCache->invalidateAfterCommit();
+
+                return $riwayat->load(['perubahan', 'dokumen']);
+            }, 3);
+        } finally {
+            $foto?->cleanup();
+            foreach ($dokumen as $upload) {
+                $upload->cleanup();
             }
+        }
+    }
 
-            $nilaiBaru = collect($fields)
-                ->mapWithKeys(fn (string $field) => [
-                    $field => $this->normalisasiNilai($field, $data[$field] ?? null),
-                ])
-                ->all();
-
-            $perubahan = $this->buatPerubahan(
-                $karyawanTerkunci,
-                $fields,
-                fn (string $field) => $karyawanTerkunci->getAttribute($field),
-                fn (string $field) => $nilaiBaru[$field] ?? null,
-            );
-
-            if ($perubahan === []) {
-                throw ValidationException::withMessages([
-                    'jenis_perubahan' => 'Tidak ada nilai yang berubah. Periksa kembali data yang Anda masukkan.',
-                ]);
-            }
-
-            $this->pastikanUrutanKronologis(
-                $karyawanTerkunci,
-                array_column($perubahan, 'field'),
-                $data['tanggal_berlaku'],
-            );
-
-            $karyawanTerkunci = $this->karyawanRepository->update($karyawanTerkunci, $nilaiBaru);
-            $riwayat = $this->simpanRiwayat(
-                $karyawanTerkunci,
-                $pelaku,
-                $jenis,
-                $data['tanggal_berlaku'],
-                $data['alasan'],
-                'aksi_perubahan',
-                $perubahan,
-            );
-
-            $this->simpanDokumen($riwayat, $data['dokumen_pendukung'] ?? []);
-            $this->fileStorage->deleteAfterCommit('public', $fotoLama);
-            $this->dashboardCache->invalidateAfterCommit();
-
-            return $riwayat->load(['perubahan', 'dokumen']);
-        }, 3);
+    public function streamedDownload(DokumenRiwayatKaryawan $dokumen)
+    {
+        return $this->storedFiles->privateResponse(
+            $dokumen,
+            'local',
+            $dokumen->path,
+            $dokumen->nama_asli,
+            'dokumen',
+        );
     }
 
     /**
@@ -178,26 +231,51 @@ class RiwayatKaryawanService
     }
 
     /**
-     * @param  array<int, UploadedFile>  $dokumen
+     * @param  array<int, PreparedUpload>  $dokumen
      */
-    private function simpanDokumen(RiwayatKaryawan $riwayat, array $dokumen): void
+    private function simpanDokumen(RiwayatKaryawan $riwayat, array $dokumen, int $uploaderId, int $koperasiId): void
     {
-        foreach ($dokumen as $file) {
-            if (! $file instanceof UploadedFile) {
-                continue;
-            }
-
-            $realPath = $file->getRealPath();
-            $checksum = is_string($realPath) ? hash_file('sha256', $realPath) : null;
-            $path = $this->fileStorage->store('local', 'riwayat-karyawan', $file);
-
-            $riwayat->dokumen()->create([
-                'nama_asli' => $file->getClientOriginalName(),
-                'path' => $path,
-                'mime_type' => $file->getClientMimeType(),
-                'ukuran' => $file->getSize(),
-                'checksum_sha256' => $checksum ?: null,
+        foreach ($dokumen as $upload) {
+            $registry = $this->storedFiles->persist(
+                $upload,
+                $koperasiId,
+                'dokumen_pendukung',
+                $riwayat,
+                $uploaderId,
+            );
+            $record = $riwayat->dokumen()->create([
+                'nama_asli' => $upload->originalName,
+                'path' => $registry->path,
+                'mime_type' => $registry->mime_type,
+                'ukuran' => $registry->final_size_bytes,
+                'checksum_sha256' => $registry->final_checksum_sha256,
             ]);
+            $this->storedFiles->assignOwner($registry, $record, 'dokumen');
+        }
+    }
+
+    /** @param list<string> $uuids */
+    private function simpanDokumenToken(RiwayatKaryawan $riwayat, array $uuids, User $pelaku): void
+    {
+        foreach ($uuids as $uuid) {
+            $token = StoredFile::query()->where('uuid', $uuid)->firstOrFail();
+            $record = $riwayat->dokumen()->create([
+                'nama_asli' => $token->original_name,
+                'path' => $token->path ?: 'pending/'.$token->uuid,
+                'mime_type' => $token->mime_type,
+                'ukuran' => $token->final_size_bytes ?: $token->source_size_bytes,
+                'checksum_sha256' => $token->final_checksum_sha256 ?: $token->source_checksum_sha256,
+            ]);
+            $claimed = $this->asyncUploads->claim(
+                $token,
+                $record,
+                $pelaku,
+                'business_documents',
+                'dokumen',
+            );
+            if ($claimed->isAvailable()) {
+                $this->storedFiles->syncLegacyOwner($claimed);
+            }
         }
     }
 

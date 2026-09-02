@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\DokumenBarang;
 
+use App\Support\UploadPolicy;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -16,7 +17,8 @@ class StoreDokumenBarangRequest extends FormRequest
     {
         return [
             'jenis_dokumen' => ['required', Rule::in(config('inventaris.jenis_dokumen'))],
-            'dokumen' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+            'dokumen' => UploadPolicy::fileOrTokenRules('business_documents', 'dokumen_upload_uuid', true),
+            'dokumen_upload_uuid' => UploadPolicy::tokenRules('business_documents', true, 'dokumen'),
         ];
     }
 }

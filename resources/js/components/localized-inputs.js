@@ -50,20 +50,6 @@ const formatMoney = (input) => {
     input.value = digits === '' ? '' : rupiahFormatter.format(Number(digits));
 };
 
-const updateFileStatus = (input) => {
-    const status = input.closest('[data-file-picker]')?.querySelector('[data-file-picker-status]');
-    if (!status) return;
-
-    if (!input.files?.length) {
-        status.textContent = 'Belum ada file dipilih';
-        return;
-    }
-
-    status.textContent = input.files.length === 1
-        ? input.files[0].name
-        : `${input.files.length} file dipilih`;
-};
-
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-local-date]').forEach((input) => {
         syncLocalDate(input);
@@ -113,10 +99,4 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     });
-});
-
-document.addEventListener('change', (event) => {
-    if (event.target.matches('.file-picker__input')) {
-        updateFileStatus(event.target);
-    }
 });

@@ -3,12 +3,13 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToKoperasi;
+use App\Models\Concerns\HasStoredFiles;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Karyawan extends Model
 {
-    use BelongsToKoperasi;
+    use BelongsToKoperasi, HasStoredFiles;
 
     /**
      * Jenis kepegawaian yang valid. Terpisah dari status aktif/keluar —

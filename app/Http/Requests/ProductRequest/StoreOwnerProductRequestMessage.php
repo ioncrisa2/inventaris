@@ -3,7 +3,8 @@
 namespace App\Http\Requests\ProductRequest;
 
 use App\Enums\ProductRequestMessageVisibility;
-use App\Rules\ValidProductRequestAttachment;
+use App\Rules\TotalUploadSize;
+use App\Support\UploadPolicy;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -16,8 +17,6 @@ class StoreOwnerProductRequestMessage extends FormRequest
 
     public function rules(): array
     {
-        $attachments = config('product_requests.attachments');
-
         return [
             'visibility' => ['required', Rule::enum(ProductRequestMessageVisibility::class)],
             'body' => ['required', 'string', 'min:2', 'max:10000'],
@@ -25,13 +24,17 @@ class StoreOwnerProductRequestMessage extends FormRequest
                 'nullable',
                 Rule::prohibitedIf(fn () => $this->input('visibility') === ProductRequestMessageVisibility::Internal->value),
                 'array',
-                'max:'.$attachments['max_files_per_submission'],
+                'max:'.UploadPolicy::get('product_attachments')['max_files'],
+                new TotalUploadSize('product_attachments'),
             ],
-            'attachments.*' => [
-                'file',
-                new ValidProductRequestAttachment,
-                'max:'.$attachments['max_file_kilobytes'],
+            'attachments.*' => UploadPolicy::fileRules('product_attachments', true),
+            'attachments_upload_uuids' => [
+                'nullable',
+                Rule::prohibitedIf(fn () => $this->input('visibility') === ProductRequestMessageVisibility::Internal->value),
+                'array',
+                'max:3',
             ],
+            'attachments_upload_uuids.*' => UploadPolicy::tokenRules('product_attachments'),
         ];
     }
 }

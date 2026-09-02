@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Barang;
 
+use App\Rules\ValidUploadFile;
 use App\Support\TenantRule;
+use App\Support\UploadPolicy;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -29,10 +31,21 @@ class UpdateBarangRequest extends FormRequest
             'keterangan_lokasi' => ['nullable', 'string', 'max:255'],
             'tanggal_perolehan' => ['required', 'date', 'before_or_equal:today'],
             'harga_perolehan' => ['required', 'numeric', 'min:0'],
-            'foto_sampul' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-            'dokumen' => ['nullable', 'array'],
-            'dokumen.*.jenis_dokumen' => ['nullable', 'required_with:dokumen.*.dokumen', Rule::in(config('inventaris.jenis_dokumen'))],
-            'dokumen.*.dokumen' => ['nullable', 'required_with:dokumen.*.jenis_dokumen', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+            'foto_sampul' => UploadPolicy::fileRules('asset_photo'),
+            'foto_sampul_upload_uuid' => UploadPolicy::tokenRules('asset_photo'),
+            'dokumen' => UploadPolicy::collectionRules('business_documents'),
+            'dokumen.*.jenis_dokumen' => ['nullable', 'required_with:dokumen.*.dokumen,dokumen.*.dokumen_upload_uuid', Rule::in(config('inventaris.jenis_dokumen'))],
+            'dokumen.*.dokumen' => [
+                'exclude_without:dokumen.*.jenis_dokumen',
+                'required_without:dokumen.*.dokumen_upload_uuid',
+                'file',
+                new ValidUploadFile('business_documents'),
+            ],
+            'dokumen.*.dokumen_upload_uuid' => [
+                'exclude_without:dokumen.*.jenis_dokumen',
+                'required_without:dokumen.*.dokumen',
+                'uuid',
+            ],
         ];
     }
 

@@ -78,7 +78,14 @@ class BarangController extends Controller
      */
     public function show(Barang $barang)
     {
-        $barang->load('koperasi:id,nama', 'unitKerja', 'kondisiTerakhir', 'fotoPendukung', 'dokumen');
+        $barang->load(
+            'koperasi:id,nama',
+            'unitKerja',
+            'kondisiTerakhir',
+            'storedFiles',
+            'fotoPendukung.storedFiles',
+            'dokumen.storedFiles',
+        );
         $riwayatKondisi = $this->riwayatKondisiBarangRepository->terbaruUntuk($barang);
         $jadwalPenyusutan = PenyusutanCalculator::jadwalTahunan(
             $barang->kategori,

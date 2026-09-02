@@ -376,7 +376,7 @@ test('barang index provides row selection for bulk barcode export', function () 
 
 test('dokumen repeater rows are uploaded when creating barang', function () {
     $nota = UploadedFile::fake()->create('nota.pdf', 200, 'application/pdf');
-    $garansi = UploadedFile::fake()->create('garansi.jpg', 100, 'image/jpeg');
+    $garansi = UploadedFile::fake()->image('garansi.jpg');
 
     $this->post(route('barang.store'), [
         'nama_barang' => 'Laptop Operasional',

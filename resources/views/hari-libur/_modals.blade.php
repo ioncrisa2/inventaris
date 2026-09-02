@@ -41,7 +41,7 @@
         </div>
     </div>
 
-    <x-form.file name="file" label="File Excel/CSV" accept=".xlsx,.xls,.csv" required help="Format .xlsx, .xls, atau .csv, maks. 5MB." />
+    <x-form.file name="file" label="File Excel/CSV" policy="calendar_import" required />
 </x-modal-form>
 @endcan
 

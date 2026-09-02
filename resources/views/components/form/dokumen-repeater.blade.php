@@ -1,4 +1,4 @@
-@props(['name' => 'dokumen', 'jenisOptions' => [], 'accept' => '.pdf,image/*', 'help' => 'PDF/JPG/PNG, maks. 5MB.'])
+@props(['name' => 'dokumen', 'jenisOptions' => [], 'policy' => 'business_documents'])
 
 {{--
     Repeater generik untuk upload dokumen pendukung (jenis + file per baris).
@@ -7,7 +7,7 @@
     JS di bawah data-driven (baca data-repeater-target/-template dari tombol
     tambah) supaya aman dipakai lebih dari sekali dalam satu halaman.
 --}}
-<p class="form-text mb-3">{{ $help }}</p>
+<p class="form-text mb-3">{{ \App\Support\UploadPolicy::get($policy)['help'] }}</p>
 
 <div id="{{ $name }}-repeater-rows" data-repeater-rows></div>
 
@@ -34,17 +34,13 @@
             </select>
         </div>
         <div class="col-md-6">
-            <label class="form-label">File Dokumen</label>
-            <div class="file-picker" data-file-picker>
-                <input
-                    type="file"
-                    id="{{ $name }}-file-__INDEX__"
-                    name="{{ $name }}[__INDEX__][dokumen]"
-                    class="file-picker__input"
-                    accept="{{ $accept }}">
-                <label class="btn btn-light file-picker__button" for="{{ $name }}-file-__INDEX__">Pilih file</label>
-                <span class="file-picker__status" data-file-picker-status>Belum ada file dipilih</span>
-            </div>
+            <x-form.file
+                :name="$name.'[__INDEX__][dokumen]'"
+                :id="$name.'-file-__INDEX__'"
+                label="File Dokumen"
+                :policy="$policy"
+                :show-help="false"
+            />
         </div>
         <div class="col-md-1">
             <button type="button" class="btn btn-outline-danger" data-repeater-remove aria-label="Hapus baris dokumen">

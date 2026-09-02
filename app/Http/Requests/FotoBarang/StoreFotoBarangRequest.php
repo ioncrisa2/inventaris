@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\FotoBarang;
 
+use App\Support\UploadPolicy;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreFotoBarangRequest extends FormRequest
@@ -14,7 +15,8 @@ class StoreFotoBarangRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'foto' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'foto' => UploadPolicy::fileOrTokenRules('asset_photo', 'foto_upload_uuid', true),
+            'foto_upload_uuid' => UploadPolicy::tokenRules('asset_photo', true, 'foto'),
             'keterangan' => ['nullable', 'string', 'max:255'],
         ];
     }

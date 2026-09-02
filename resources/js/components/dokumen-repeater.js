@@ -11,8 +11,12 @@ document.addEventListener('DOMContentLoaded', () => {
             wrapper.innerHTML = template.innerHTML.replaceAll('__INDEX__', index++).trim();
             const row = wrapper.firstElementChild;
 
-            row.querySelector('[data-repeater-remove]')?.addEventListener('click', () => row.remove());
+            row.querySelector('[data-repeater-remove]')?.addEventListener('click', () => {
+                row.dispatchEvent(new CustomEvent('file-upload:dispose', { bubbles: true }));
+                row.remove();
+            });
             container.appendChild(row);
+            row.dispatchEvent(new CustomEvent('file-upload:added', { bubbles: true }));
         });
     });
 });

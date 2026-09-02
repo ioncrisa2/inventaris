@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\Koperasi;
 use App\Models\Pengaturan;
+use App\Models\StoredFile;
 use App\Support\CurrentTenant;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
@@ -17,7 +19,11 @@ class IdentitasAplikasiService
 
     private const KEY_LOGO_PATH = 'identitas_logo_path';
 
-    public function __construct(private TransactionalFileStorage $fileStorage) {}
+    public function __construct(
+        private TransactionalFileStorage $fileStorage,
+        private StoredFileService $storedFiles,
+        private AsyncUploadService $asyncUploads,
+    ) {}
 
     /**
      * Nama aplikasi bersifat dinamis:
@@ -72,18 +78,43 @@ class IdentitasAplikasiService
             throw new \DomainException('Identitas koperasi khusus per koperasi, dikelola oleh admin_primer masing-masing koperasi.');
         }
 
-        DB::transaction(function () use ($data) {
-            $logoLama = null;
+        $prepared = ($data['logo'] ?? null) instanceof UploadedFile
+            ? $this->storedFiles->prepare($data['logo'], 'logo')
+            : null;
+        $logoToken = $data['logo_upload_uuid'] ?? null;
 
-            if ($data['logo'] instanceof UploadedFile) {
-                $logoLama = $this->logoPath();
-                Pengaturan::set(self::KEY_LOGO_PATH, $this->fileStorage->store('public', 'identitas', $data['logo']));
-            }
+        try {
+            DB::transaction(function () use ($data, $prepared, $logoToken) {
+                $logoLama = null;
 
-            Pengaturan::set(self::KEY_NAMA, $data['nama']);
-            Pengaturan::set(self::KEY_ALAMAT, (string) ($data['alamat'] ?? ''));
+                if ($prepared || $logoToken) {
+                    $koperasiId = CurrentTenant::id();
+                    $koperasi = Koperasi::query()->findOrFail($koperasiId);
+                    $logoLama = $this->logoPath();
+                    $this->storedFiles->deleteForOwner($koperasi, 'logo', 'replace');
+                }
+                if ($prepared) {
+                    $registry = $this->storedFiles->persist(
+                        $prepared,
+                        $koperasiId,
+                        'logo',
+                        $koperasi,
+                        auth()->id(),
+                    );
+                    Pengaturan::set(self::KEY_LOGO_PATH, $registry->path);
+                } elseif ($logoToken) {
+                    $token = StoredFile::query()->where('uuid', $logoToken)->firstOrFail();
+                    $claimed = $this->asyncUploads->claim($token, $koperasi, auth()->user(), 'logo', 'logo');
+                    Pengaturan::set(self::KEY_LOGO_PATH, $claimed->isAvailable() ? $claimed->path : '');
+                }
 
-            $this->fileStorage->deleteAfterCommit('public', $logoLama);
-        }, 3);
+                Pengaturan::set(self::KEY_NAMA, $data['nama']);
+                Pengaturan::set(self::KEY_ALAMAT, (string) ($data['alamat'] ?? ''));
+
+                $this->fileStorage->deleteAfterCommit('public', $logoLama);
+            }, 3);
+        } finally {
+            $prepared?->cleanup();
+        }
     }
 }

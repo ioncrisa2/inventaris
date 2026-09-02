@@ -7,8 +7,8 @@ use App\Http\Requests\Karyawan\StoreKaryawanRequest;
 use App\Models\Karyawan;
 use App\Repositories\KaryawanRepository;
 use App\Repositories\UnitKerjaRepository;
-use App\Services\KaryawanService;
 use App\Services\KaryawanAccountService;
+use App\Services\KaryawanService;
 use App\Support\KaryawanPerubahanSchema;
 use App\Support\PerPage;
 use App\Support\TenantContext;
@@ -77,11 +77,11 @@ class KaryawanController extends Controller
      */
     public function show(Request $request, Karyawan $karyawan)
     {
-        $karyawan->load('koperasi:id,nama', 'unitKerja', 'dokumen', 'atasanLangsung', 'user.roles');
+        $karyawan->load('koperasi:id,nama', 'unitKerja', 'storedFiles', 'dokumen.storedFiles', 'atasanLangsung', 'user.roles');
         if ($request->user()->can('karyawan.riwayat.view')) {
             $karyawan->load([
                 'riwayatPerubahan' => fn ($query) => $query
-                    ->with(['pelaku:id,name', 'perubahan', 'dokumen'])
+                    ->with(['pelaku:id,name', 'perubahan', 'dokumen.storedFiles'])
                     ->orderByDesc('tanggal_berlaku')
                     ->orderByDesc('created_at'),
             ]);

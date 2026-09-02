@@ -33,7 +33,7 @@ return [
             'webp' => ['image/webp'],
             'txt' => ['text/plain'],
         ],
-        'max_file_kilobytes' => 5120,
+        'max_file_kilobytes' => 10 * 1024,
         'max_files_per_submission' => 3,
         'max_files_per_request' => 10,
         'max_total_bytes_per_request' => 20 * 1024 * 1024,

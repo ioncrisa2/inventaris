@@ -32,7 +32,8 @@ class ProductRequestMessageService
             $locked = $this->tenantRepository->findForUpdate($actor, $productRequest->id);
             Gate::forUser($actor)->authorize('reply', $locked);
             $files = array_values($data['attachments'] ?? []);
-            $this->attachmentService->assertCapacity($locked, $files);
+            $tokens = array_values($data['attachments_upload_uuids'] ?? []);
+            $this->attachmentService->assertCapacity($locked, $files, $tokens);
 
             $message = $locked->messages()->create([
                 'author_user_id' => $actor->id,
@@ -45,6 +46,7 @@ class ProductRequestMessageService
                 $actor,
                 $files,
             );
+            $this->attachmentService->claimTokens($locked, $message, $actor, $tokens);
 
             $now = now();
             $locked->last_activity_at = $now;
@@ -80,7 +82,8 @@ class ProductRequestMessageService
             $locked = $this->ownerRepository->findForUpdate($productRequest->id);
             $visibility = ProductRequestMessageVisibility::from($data['visibility']);
             $files = array_values($data['attachments'] ?? []);
-            $this->attachmentService->assertCapacity($locked, $files);
+            $tokens = array_values($data['attachments_upload_uuids'] ?? []);
+            $this->attachmentService->assertCapacity($locked, $files, $tokens);
             $message = $locked->messages()->create([
                 'author_user_id' => $actor->id,
                 'visibility' => $visibility,
@@ -92,6 +95,7 @@ class ProductRequestMessageService
                 $actor,
                 $files,
             );
+            $this->attachmentService->claimTokens($locked, $message, $actor, $tokens);
 
             if ($visibility === ProductRequestMessageVisibility::Public) {
                 $now = now();

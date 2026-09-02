@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasStoredFiles;
 use Illuminate\Database\Eloquent\Model;
 
 class RiwayatKaryawan extends Model
 {
+    use HasStoredFiles;
+
     public const UPDATED_AT = null;
 
     protected $table = 'riwayat_karyawan';

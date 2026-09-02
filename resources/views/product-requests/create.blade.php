@@ -71,9 +71,7 @@
                 @error('requester_priority')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
             <div class="col-12">
-                <x-form.file name="attachments" label="Lampiran pendukung" multiple
-                    accept=".pdf,.jpg,.jpeg,.png,.webp,.txt"
-                    help="Opsional. Maksimal 3 file sekali kirim, 5 MB per file; PDF, gambar, atau TXT." />
+                <x-form.file name="attachments" label="Lampiran pendukung" policy="product_attachments" multiple />
                 @error('attachments')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
             </div>
         </div>

@@ -8,7 +8,6 @@ use App\Models\Karyawan;
 use App\Models\RiwayatKaryawan;
 use App\Services\RiwayatKaryawanService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class RiwayatKaryawanController extends Controller
 {
@@ -40,9 +39,6 @@ class RiwayatKaryawanController extends Controller
         abort_unless($riwayatKaryawan->karyawan_id === $karyawan->id, 404);
         abort_unless($dokumenRiwayatKaryawan->riwayat_karyawan_id === $riwayatKaryawan->id, 404);
 
-        return Storage::disk('local')->response(
-            $dokumenRiwayatKaryawan->path,
-            $dokumenRiwayatKaryawan->nama_asli,
-        );
+        return $this->riwayatKaryawanService->streamedDownload($dokumenRiwayatKaryawan);
     }
 }

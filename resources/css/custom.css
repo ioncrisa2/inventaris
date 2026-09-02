@@ -965,11 +965,13 @@ a:hover {
     position: relative;
     display: flex;
     align-items: center;
+    gap: .5rem;
+    flex-wrap: wrap;
     min-height: 42px;
     border: var(--bs-border-width) solid var(--bs-border-color);
     border-radius: var(--app-radius-sm);
     background: var(--bs-body-bg);
-    overflow: hidden;
+    padding: .35rem;
 }
 
 .file-picker:focus-within {
@@ -986,24 +988,226 @@ a:hover {
     width: 1px;
     height: 1px;
     opacity: 0;
+    pointer-events: none;
+}
+
+.file-picker__actions {
+    display: flex;
+    gap: .35rem;
+    flex-wrap: wrap;
 }
 
 .file-picker__button {
     min-height: 40px;
-    border-width: 0 var(--bs-border-width) 0 0;
-    border-radius: 0;
     box-shadow: none;
     white-space: nowrap;
 }
 
+.file-picker__button,
+.file-picker__camera {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .45rem;
+}
+
 .file-picker__status {
+    flex: 1 1 12rem;
     min-width: 0;
-    padding: .55rem .75rem;
+    padding: .45rem .5rem;
     color: var(--bs-secondary-color);
     font-size: .82rem;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.file-upload__summary {
+    margin-top: .65rem;
+    color: var(--bs-secondary-color);
+    font-size: .82rem;
+    font-weight: 600;
+}
+
+.file-upload__list {
+    display: flex;
+    flex-direction: column;
+    margin-top: .65rem;
+}
+
+.file-upload__list:empty {
+    display: none;
+}
+
+.file-upload__item {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    min-width: 0;
+    padding: .65rem 0;
+    border-bottom: var(--bs-border-width) solid var(--bs-border-color);
+}
+
+.file-upload__item:first-child {
+    border-top: var(--bs-border-width) solid var(--bs-border-color);
+}
+
+.file-upload__visual {
+    display: grid;
+    flex: 0 0 48px;
+    width: 48px;
+    height: 48px;
+    place-items: center;
+    overflow: hidden;
+    border-radius: var(--app-radius-sm);
+    color: var(--bs-secondary-color);
+    background: var(--bs-tertiary-bg);
+}
+
+.file-upload__visual img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.file-upload__visual .bi {
+    font-size: 1.4rem;
+}
+
+.file-upload__info {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.file-upload__name {
+    overflow: hidden;
+    font-size: .875rem;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.file-upload__meta,
+.file-upload__validation {
+    margin-top: .15rem;
+    color: var(--bs-secondary-color);
+    font-size: .76rem;
+}
+
+.file-upload__validation {
+    display: flex;
+    align-items: flex-start;
+    gap: .3rem;
+}
+
+.file-upload__item-actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: .15rem;
+}
+
+.file-upload__action {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    min-height: 36px;
+    padding-inline: .45rem;
+    text-decoration: none;
+}
+
+.file-upload__action:hover,
+.file-upload__action:focus-visible {
+    text-decoration: underline;
+}
+
+.file-upload-preview {
+    min-height: min(70vh, 560px);
+}
+
+.file-upload-preview__image {
+    display: block;
+    max-width: 100%;
+    max-height: 70vh;
+    margin: auto;
+    object-fit: contain;
+}
+
+.file-upload-preview__document {
+    width: 100%;
+    min-height: 70vh;
+    border: 0;
+}
+
+.file-upload-preview__text {
+    max-height: 70vh;
+    margin: 0;
+    overflow: auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.file-upload-camera__viewport,
+.file-upload-crop__viewport {
+    display: grid;
+    min-height: 280px;
+    place-items: center;
+    overflow: hidden;
+    border-radius: var(--app-radius-sm);
+    background: var(--bs-dark);
+}
+
+.file-upload-camera__viewport video {
+    display: block;
+    width: 100%;
+    max-height: 65vh;
+    object-fit: contain;
+}
+
+.file-upload-crop__viewport img {
+    display: block;
+    max-width: 100%;
+    max-height: 65vh;
+}
+
+@media (max-width: 575.98px) {
+    .file-picker,
+    .file-picker__actions {
+        align-items: stretch;
+    }
+
+    .file-picker__actions {
+        width: 100%;
+    }
+
+    .file-picker__actions > * {
+        flex: 1 1 auto;
+    }
+
+    .file-picker__status {
+        flex-basis: 100%;
+    }
+
+    .file-upload__item {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .file-upload__info {
+        flex-basis: calc(100% - 64px);
+    }
+
+    .file-upload__item-actions {
+        width: 100%;
+        padding-left: 60px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .file-picker,
+    .file-picker * {
+        transition-duration: .01ms !important;
+    }
 }
 
 .localized-date {

@@ -3,9 +3,11 @@
 namespace App\Services;
 
 use App\Models\Karyawan;
+use App\Models\StoredFile;
 use App\Models\UnitKerja;
 use App\Repositories\KaryawanRepository;
 use App\Support\PerPage;
+use App\Support\PreparedUpload;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +19,8 @@ class KaryawanService
         private KaryawanRepository $karyawanRepository,
         private DokumenKaryawanService $dokumenKaryawanService,
         private TransactionalFileStorage $fileStorage,
+        private StoredFileService $storedFiles,
+        private AsyncUploadService $asyncUploads,
         private DashboardCache $dashboardCache,
     ) {}
 
@@ -35,29 +39,61 @@ class KaryawanService
     public function store(array $data): Karyawan
     {
         $this->ensureRelasiTenantValid($data);
+        $foto = null;
+        $dokumen = [];
 
-        return DB::transaction(function () use ($data) {
-            $dokumenBaris = $this->dokumenTerisi($data);
-            unset($data['dokumen']);
-            $data = $this->simpanFotoKaryawan($data);
-            $karyawan = $this->karyawanRepository->create($data);
+        try {
+            $foto = ($data['foto_karyawan'] ?? null) instanceof UploadedFile
+                ? $this->storedFiles->prepare($data['foto_karyawan'], 'employee_photo')
+                : null;
+            $dokumen = $this->prepareDokumen($data);
+            $dokumenToken = $this->dokumenToken($data);
 
-            $this->simpanDokumen($karyawan, $dokumenBaris);
-            $this->dashboardCache->invalidateAfterCommit();
+            return DB::transaction(function () use ($data, $foto, $dokumen, $dokumenToken) {
+                $fotoToken = $data['foto_karyawan_upload_uuid'] ?? null;
+                unset($data['dokumen'], $data['foto_karyawan'], $data['foto_karyawan_upload_uuid']);
+                $karyawan = $this->karyawanRepository->create($data);
 
-            return $karyawan;
-        });
-    }
+                if ($foto) {
+                    $registry = $this->storedFiles->persist(
+                        $foto,
+                        (int) $karyawan->koperasi_id,
+                        'foto_karyawan',
+                        $karyawan,
+                        auth()->id(),
+                    );
+                    $karyawan = $this->karyawanRepository->update($karyawan, ['foto_karyawan' => $registry->path]);
+                } elseif ($fotoToken) {
+                    $token = StoredFile::query()->where('uuid', $fotoToken)->firstOrFail();
+                    $claimed = $this->asyncUploads->claim(
+                        $token,
+                        $karyawan,
+                        auth()->user(),
+                        'employee_photo',
+                        'foto_karyawan',
+                    );
+                    if ($claimed->isAvailable()) {
+                        $this->storedFiles->syncLegacyOwner($claimed);
+                        $karyawan->refresh();
+                    }
+                }
 
-    private function simpanFotoKaryawan(array $data): array
-    {
-        if (isset($data['foto_karyawan']) && $data['foto_karyawan'] instanceof UploadedFile) {
-            $data['foto_karyawan'] = $this->fileStorage->store('public', 'karyawan-foto', $data['foto_karyawan']);
-        } else {
-            unset($data['foto_karyawan']);
+                foreach ($dokumen as $baris) {
+                    $this->dokumenKaryawanService->storePrepared($karyawan, $baris['upload'], $baris['jenis']);
+                }
+                foreach ($dokumenToken as $baris) {
+                    $this->dokumenKaryawanService->claimUpload($karyawan, $baris['uuid'], $baris['jenis']);
+                }
+                $this->dashboardCache->invalidateAfterCommit();
+
+                return $karyawan;
+            });
+        } finally {
+            $foto?->cleanup();
+            foreach ($dokumen as $baris) {
+                $baris['upload']->cleanup();
+            }
         }
-
-        return $data;
     }
 
     /**
@@ -68,8 +104,50 @@ class KaryawanService
     {
         return array_filter(
             $data['dokumen'] ?? [],
-            fn ($baris) => isset($baris['dokumen']) && $baris['dokumen'] instanceof UploadedFile
+            fn ($baris) => (isset($baris['dokumen']) && $baris['dokumen'] instanceof UploadedFile)
+                || filled($baris['dokumen_upload_uuid'] ?? null)
         );
+    }
+
+    /** @return list<array{jenis:string,upload:PreparedUpload}> */
+    private function prepareDokumen(array $data): array
+    {
+        $prepared = [];
+
+        try {
+            foreach ($this->dokumenTerisi($data) as $baris) {
+                if (! isset($baris['dokumen']) || ! $baris['dokumen'] instanceof UploadedFile) {
+                    continue;
+                }
+                $prepared[] = [
+                    'jenis' => $baris['jenis_dokumen'],
+                    'upload' => $this->storedFiles->prepare($baris['dokumen'], 'business_documents'),
+                ];
+            }
+        } catch (\Throwable $exception) {
+            foreach ($prepared as $baris) {
+                $baris['upload']->cleanup();
+            }
+
+            throw $exception;
+        }
+
+        return $prepared;
+    }
+
+    /** @return list<array{jenis:string,uuid:string}> */
+    private function dokumenToken(array $data): array
+    {
+        return array_values(array_map(
+            fn (array $baris): array => [
+                'jenis' => $baris['jenis_dokumen'],
+                'uuid' => $baris['dokumen_upload_uuid'],
+            ],
+            array_filter(
+                $this->dokumenTerisi($data),
+                fn (array $baris): bool => filled($baris['dokumen_upload_uuid'] ?? null),
+            ),
+        ));
     }
 
     private function simpanDokumen(Karyawan $karyawan, array $dokumenBaris): void
@@ -100,15 +178,15 @@ class KaryawanService
             $karyawans->each(fn (Karyawan $karyawan) => $this->ensureCanDelete($karyawan));
 
             foreach ($karyawans as $karyawan) {
-                $foto = $karyawan->foto_karyawan;
-                $dokumen = $karyawan->dokumen->pluck('path')->all();
+                $this->storedFiles->deleteForOwner($karyawan);
+                $this->fileStorage->deleteAfterCommit('public', $karyawan->foto_karyawan);
+
+                foreach ($karyawan->dokumen as $dokumenRecord) {
+                    $this->storedFiles->deleteForOwner($dokumenRecord);
+                    $this->fileStorage->deleteAfterCommit('local', $dokumenRecord->path);
+                }
 
                 $this->karyawanRepository->delete($karyawan);
-
-                $this->fileStorage->deleteAfterCommit('public', $foto);
-                foreach ($dokumen as $path) {
-                    $this->fileStorage->deleteAfterCommit('local', $path);
-                }
             }
 
             $this->dashboardCache->invalidateAfterCommit();

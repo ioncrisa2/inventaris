@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasStoredFiles;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ProductRequestAttachment extends Model
 {
+    use HasStoredFiles;
+
     protected $fillable = [
         'product_request_id',
         'message_id',

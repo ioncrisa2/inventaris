@@ -100,7 +100,8 @@
                         <div class="col-md-4">
                             <span class="form-label d-block">Logo</span>
                             <x-image-preview :src="$identitasLogoUrl" alt="Logo koperasi" icon="bi-building" size="medium" class="mb-2" />
-                            <x-form.file name="logo" accept="image/*" help="JPG/PNG/WEBP, maks. 2MB. Kosongkan untuk tetap pakai logo saat ini." />
+                            <x-form.file name="logo" policy="logo" />
+                            <div class="form-text">Kosongkan untuk tetap menggunakan logo saat ini.</div>
                         </div>
                     </div>
 

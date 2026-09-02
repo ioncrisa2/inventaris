@@ -105,7 +105,7 @@ test('jenis_dokumen outside the configured list is rejected', function () {
 test('oversized or invalid mime documents are rejected', function () {
     $this->actingAs($this->admin);
 
-    $terlaluBesar = UploadedFile::fake()->create('besar.pdf', 6000, 'application/pdf');
+    $terlaluBesar = UploadedFile::fake()->create('besar.pdf', 20481, 'application/pdf');
 
     $this->post(route('barang.dokumen.store', $this->barang), [
         'jenis_dokumen' => 'Nota Pembelian',

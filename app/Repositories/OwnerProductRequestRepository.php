@@ -40,12 +40,14 @@ class OwnerProductRequestRepository
                     ->withoutGlobalScope(KoperasiScope::class)
                     ->select(['id', 'koperasi_id', 'ticket_number', 'title', 'status']),
                 'initialAttachments:id,product_request_id,message_id,original_name,mime_type,size_bytes,created_at',
+                'initialAttachments.storedFiles:id,uuid,owner_type,owner_id,status,scan_status,failure_code',
                 'messages' => fn ($query) => $query
                     ->select(['id', 'product_request_id', 'author_user_id', 'visibility', 'body', 'created_at', 'updated_at'])
                     ->oldest(),
                 'messages.author:id,name,koperasi_id',
                 'messages.author.roles:id,name,guard_name,koperasi_id',
                 'messages.attachments:id,product_request_id,message_id,original_name,mime_type,size_bytes,created_at',
+                'messages.attachments.storedFiles:id,uuid,owner_type,owner_id,status,scan_status,failure_code',
                 'statusHistories' => fn ($query) => $query
                     ->select(['id', 'product_request_id', 'changed_by', 'from_status', 'to_status', 'reason', 'created_at'])
                     ->oldest('created_at')

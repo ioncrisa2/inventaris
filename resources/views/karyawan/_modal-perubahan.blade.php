@@ -189,9 +189,9 @@
                             <x-form.file
                                 name="foto_karyawan"
                                 label="Ganti Foto Karyawan"
-                                accept="image/jpeg,image/png,image/webp"
-                                help="Opsional. JPG/PNG/WEBP, maks. 2MB. Kosongkan jika foto tidak berubah."
+                                policy="employee_photo"
                             />
+                            <div class="form-text">Kosongkan jika foto tidak berubah.</div>
                         </div>
                     </div>
                 </div>
@@ -338,9 +338,8 @@
         <x-form.file
             name="dokumen_pendukung"
             label="Dokumen Pendukung"
+            policy="business_documents"
             multiple
-            accept=".pdf,.jpg,.jpeg,.png"
-            help="PDF/JPG/PNG, maks. 5MB per file dan maksimal 5 file."
             data-karyawan-change-documents
         />
         <div class="form-text fw-medium" data-karyawan-change-document-requirement></div>

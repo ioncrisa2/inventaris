@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasStoredFiles;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Koperasi extends Model
 {
+    use HasStoredFiles;
+
     protected $table = 'koperasi';
 
     protected $fillable = ['nama', 'expires_at', 'is_active'];

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Pengaturan;
 
+use App\Support\UploadPolicy;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateIdentitasAplikasiRequest extends FormRequest
@@ -16,7 +17,8 @@ class UpdateIdentitasAplikasiRequest extends FormRequest
         return [
             'nama' => ['required', 'string', 'max:255'],
             'alamat' => ['nullable', 'string', 'max:500'],
-            'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'logo' => UploadPolicy::fileRules('logo'),
+            'logo_upload_uuid' => UploadPolicy::tokenRules('logo'),
         ];
     }
 }

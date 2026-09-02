@@ -26,7 +26,7 @@ class ProductRequestService
         return $this->fileStorage->transaction(function () use ($actor, $data): ProductRequest {
             $now = now();
             $productRequest = ProductRequest::query()->create([
-                'ticket_number' => 'TMP-'.Str::uuid(),
+                'ticket_number' => 'TMP-'.Str::lower(Str::random(20)),
                 'koperasi_id' => $actor->koperasi_id,
                 'created_by' => $actor->id,
                 'type' => $data['type'],
@@ -53,11 +53,20 @@ class ProductRequestService
                 'to_status' => ProductRequestStatus::Submitted,
             ]);
 
+            $files = array_values($data['attachments'] ?? []);
+            $tokens = array_values($data['attachments_upload_uuids'] ?? []);
+            $this->attachmentService->assertCapacity($productRequest, $files, $tokens);
             $this->attachmentService->store(
                 $productRequest,
                 null,
                 $actor,
-                array_values($data['attachments'] ?? []),
+                $files,
+            );
+            $this->attachmentService->claimTokens(
+                $productRequest,
+                null,
+                $actor,
+                $tokens,
             );
 
             DB::afterCommit(fn () => ProductRequestActivity::dispatch(
