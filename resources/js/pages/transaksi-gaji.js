@@ -65,32 +65,6 @@ const syncSalaryRow = (row) => {
     });
 };
 
-const syncSalaryListEmptyState = (list) => {
-    const hasRows = Boolean(list.querySelector('[data-salary-list-row]'));
-    list.querySelector('[data-salary-list-empty]')?.classList.toggle('d-none', hasRows);
-};
-
-const addSalaryListRow = (list) => {
-    const template = list.querySelector('[data-salary-list-template]');
-    const rows = list.querySelector('[data-salary-list-rows]');
-    if (!template || !rows) return;
-
-    const index = Number.parseInt(list.dataset.nextIndex || '0', 10);
-    const wrapper = document.createElement('div');
-    wrapper.innerHTML = template.innerHTML.replaceAll('__INDEX__', String(index)).trim();
-    const newRow = wrapper.firstElementChild;
-    if (!newRow) return;
-
-    rows.append(newRow);
-    list.dataset.nextIndex = String(index + 1);
-    syncSalaryListEmptyState(list);
-
-    const salaryRow = list.closest('[data-salary-row]');
-    if (salaryRow) syncSalaryRow(salaryRow);
-
-    newRow.querySelector('input')?.focus();
-};
-
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-salary-calculation-method]').forEach((select) => {
         select.addEventListener('change', () => perbaruiSuffixNilai(select));
@@ -101,24 +75,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const toggle = row.querySelector('[data-salary-row-toggle]');
         toggle?.addEventListener('change', () => syncSalaryRow(row));
         syncSalaryRow(row);
-    });
-
-    document.querySelectorAll('[data-salary-list]').forEach(syncSalaryListEmptyState);
-
-    document.addEventListener('click', (event) => {
-        const addButton = event.target.closest('[data-salary-list-add]');
-        if (addButton) {
-            const list = addButton.closest('[data-salary-list]');
-            if (list) addSalaryListRow(list);
-            return;
-        }
-
-        const removeButton = event.target.closest('[data-salary-list-remove]');
-        if (!removeButton) return;
-
-        const list = removeButton.closest('[data-salary-list]');
-        removeButton.closest('[data-salary-list-row]')?.remove();
-        if (list) syncSalaryListEmptyState(list);
     });
 
     document.querySelectorAll('[data-slip-print-modal]').forEach((modal) => {

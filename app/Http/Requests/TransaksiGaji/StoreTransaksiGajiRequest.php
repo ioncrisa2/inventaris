@@ -57,9 +57,10 @@ class StoreTransaksiGajiRequest extends FormRequest
      * untuk baris yatim yang komponen master-nya sudah dihapus).
      *
      * Baris master mengunci metode ke Komponen Gaji saat ini. Nilai juga
-     * dikunci kecuali untuk metode nominal_tidak_tetap dan
-     * nominal_tetap_list yang memang meminta input per transaksi. Hanya baris
-     * "custom_*" (yatim, tanpa master) yang menerima metode dari client.
+     * dikunci kecuali untuk metode nominal_tidak_tetap yang memang meminta
+     * input per transaksi. Nominal Tetap - List selalu membaca rincian dari
+     * master. Hanya baris "custom_*" (yatim, tanpa master) yang menerima
+     * metode dari client.
      */
     public function after(): array
     {
@@ -88,6 +89,7 @@ class StoreTransaksiGajiRequest extends FormRequest
                 }
 
                 $komponenMasterById = KomponenGaji::query()
+                    ->with('rincian:id,komponen_gaji_id')
                     ->whereKey(array_values(array_unique($masterIds)))
                     ->get()
                     ->keyBy(fn (KomponenGaji $komponen) => (int) $komponen->id);
@@ -132,8 +134,8 @@ class StoreTransaksiGajiRequest extends FormRequest
                             continue;
                         }
 
-                        if ($komponenMaster->metode_perhitungan === 'nominal_tetap_list'
-                            && ! $this->validasiRincianNominal($validator, $kunci, $row)) {
+                        if ($komponenMaster->metode_perhitungan === KomponenGaji::METODE_DAFTAR_TETAP
+                            && ! $this->validasiPilihanRincian($validator, $kunci, $row, $komponenMaster)) {
                             continue;
                         }
 
@@ -262,52 +264,40 @@ class StoreTransaksiGajiRequest extends FormRequest
         return true;
     }
 
-    private function validasiRincianNominal(Validator $validator, string $kunci, array $row): bool
-    {
-        $rincian = $row['rincian'] ?? null;
+    private function validasiPilihanRincian(
+        Validator $validator,
+        string $kunci,
+        array $row,
+        KomponenGaji $komponenGaji,
+    ): bool {
+        $rincianIds = $row['rincian_ids'] ?? null;
 
-        if (! is_array($rincian) || $rincian === []) {
-            $validator->errors()->add("baris.{$kunci}.rincian", 'Tambahkan minimal satu rincian keterangan dan nominal.');
+        if (! is_array($rincianIds) || $rincianIds === [] || count($rincianIds) > 100) {
+            $validator->errors()->add(
+                "baris.{$kunci}.rincian_ids",
+                'Pilih minimal satu rincian tetap dari komponen ini.',
+            );
 
             return false;
         }
 
-        if (count($rincian) > 100) {
-            $validator->errors()->add("baris.{$kunci}.rincian", 'Maksimal 100 rincian dalam satu komponen.');
+        $ids = collect($rincianIds)
+            ->filter(fn ($id) => filter_var($id, FILTER_VALIDATE_INT) !== false && (int) $id > 0)
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+        $idsValid = $komponenGaji->rincian->pluck('id');
+
+        if ($ids->count() !== count($rincianIds) || $ids->diff($idsValid)->isNotEmpty()) {
+            $validator->errors()->add(
+                "baris.{$kunci}.rincian_ids",
+                'Pilihan rincian tidak valid atau bukan milik komponen ini.',
+            );
 
             return false;
         }
 
-        $valid = true;
-
-        foreach ($rincian as $index => $item) {
-            if (! is_array($item)) {
-                $validator->errors()->add("baris.{$kunci}.rincian.{$index}", 'Format rincian tidak valid.');
-                $valid = false;
-
-                continue;
-            }
-
-            $keterangan = trim((string) ($item['keterangan'] ?? ''));
-
-            if ($keterangan === '') {
-                $validator->errors()->add("baris.{$kunci}.rincian.{$index}.keterangan", 'Keterangan wajib diisi.');
-                $valid = false;
-            } elseif (mb_strlen($keterangan) > 255) {
-                $validator->errors()->add("baris.{$kunci}.rincian.{$index}.keterangan", 'Keterangan maksimal 255 karakter.');
-                $valid = false;
-            }
-
-            if (Decimal15Two::normalizeNonNegative($item['nominal'] ?? null) === null) {
-                $validator->errors()->add(
-                    "baris.{$kunci}.rincian.{$index}.nominal",
-                    'Nominal wajib berupa angka non-negatif, maksimal 13 digit dan 2 angka pecahan.',
-                );
-                $valid = false;
-            }
-        }
-
-        return $valid;
+        return true;
     }
 
     /**

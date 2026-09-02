@@ -63,6 +63,10 @@ class KomponenGajiController extends Controller
      */
     public function edit(KomponenGaji $komponenGaji)
     {
+        $komponenGaji->load([
+            'rincian' => fn ($query) => $query->orderBy('urutan')->orderBy('id'),
+        ]);
+
         return view('komponen-gaji.form', compact('komponenGaji'));
     }
 

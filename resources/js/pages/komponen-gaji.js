@@ -7,21 +7,42 @@ const initializeSalaryComponentForm = (formRoot) => {
     const help = formRoot.querySelector('[data-component-default-help]');
     const transactionNote = formRoot.querySelector('[data-component-transaction-note]');
     const transactionNoteText = formRoot.querySelector('[data-component-transaction-note-text]');
+    const fixedList = formRoot.querySelector('[data-component-fixed-list]');
 
-    if (!method || !valueGroup || !prefix || !suffix || !input || !help || !transactionNote || !transactionNoteText) return;
+    if (!method || !valueGroup || !prefix || !suffix || !input || !help || !transactionNote || !transactionNoteText || !fixedList) return;
+
+    const syncFixedListEmptyState = () => {
+        const hasRows = Boolean(fixedList.querySelector('[data-component-fixed-list-row]'));
+        fixedList.querySelector('[data-component-fixed-list-empty]')?.classList.toggle('d-none', hasRows);
+    };
+
+    const syncFixedListControls = (isActive) => {
+        fixedList.querySelectorAll('[data-component-fixed-list-rows] input, [data-component-fixed-list-rows] button, [data-component-fixed-list-add]').forEach((control) => {
+            control.disabled = !isActive;
+
+            if (control.matches('input')) {
+                control.required = isActive;
+            }
+        });
+    };
 
     const sync = () => {
-        const isTransactionInput = ['nominal_tidak_tetap', 'nominal_tetap_list'].includes(method.value);
+        const isTransactionInput = method.value === 'nominal_tidak_tetap';
+        const isFixedList = method.value === 'nominal_tetap_list';
 
-        valueGroup.classList.toggle('d-none', isTransactionInput);
+        valueGroup.classList.toggle('d-none', isTransactionInput || isFixedList);
         transactionNote.classList.toggle('d-none', !isTransactionInput);
-        input.disabled = isTransactionInput;
-        input.required = !isTransactionInput;
+        fixedList.classList.toggle('d-none', !isFixedList);
+        input.disabled = isTransactionInput || isFixedList;
+        input.required = !isTransactionInput && !isFixedList;
+        syncFixedListControls(isFixedList);
 
         if (isTransactionInput) {
-            transactionNoteText.textContent = method.value === 'nominal_tetap_list'
-                ? 'Saat transaksi gaji, petugas akan mengisi satu atau beberapa baris yang masing-masing berisi keterangan dan nominal.'
-                : 'Saat transaksi gaji, petugas wajib mengisi nominal komponen ini secara manual.';
+            transactionNoteText.textContent = 'Saat transaksi gaji, petugas wajib mengisi nominal komponen ini secara manual.';
+            return;
+        }
+
+        if (isFixedList) {
             return;
         }
 
@@ -54,6 +75,35 @@ const initializeSalaryComponentForm = (formRoot) => {
     };
 
     method.addEventListener('change', sync);
+
+    fixedList.addEventListener('click', (event) => {
+        const addButton = event.target.closest('[data-component-fixed-list-add]');
+        if (addButton) {
+            const template = fixedList.querySelector('[data-component-fixed-list-template]');
+            const rows = fixedList.querySelector('[data-component-fixed-list-rows]');
+            if (!template || !rows) return;
+
+            const index = Number.parseInt(fixedList.dataset.nextIndex || '0', 10);
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = template.innerHTML.replaceAll('__INDEX__', String(index)).trim();
+            const newRow = wrapper.firstElementChild;
+            if (!newRow) return;
+
+            rows.append(newRow);
+            fixedList.dataset.nextIndex = String(index + 1);
+            syncFixedListEmptyState();
+            newRow.querySelector('input')?.focus();
+            return;
+        }
+
+        const removeButton = event.target.closest('[data-component-fixed-list-remove]');
+        if (!removeButton) return;
+
+        removeButton.closest('[data-component-fixed-list-row]')?.remove();
+        syncFixedListEmptyState();
+    });
+
+    syncFixedListEmptyState();
     sync();
 };
 

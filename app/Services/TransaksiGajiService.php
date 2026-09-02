@@ -296,9 +296,9 @@ class TransaksiGajiService
             $komponenGajiId = $komponen->id;
             // Baris master tidak boleh dikunci nilainya dari client: metode &
             // nilai selalu diambil dari Komponen Gaji saat ini, bukan dari
-            // $row. Pengecualian: metode nominal input, rincian list, rentang
-            // tanggal per_hari, serta jumlah hari/pengali memang input
-            // per-transaksi dan hanya tersedia dari $row.
+            // $row. Pengecualian: nominal tidak tetap, rentang tanggal
+            // per_hari, serta jumlah hari/pengali memang input per-transaksi.
+            // Rincian nominal tetap list selalu berasal dari master komponen.
             $metode = $komponen->metode_perhitungan;
             $nilai = $metode === 'nominal_tidak_tetap'
                 ? Decimal15Two::normalizeNonNegative($row['nilai'] ?? null)
@@ -310,9 +310,15 @@ class TransaksiGajiService
             $jumlahPengali = $row['jumlah_pengali'] ?? null;
 
             if ($metode === 'nominal_tetap_list') {
+                $rincianIds = collect($row['rincian_ids'] ?? [])
+                    ->map(fn ($id) => (int) $id)
+                    ->unique()
+                    ->values();
+
                 return $this->siapkanRincianNominalList(
                     $kunci,
-                    $row['rincian'] ?? null,
+                    $komponen->rincian->whereIn('id', $rincianIds),
+                    $rincianIds->count(),
                     $komponenGajiId,
                     $namaSnapshot,
                     $jenisSnapshot,
@@ -474,27 +480,28 @@ class TransaksiGajiService
 
     private function siapkanRincianNominalList(
         string $kunci,
-        mixed $rincian,
+        Collection $rincian,
+        int $jumlahPilihan,
         int $komponenGajiId,
         string $namaSnapshot,
         string $jenisSnapshot,
         string $gajiPokok,
     ): array {
-        if (! is_array($rincian) || $rincian === [] || count($rincian) > 100) {
+        if ($rincian->isEmpty() || $rincian->count() > 100 || $rincian->count() !== $jumlahPilihan) {
             throw ValidationException::withMessages([
-                "baris.{$kunci}.rincian" => 'Rincian komponen wajib berisi 1 sampai 100 baris.',
+                "baris.{$kunci}.rincian_ids" => 'Pilih minimal satu rincian tetap yang masih tersedia.',
             ]);
         }
 
         $hasil = [];
 
         foreach ($rincian as $index => $item) {
-            $keterangan = is_array($item) ? trim((string) ($item['keterangan'] ?? '')) : '';
-            $nilai = is_array($item) ? Decimal15Two::normalizeNonNegative($item['nominal'] ?? null) : null;
+            $keterangan = trim((string) $item->keterangan);
+            $nilai = Decimal15Two::normalizeNonNegative($item->nominal);
 
             if ($keterangan === '' || mb_strlen($keterangan) > 255 || $nilai === null) {
                 throw ValidationException::withMessages([
-                    "baris.{$kunci}.rincian.{$index}" => 'Keterangan atau nominal rincian tidak valid.',
+                    "baris.{$kunci}" => 'Keterangan atau nominal rincian master tidak valid.',
                 ]);
             }
 
@@ -578,10 +585,14 @@ class TransaksiGajiService
             $kunci = "master_{$komponen->id}";
             $details = $detailByKomponen->get($komponen->id, collect());
             $detail = $details->first();
-            $rincianTersimpan = $details
+            $rincianMaster = $komponen->rincian
                 ->map(fn ($item) => [
-                    'keterangan' => $item->keterangan_snapshot,
-                    'nominal' => (string) $item->nilai_snapshot,
+                    'id' => $item->id,
+                    'keterangan' => $item->keterangan,
+                    'nominal' => (string) $item->nominal,
+                    'checked' => $oldBaris !== null
+                        ? collect(data_get($oldBaris, "{$kunci}.rincian_ids", []))->contains(fn ($id) => (int) $id === $item->id)
+                        : $details->contains(fn ($detail) => $detail->keterangan_snapshot === $item->keterangan),
                 ])
                 ->values()
                 ->all();
@@ -601,9 +612,9 @@ class TransaksiGajiService
                         ? $detail?->nilai_snapshot
                         : (string) $komponen->nilai_default),
                 'keterangan' => null,
-                'rincian' => $oldBaris !== null
-                    ? data_get($oldBaris, "{$kunci}.rincian", [])
-                    : $rincianTersimpan,
+                'rincian' => $komponen->metode_perhitungan === KomponenGaji::METODE_DAFTAR_TETAP
+                    ? $rincianMaster
+                    : [],
                 'tanggal_awal' => $oldBaris !== null
                     ? data_get($oldBaris, "{$kunci}.tanggal_awal")
                     : $detail?->tanggal_awal_snapshot?->format('Y-m-d'),

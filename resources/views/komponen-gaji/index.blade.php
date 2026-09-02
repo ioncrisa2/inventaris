@@ -107,11 +107,14 @@
                                 @elseif($data->metode_perhitungan === 'nominal_tidak_tetap')
                                     <span class="text-body-secondary small">(nominal diisi saat transaksi dibuat)</span>
                                 @elseif($data->metode_perhitungan === 'nominal_tetap_list')
-                                    <span class="text-body-secondary small">(keterangan dan nominal diisi sebagai daftar saat transaksi dibuat)</span>
+                                    <span class="text-body-secondary small">(daftar tetap dari master komponen)</span>
                                 @endif
                             </td>
                             <td class="text-end">
-                                @if(in_array($data->metode_perhitungan, \App\Models\KomponenGaji::METODE_INPUT_TRANSAKSI, true))
+                                @if($data->metode_perhitungan === \App\Models\KomponenGaji::METODE_DAFTAR_TETAP)
+                                    {{ $data->rincian_count }} rincian
+                                    <span class="text-body-secondary small d-block">Total Rp {{ number_format($data->total_rincian_nominal ?? 0, 0, ',', '.') }}</span>
+                                @elseif(in_array($data->metode_perhitungan, \App\Models\KomponenGaji::METODE_INPUT_TRANSAKSI, true))
                                     <span class="text-body-secondary">Diisi saat transaksi</span>
                                 @elseif(in_array($data->metode_perhitungan, ['persentase', 'persentase_pengali'], true))
                                     {{ rtrim(rtrim($data->nilai_default, '0'), '.') }}%

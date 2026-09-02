@@ -22,18 +22,24 @@ class KomponenGajiService
 
     public function store(array $data): KomponenGaji
     {
-        return DB::transaction(
-            fn () => $this->komponenGajiRepository->create($this->withDasarPersentase($data)),
-            3,
-        );
+        return DB::transaction(function () use ($data) {
+            [$atribut, $rincian] = $this->siapkanData($data);
+            $komponenGaji = $this->komponenGajiRepository->create($atribut);
+            $this->komponenGajiRepository->replaceRincian($komponenGaji, $rincian);
+
+            return $komponenGaji;
+        }, 3);
     }
 
     public function update(KomponenGaji $komponenGaji, array $data): KomponenGaji
     {
-        return DB::transaction(
-            fn () => $this->komponenGajiRepository->update($komponenGaji, $this->withDasarPersentase($data)),
-            3,
-        );
+        return DB::transaction(function () use ($komponenGaji, $data) {
+            [$atribut, $rincian] = $this->siapkanData($data);
+            $komponenGaji = $this->komponenGajiRepository->update($komponenGaji, $atribut);
+            $this->komponenGajiRepository->replaceRincian($komponenGaji, $rincian);
+
+            return $komponenGaji;
+        }, 3);
     }
 
     public function destroy(KomponenGaji $komponenGaji): void
@@ -73,19 +79,36 @@ class KomponenGajiService
     /**
      * dasar_persentase tidak diambil dari input pengguna: nilainya ditentukan
      * otomatis dari metode_perhitungan supaya konsisten ("gaji_pokok" untuk
-     * persentase, kosong untuk metode nominal). Metode yang nilainya diisi
-     * saat transaksi tidak menyimpan nilai default yang menyesatkan.
+     * persentase, kosong untuk metode nominal). Metode yang tidak memakai
+     * satu nilai default menyimpan nilai_default nol agar kolom tetap konsisten.
      */
-    private function withDasarPersentase(array $data): array
+    private function siapkanData(array $data): array
     {
+        $rincianInput = $data['rincian'] ?? [];
+        unset($data['rincian']);
+
         $data['dasar_persentase'] = in_array($data['metode_perhitungan'], ['persentase', 'persentase_pengali'], true)
             ? 'gaji_pokok'
             : null;
 
-        if (in_array($data['metode_perhitungan'], KomponenGaji::METODE_INPUT_TRANSAKSI, true)) {
+        if (in_array($data['metode_perhitungan'], [
+            ...KomponenGaji::METODE_INPUT_TRANSAKSI,
+            KomponenGaji::METODE_DAFTAR_TETAP,
+        ], true)) {
             $data['nilai_default'] = '0';
         }
 
-        return $data;
+        $rincian = $data['metode_perhitungan'] === KomponenGaji::METODE_DAFTAR_TETAP
+            ? collect($rincianInput)
+                ->values()
+                ->map(fn (array $item, int $index) => [
+                    'keterangan' => trim($item['keterangan']),
+                    'nominal' => $item['nominal'],
+                    'urutan' => $index,
+                ])
+                ->all()
+            : [];
+
+        return [$data, $rincian];
     }
 }

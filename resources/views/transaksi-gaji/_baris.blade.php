@@ -2,12 +2,6 @@
     $idAwalan = 'baris_'.$baris['kunci'];
     $namaField = "baris[{$baris['kunci']}]";
     $rincian = collect($baris['rincian'] ?? []);
-
-    if ($baris['metode'] === 'nominal_tetap_list' && $rincian->isEmpty()) {
-        $rincian = collect([['keterangan' => '', 'nominal' => '']]);
-    }
-
-    $nextRincianIndex = ((int) ($rincian->keys()->max() ?? -1)) + 1;
 @endphp
 <tr data-salary-row>
     <td class="align-top pt-3">
@@ -109,90 +103,25 @@
                 @error("baris.{$baris['kunci']}.nilai")<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                 <div class="form-text">Isi nominal yang berlaku khusus untuk transaksi ini.</div>
             @elseif($baris['metode'] === 'nominal_tetap_list')
-                <div
-                    data-salary-list
-                    data-next-index="{{ $nextRincianIndex }}"
-                >
-                    <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
-                        <span class="small fw-semibold">Rincian Nominal</span>
-                        <button type="button" class="btn btn-sm btn-outline-primary" data-salary-list-add>
-                            <i class="bi bi-plus-lg" aria-hidden="true"></i>
-                            Tambah Rincian
-                        </button>
-                    </div>
-
-                    <div class="d-grid gap-2" data-salary-list-rows>
-                        @foreach($rincian as $rincianIndex => $item)
-                            <div class="border rounded p-2" data-salary-list-row>
-                                <div class="row g-2 align-items-end">
-                                    <div class="col-lg-6">
-                                        <label for="{{ $idAwalan }}_rincian_{{ $rincianIndex }}_keterangan" class="form-label small mb-1">Keterangan</label>
-                                        <input
-                                            type="text"
-                                            name="{{ $namaField }}[rincian][{{ $rincianIndex }}][keterangan]"
-                                            id="{{ $idAwalan }}_rincian_{{ $rincianIndex }}_keterangan"
-                                            class="form-control form-control-sm @error("baris.{$baris['kunci']}.rincian.{$rincianIndex}.keterangan") is-invalid @enderror"
-                                            value="{{ $item['keterangan'] ?? '' }}"
-                                            maxlength="255"
-                                            placeholder="Contoh: Laki-laki"
-                                        >
-                                        @error("baris.{$baris['kunci']}.rincian.{$rincianIndex}.keterangan")<div class="invalid-feedback">{{ $message }}</div>@enderror
-                                    </div>
-                                    <div class="col-lg-5">
-                                        <label for="{{ $idAwalan }}_rincian_{{ $rincianIndex }}_nominal" class="form-label small mb-1">Nominal</label>
-                                        <div class="input-group input-group-sm">
-                                            <span class="input-group-text">Rp</span>
-                                            <input
-                                                type="number"
-                                                name="{{ $namaField }}[rincian][{{ $rincianIndex }}][nominal]"
-                                                id="{{ $idAwalan }}_rincian_{{ $rincianIndex }}_nominal"
-                                                class="form-control @error("baris.{$baris['kunci']}.rincian.{$rincianIndex}.nominal") is-invalid @enderror"
-                                                value="{{ $item['nominal'] ?? '' }}"
-                                                min="0"
-                                                step="0.01"
-                                                placeholder="0"
-                                            >
-                                        </div>
-                                        @error("baris.{$baris['kunci']}.rincian.{$rincianIndex}.nominal")<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-                                    </div>
-                                    <div class="col-lg-1 d-grid">
-                                        <button type="button" class="btn btn-sm btn-outline-danger" data-salary-list-remove aria-label="Hapus rincian">
-                                            <i class="bi bi-trash" aria-hidden="true"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-
-                    <p class="form-text mb-0 mt-2 {{ $rincian->isEmpty() ? '' : 'd-none' }}" data-salary-list-empty>
-                        Belum ada rincian. Tambahkan minimal satu baris saat komponen digunakan.
-                    </p>
-                    @error("baris.{$baris['kunci']}.rincian")<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-
-                    <template data-salary-list-template>
-                        <div class="border rounded p-2" data-salary-list-row>
-                            <div class="row g-2 align-items-end">
-                                <div class="col-lg-6">
-                                    <label for="{{ $idAwalan }}_rincian___INDEX___keterangan" class="form-label small mb-1">Keterangan</label>
-                                    <input type="text" name="{{ $namaField }}[rincian][__INDEX__][keterangan]" id="{{ $idAwalan }}_rincian___INDEX___keterangan" class="form-control form-control-sm" maxlength="255" placeholder="Contoh: Perempuan">
-                                </div>
-                                <div class="col-lg-5">
-                                    <label for="{{ $idAwalan }}_rincian___INDEX___nominal" class="form-label small mb-1">Nominal</label>
-                                    <div class="input-group input-group-sm">
-                                        <span class="input-group-text">Rp</span>
-                                        <input type="number" name="{{ $namaField }}[rincian][__INDEX__][nominal]" id="{{ $idAwalan }}_rincian___INDEX___nominal" class="form-control" min="0" step="0.01" placeholder="0">
-                                    </div>
-                                </div>
-                                <div class="col-lg-1 d-grid">
-                                    <button type="button" class="btn btn-sm btn-outline-danger" data-salary-list-remove aria-label="Hapus rincian">
-                                        <i class="bi bi-trash" aria-hidden="true"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </template>
-                </div>
+                <span class="small fw-semibold d-block mb-1">Pilih Rincian Tetap</span>
+                @forelse($rincian as $item)
+                    <label class="d-flex align-items-start gap-2 py-2 border-bottom small">
+                        <input
+                            type="checkbox"
+                            class="form-check-input mt-0"
+                            name="{{ $namaField }}[rincian_ids][]"
+                            value="{{ $item['id'] }}"
+                            @checked($item['checked'])
+                        >
+                        <span class="d-flex justify-content-between gap-3 flex-grow-1">
+                            <span>{{ $item['keterangan'] }}</span>
+                            <span class="text-nowrap">Rp {{ number_format($item['nominal'], 0, ',', '.') }}</span>
+                        </span>
+                    </label>
+                @empty
+                    <span class="text-danger small">Belum ada rincian. Edit Komponen Gaji terlebih dahulu.</span>
+                @endforelse
+                @error("baris.{$baris['kunci']}.rincian_ids")<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
             @elseif($baris['metode'] === 'persentase')
                 {{ rtrim(rtrim($baris['nilai'], '0'), '.') }}%
             @elseif($baris['metode'] === 'persentase_pengali')

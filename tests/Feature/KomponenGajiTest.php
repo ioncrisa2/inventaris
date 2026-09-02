@@ -16,6 +16,7 @@ test('tambah dan edit komponen gaji menggunakan halaman khusus', function () {
         ->assertSee('Simpan Komponen')
         ->assertSee('Nominal Tidak Tetap')
         ->assertSee('Nominal Tetap - List')
+        ->assertSee('data-component-fixed-list', false)
         ->assertDontSee('Harian (Sehari)');
 
     $komponen = KomponenGaji::create([
@@ -96,20 +97,102 @@ test('komponen persentase dengan pengali dapat dibuat', function () {
     ]);
 });
 
-test('metode nominal input transaksi disimpan tanpa nilai default', function (string $metode) {
+test('metode nominal input transaksi disimpan tanpa nilai default', function () {
     $this->post(route('komponen-gaji.store'), [
-        'nama_komponen' => 'Komponen '.$metode,
+        'nama_komponen' => 'Bonus Tidak Tetap',
         'jenis' => 'Tunjangan',
-        'metode_perhitungan' => $metode,
+        'metode_perhitungan' => 'nominal_tidak_tetap',
     ])->assertRedirect(route('komponen-gaji.index'));
 
     $this->assertDatabaseHas('komponen_gaji', [
-        'nama_komponen' => 'Komponen '.$metode,
-        'metode_perhitungan' => $metode,
+        'nama_komponen' => 'Bonus Tidak Tetap',
+        'metode_perhitungan' => 'nominal_tidak_tetap',
         'nilai_default' => 0,
         'dasar_persentase' => null,
     ]);
-})->with(['nominal_tidak_tetap', 'nominal_tetap_list']);
+});
+
+test('nominal tetap list menyimpan repeater pada master dan dapat diperbarui', function () {
+    $this->post(route('komponen-gaji.store'), [
+        'nama_komponen' => 'Tunjangan Beras',
+        'jenis' => 'Tunjangan',
+        'metode_perhitungan' => 'nominal_tetap_list',
+        'rincian' => [
+            ['keterangan' => 'Laki-laki', 'nominal' => 150000],
+            ['keterangan' => 'Perempuan', 'nominal' => 125000],
+        ],
+    ])->assertRedirect(route('komponen-gaji.index'));
+
+    $komponen = KomponenGaji::where('nama_komponen', 'Tunjangan Beras')->firstOrFail();
+
+    expect((string) $komponen->nilai_default)->toBe('0.00')
+        ->and($komponen->rincian()->orderBy('urutan')->pluck('keterangan')->all())
+        ->toBe(['Laki-laki', 'Perempuan']);
+
+    $this->assertDatabaseHas('komponen_gaji_rincian', [
+        'komponen_gaji_id' => $komponen->id,
+        'keterangan' => 'Laki-laki',
+        'nominal' => 150000,
+        'urutan' => 0,
+    ]);
+
+    $this->get(route('komponen-gaji.edit', $komponen))
+        ->assertOk()
+        ->assertSee('Laki-laki')
+        ->assertSee('value="150000.00"', false);
+
+    $this->put(route('komponen-gaji.update', $komponen), [
+        'nama_komponen' => 'Tunjangan Beras',
+        'jenis' => 'Tunjangan',
+        'metode_perhitungan' => 'nominal_tetap_list',
+        'rincian' => [
+            ['keterangan' => 'Semua Karyawan', 'nominal' => 175000],
+        ],
+    ])->assertRedirect(route('komponen-gaji.index'));
+
+    expect($komponen->rincian()->count())->toBe(1);
+    $this->assertDatabaseHas('komponen_gaji_rincian', [
+        'komponen_gaji_id' => $komponen->id,
+        'keterangan' => 'Semua Karyawan',
+        'nominal' => 175000,
+        'urutan' => 0,
+    ]);
+    $this->assertDatabaseMissing('komponen_gaji_rincian', [
+        'komponen_gaji_id' => $komponen->id,
+        'keterangan' => 'Laki-laki',
+    ]);
+});
+
+test('nominal tetap list wajib memiliki rincian master yang lengkap', function () {
+    $payload = [
+        'nama_komponen' => 'Tunjangan Beras',
+        'jenis' => 'Tunjangan',
+        'metode_perhitungan' => 'nominal_tetap_list',
+    ];
+
+    $this->post(route('komponen-gaji.store'), $payload)
+        ->assertSessionHasErrors('rincian');
+
+    $this->post(route('komponen-gaji.store'), [
+        ...$payload,
+        'rincian' => [
+            ['keterangan' => '', 'nominal' => 'tidak-valid'],
+        ],
+    ])->assertSessionHasErrors([
+        'rincian.0.keterangan',
+        'rincian.0.nominal',
+    ]);
+
+    $this->post(route('komponen-gaji.store'), [
+        ...$payload,
+        'rincian' => [
+            ['keterangan' => 'Laki-laki', 'nominal' => 150000],
+            ['keterangan' => ' laki-laki ', 'nominal' => 125000],
+        ],
+    ])->assertSessionHasErrors('rincian.1.keterangan');
+
+    $this->assertDatabaseMissing('komponen_gaji', ['nama_komponen' => 'Tunjangan Beras']);
+});
 
 test('metode harian sehari tidak lagi diterima', function () {
     $this->post(route('komponen-gaji.store'), [

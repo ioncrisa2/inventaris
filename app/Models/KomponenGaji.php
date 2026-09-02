@@ -21,8 +21,9 @@ class KomponenGaji extends Model
 
     public const METODE_INPUT_TRANSAKSI = [
         'nominal_tidak_tetap',
-        'nominal_tetap_list',
     ];
+
+    public const METODE_DAFTAR_TETAP = 'nominal_tetap_list';
 
     protected $table = 'komponen_gaji';
 
@@ -41,5 +42,10 @@ class KomponenGaji extends Model
     public function transaksiGajiDetails()
     {
         return $this->hasMany(TransaksiGajiDetail::class);
+    }
+
+    public function rincian()
+    {
+        return $this->hasMany(KomponenGajiRincian::class);
     }
 }

@@ -1058,13 +1058,17 @@ test('nominal tidak tetap wajib diisi dan disimpan dari input transaksi', functi
     ]);
 });
 
-test('nominal tetap list menyimpan setiap rincian dan memuatnya kembali saat edit', function () {
+test('nominal tetap list memakai rincian master yang dipilih dan mengabaikan nominal kiriman client', function () {
     $tunjanganBeras = KomponenGaji::create([
         'nama_komponen' => 'Tunjangan Beras',
         'jenis' => 'Tunjangan',
         'metode_perhitungan' => 'nominal_tetap_list',
         'nilai_default' => 0,
         'dasar_persentase' => null,
+    ]);
+    $rincianAwal = $tunjanganBeras->rincian()->createMany([
+        ['keterangan' => 'Laki-laki', 'nominal' => 150000, 'urutan' => 0],
+        ['keterangan' => 'Perempuan', 'nominal' => 125000, 'urutan' => 1],
     ]);
 
     $response = $this->post(route('transaksi-gaji.store'), [
@@ -1074,9 +1078,11 @@ test('nominal tetap list menyimpan setiap rincian dan memuatnya kembali saat edi
         'baris' => [
             "master_{$tunjanganBeras->id}" => [
                 'pakai' => '1',
+                'rincian_ids' => [$rincianAwal->first()->id],
+                // Payload rincian dari client harus diabaikan; sumber nilai
+                // selalu master Komponen Gaji.
                 'rincian' => [
-                    ['keterangan' => 'Laki-laki', 'nominal' => 150000],
-                    ['keterangan' => 'Perempuan', 'nominal' => 125000],
+                    ['keterangan' => 'Manipulasi', 'nominal' => 9999999],
                 ],
             ],
         ],
@@ -1085,8 +1091,8 @@ test('nominal tetap list menyimpan setiap rincian dan memuatnya kembali saat edi
     $transaksi = TransaksiGaji::firstOrFail();
     $response->assertRedirect(route('transaksi-gaji.show', $transaksi));
 
-    expect((string) $transaksi->gaji_bersih)->toBe('5275000.00')
-        ->and($transaksi->details()->where('komponen_gaji_id', $tunjanganBeras->id)->count())->toBe(2);
+    expect((string) $transaksi->gaji_bersih)->toBe('5150000.00')
+        ->and($transaksi->details()->where('komponen_gaji_id', $tunjanganBeras->id)->count())->toBe(1);
 
     $this->assertDatabaseHas('transaksi_gaji_detail', [
         'transaksi_gaji_id' => $transaksi->id,
@@ -1096,26 +1102,29 @@ test('nominal tetap list menyimpan setiap rincian dan memuatnya kembali saat edi
         'nilai_snapshot' => 150000,
         'nominal_hasil' => 150000,
     ]);
-    $this->assertDatabaseHas('transaksi_gaji_detail', [
+    $this->assertDatabaseMissing('transaksi_gaji_detail', [
         'transaksi_gaji_id' => $transaksi->id,
         'komponen_gaji_id' => $tunjanganBeras->id,
         'keterangan_snapshot' => 'Perempuan',
-        'nilai_snapshot' => 125000,
-        'nominal_hasil' => 125000,
     ]);
 
     $this->get(route('transaksi-gaji.edit', $transaksi))
         ->assertOk()
         ->assertSee('Laki-laki')
         ->assertSee('Perempuan')
-        ->assertSee('value="150000.00"', false)
-        ->assertSee('value="125000.00"', false);
+        ->assertSee("baris[master_{$tunjanganBeras->id}][rincian_ids][]", false);
 
     $this->get(route('transaksi-gaji.show', $transaksi))
         ->assertOk()
         ->assertSee('Tunjangan Beras')
         ->assertSee('Laki-laki')
-        ->assertSee('Perempuan');
+        ->assertDontSee('Perempuan');
+
+    $tunjanganBeras->rincian()->delete();
+    $rincianBaru = $tunjanganBeras->rincian()->createMany([
+        ['keterangan' => 'Laki-laki', 'nominal' => 175000, 'urutan' => 0],
+        ['keterangan' => 'Perempuan', 'nominal' => 130000, 'urutan' => 1],
+    ]);
 
     $this->put(route('transaksi-gaji.update', $transaksi), [
         'karyawan_id' => $this->karyawan->id,
@@ -1124,10 +1133,7 @@ test('nominal tetap list menyimpan setiap rincian dan memuatnya kembali saat edi
         'baris' => [
             "master_{$tunjanganBeras->id}" => [
                 'pakai' => '1',
-                'rincian' => [
-                    ['keterangan' => 'Laki-laki', 'nominal' => 175000],
-                    ['keterangan' => 'Perempuan', 'nominal' => 130000],
-                ],
+                'rincian_ids' => $rincianBaru->pluck('id')->all(),
             ],
         ],
     ])->assertRedirect(route('transaksi-gaji.show', $transaksi));
@@ -1142,7 +1148,7 @@ test('nominal tetap list menyimpan setiap rincian dan memuatnya kembali saat edi
     ]);
 });
 
-test('nominal tetap list menolak rincian kosong atau tidak lengkap', function () {
+test('nominal tetap list menolak master yang belum memiliki rincian', function () {
     $tunjanganBeras = KomponenGaji::create([
         'nama_komponen' => 'Tunjangan Beras',
         'jenis' => 'Tunjangan',
@@ -1158,17 +1164,11 @@ test('nominal tetap list menolak rincian kosong atau tidak lengkap', function ()
             'baris' => [
                 "master_{$tunjanganBeras->id}" => [
                     'pakai' => '1',
-                    'rincian' => [
-                        ['keterangan' => '', 'nominal' => 'tidak-valid'],
-                    ],
                 ],
             ],
         ])
         ->assertRedirect(route('transaksi-gaji.create'))
-        ->assertSessionHasErrors([
-            "baris.master_{$tunjanganBeras->id}.rincian.0.keterangan",
-            "baris.master_{$tunjanganBeras->id}.rincian.0.nominal",
-        ]);
+        ->assertSessionHasErrors("baris.master_{$tunjanganBeras->id}.rincian_ids");
 
     expect(TransaksiGaji::count())->toBe(0);
 });

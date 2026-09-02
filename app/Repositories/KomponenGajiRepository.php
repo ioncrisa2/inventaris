@@ -15,6 +15,8 @@ class KomponenGajiRepository
     {
         return KomponenGaji::query()
             ->with('koperasi:id,nama')
+            ->withCount('rincian')
+            ->withSum('rincian as total_rincian_nominal', 'nominal')
             ->when($filters['koperasi_id'] ?? null, fn ($query, $koperasiId) => $query->where('koperasi_id', $koperasiId))
             ->when($filters['search'] ?? null, function ($query, $search) {
                 $query->where('nama_komponen', 'like', '%'.$search.'%');
@@ -30,7 +32,9 @@ class KomponenGajiRepository
 
     public function orderedList(): Collection
     {
-        return KomponenGaji::orderBy('jenis')->orderBy('nama_komponen')->get();
+        return KomponenGaji::with([
+            'rincian' => fn ($query) => $query->orderBy('urutan')->orderBy('id'),
+        ])->orderBy('jenis')->orderBy('nama_komponen')->get();
     }
 
     public function find(int $id): ?KomponenGaji
@@ -41,6 +45,9 @@ class KomponenGajiRepository
     public function findManyForUpdate(array $ids): Collection
     {
         return KomponenGaji::query()
+            ->with([
+                'rincian' => fn ($query) => $query->orderBy('urutan')->orderBy('id'),
+            ])
             ->whereKey($ids)
             ->orderBy('id')
             ->lockForUpdate()
@@ -67,6 +74,19 @@ class KomponenGajiRepository
         $komponenGaji->update($data);
 
         return $komponenGaji;
+    }
+
+    public function replaceRincian(KomponenGaji $komponenGaji, array $rows): void
+    {
+        $komponenGaji->rincian()->delete();
+
+        if ($rows !== []) {
+            $komponenGaji->rincian()->createMany($rows);
+        }
+
+        $komponenGaji->load([
+            'rincian' => fn ($query) => $query->orderBy('urutan')->orderBy('id'),
+        ]);
     }
 
     public function delete(KomponenGaji $komponenGaji): void
