@@ -3,6 +3,14 @@
 return [
     'cache_key' => 'platform.features.statuses.v1',
 
+    // Relasi akun login karyawan hanya diperlukan ketika setidaknya satu
+    // layanan mandiri karyawan tersedia.
+    'employee_self_service_features' => [
+        'my_profile',
+        'my_attendance',
+        'my_salary_slips',
+    ],
+
     'features' => [
         'product_requests' => [
             'label' => 'Request Produk',

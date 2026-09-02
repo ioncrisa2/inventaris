@@ -11,6 +11,8 @@ use Illuminate\Validation\ValidationException;
 
 class KaryawanAccountService
 {
+    public function __construct(private PlatformFeatureService $featureService) {}
+
     /** @return Collection<int, User> */
     public function availableUsers(Karyawan $karyawan): Collection
     {
@@ -106,6 +108,12 @@ class KaryawanAccountService
 
     private function ensureActorCanManage(User $actor, Karyawan $karyawan): void
     {
+        if (! $this->featureService->employeeSelfServiceEnabled()) {
+            throw new \DomainException(
+                'Pengelolaan akun karyawan tidak tersedia karena seluruh fitur personal sedang dinonaktifkan.'
+            );
+        }
+
         if (! $actor->can('karyawan.akun.update')
             || $actor->koperasi_id === null
             || (int) $actor->koperasi_id !== (int) $karyawan->koperasi_id) {

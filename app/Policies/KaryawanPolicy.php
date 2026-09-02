@@ -4,9 +4,12 @@ namespace App\Policies;
 
 use App\Models\Karyawan;
 use App\Models\User;
+use App\Services\PlatformFeatureService;
 
 class KaryawanPolicy
 {
+    public function __construct(private PlatformFeatureService $featureService) {}
+
     public function viewAny(User $user): bool
     {
         return $user->can('karyawan.view');
@@ -54,7 +57,8 @@ class KaryawanPolicy
 
     public function manageAccount(User $user, Karyawan $karyawan): bool
     {
-        return $user->can('karyawan.akun.update')
+        return $this->featureService->employeeSelfServiceEnabled()
+            && $user->can('karyawan.akun.update')
             && $user->koperasi_id !== null
             && (int) $user->koperasi_id === (int) $karyawan->koperasi_id;
     }

@@ -29,6 +29,27 @@ class PlatformFeatureService
         return $this->statuses()[$featureKey] ?? true;
     }
 
+    public function employeeSelfServiceEnabled(): bool
+    {
+        $featureKeys = config('platform_features.employee_self_service_features', []);
+
+        // Fail-open bila konfigurasi grup belum tersedia agar deploy parsial
+        // tidak memutus pengelolaan akun karyawan.
+        if ($featureKeys === []) {
+            return true;
+        }
+
+        $statuses = $this->statuses();
+
+        foreach ($featureKeys as $featureKey) {
+            if ($statuses[$featureKey] ?? true) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public function featureForRoute(?string $routeName): ?string
     {
         if (! $routeName) {

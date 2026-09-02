@@ -4,7 +4,10 @@ use App\Models\Karyawan;
 use App\Models\Koperasi;
 use App\Models\UnitKerja;
 use App\Models\User;
+use App\Services\KaryawanAccountService;
+use App\Services\PlatformFeatureService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 
 uses(RefreshDatabase::class);
 
@@ -20,6 +23,18 @@ function accountTestKaryawan(UnitKerja $unitKerja, array $attributes = []): Kary
         'status_karyawan' => 'PKWTT',
         'gaji_pokok' => 0,
     ], $attributes));
+}
+
+function configureEmployeeSelfServiceFeatures(array $enabledFeatures): void
+{
+    $owner = systemOwnerUser();
+    $featureService = app(PlatformFeatureService::class);
+
+    foreach (config('platform_features.employee_self_service_features') as $featureKey) {
+        $featureService->setEnabled($featureKey, in_array($featureKey, $enabledFeatures, true), $owner);
+    }
+
+    Cache::forget(config('platform_features.cache_key'));
 }
 
 test('admin primer dapat menghubungkan dan melepas akun karyawan dalam koperasinya', function () {
@@ -61,6 +76,65 @@ test('admin primer dapat menghubungkan dan melepas akun karyawan dalam koperasin
         'action' => 'unlinked',
     ]);
 });
+
+test('pengelolaan akun karyawan disembunyikan dan ditolak saat seluruh fitur personal nonaktif', function () {
+    configureEmployeeSelfServiceFeatures([]);
+
+    $actor = adminPrimerUser();
+    $this->actingAs($actor);
+    $unit = UnitKerja::create(['nama_unit' => 'Layanan Personal']);
+    $linkedUser = User::factory()->create(['koperasi_id' => $actor->koperasi_id]);
+    $availableUser = User::factory()->create(['koperasi_id' => $actor->koperasi_id]);
+    $linkedKaryawan = accountTestKaryawan($unit, ['user_id' => $linkedUser->id]);
+    $unlinkedKaryawan = accountTestKaryawan($unit, [
+        'nik' => 'AKUN-002',
+        'nama_lengkap' => 'Karyawan Belum Terhubung',
+    ]);
+
+    $this->get(route('karyawan.show', $linkedKaryawan))
+        ->assertOk()
+        ->assertDontSee('Akun Login Karyawan')
+        ->assertDontSee($linkedUser->email);
+
+    $this->put(route('karyawan.akun.update', $unlinkedKaryawan), ['user_id' => $availableUser->id])
+        ->assertForbidden();
+    $this->delete(route('karyawan.akun.destroy', $linkedKaryawan))
+        ->assertForbidden();
+
+    expect(fn () => app(KaryawanAccountService::class)->link($actor, $unlinkedKaryawan, $availableUser))
+        ->toThrow(
+            DomainException::class,
+            'Pengelolaan akun karyawan tidak tersedia karena seluruh fitur personal sedang dinonaktifkan.',
+        );
+
+    expect($unlinkedKaryawan->fresh()->user_id)->toBeNull()
+        ->and($linkedKaryawan->fresh()->user_id)->toBe($linkedUser->id);
+});
+
+test('pengelolaan akun karyawan tersedia saat salah satu fitur personal aktif', function (string $activeFeature) {
+    configureEmployeeSelfServiceFeatures([$activeFeature]);
+
+    $actor = adminPrimerUser();
+    $this->actingAs($actor);
+    $unit = UnitKerja::create(['nama_unit' => 'Layanan Personal']);
+    $karyawan = accountTestKaryawan($unit);
+    $target = User::factory()->create(['koperasi_id' => $actor->koperasi_id]);
+
+    $this->get(route('karyawan.show', $karyawan))
+        ->assertOk()
+        ->assertSee('Akun Login Karyawan')
+        ->assertSee($target->email);
+
+    $this->put(route('karyawan.akun.update', $karyawan), ['user_id' => $target->id])
+        ->assertRedirect()
+        ->assertSessionHasNoErrors();
+
+    expect($karyawan->fresh()->user_id)->toBe($target->id);
+})->with([
+    'Data Saya' => 'my_profile',
+    'Absensi Saya' => 'my_attendance',
+    'Slip Gaji Saya' => 'my_salary_slips',
+]);
 
 test('satu akun tidak dapat dihubungkan dengan dua karyawan', function () {
     $actor = adminPrimerUser();
