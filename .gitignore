@@ -27,5 +27,7 @@ Homestead.yaml
 Thumbs.db
 /.claude
 /.playwright-cli
+/playwright-report
+/test-results
 /graphify-out
 /output

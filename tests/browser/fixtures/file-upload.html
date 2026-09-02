@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="browser-test-token">
+    <title>File upload browser test</title>
+    <link rel="stylesheet" href="/resources/css/app.css">
+</head>
+<body>
+    <main class="container py-4">
+        <form>
+            <div
+                class="file-upload"
+                data-file-upload
+                data-upload-policy='{"name":"product_attachments","extensions":["pdf","txt"],"mimeByExtension":{"pdf":["application/pdf"],"txt":["text/plain"]},"maxFiles":3,"maxFileBytes":10485760,"maxTotalBytes":20971520,"maxImageDimension":8000,"maxImageMegapixels":40,"preview":true,"camera":false,"cropAspectRatio":null,"clientMaxDimension":null,"txtPreviewBytes":204800,"asyncEnabled":false}'
+            >
+                <label class="form-label" for="document-input">Dokumen</label>
+                <div class="file-picker" data-file-picker>
+                    <input id="document-input" class="file-picker__input" type="file" name="attachments[]" multiple data-file-upload-input>
+                    <div class="file-picker__actions">
+                        <label class="btn btn-light file-picker__button" for="document-input">Pilih file</label>
+                    </div>
+                    <span data-file-picker-status role="status" aria-live="polite">Belum ada file dipilih</span>
+                </div>
+                <div data-file-upload-summary hidden></div>
+                <div data-file-upload-list role="list" aria-label="File yang dipilih"></div>
+            </div>
+        </form>
+
+        <form class="mt-4">
+            <div
+                class="file-upload"
+                data-file-upload
+                data-upload-policy='{"name":"product_attachments","extensions":["txt"],"mimeByExtension":{"txt":["text/plain"]},"maxFiles":3,"maxFileBytes":10485760,"maxTotalBytes":20971520,"maxImageDimension":8000,"maxImageMegapixels":40,"preview":true,"camera":false,"cropAspectRatio":null,"clientMaxDimension":null,"txtPreviewBytes":204800,"asyncEnabled":true,"asyncStoreUrl":"/uploads","asyncStatusUrl":"/uploads/__UUID__","asyncDeleteUrl":"/uploads/__UUID__","maxParallelUploads":3}'
+            >
+                <label class="form-label" for="async-input">Lampiran asinkron</label>
+                <div class="file-picker" data-file-picker>
+                    <input id="async-input" class="file-picker__input" type="file" name="async_attachments[]" required data-file-upload-input>
+                    <div class="file-picker__actions">
+                        <label class="btn btn-light file-picker__button" for="async-input">Pilih file</label>
+                    </div>
+                    <span data-file-picker-status role="status" aria-live="polite">Belum ada file dipilih</span>
+                </div>
+                <div data-file-upload-summary hidden></div>
+                <div data-file-upload-list role="list" aria-label="File yang dipilih"></div>
+            </div>
+        </form>
+
+        <form class="mt-4">
+            <div
+                class="file-upload"
+                data-file-upload
+                data-upload-policy='{"name":"asset_photo","extensions":["jpg","jpeg","png","webp"],"mimeByExtension":{"jpg":["image/jpeg"],"jpeg":["image/jpeg"],"png":["image/png"],"webp":["image/webp"]},"maxFiles":1,"maxFileBytes":15728640,"maxTotalBytes":15728640,"maxImageDimension":8000,"maxImageMegapixels":40,"preview":true,"camera":true,"cropAspectRatio":null,"clientMaxDimension":2560,"txtPreviewBytes":204800,"asyncEnabled":false}'
+            >
+                <label class="form-label" for="camera-input">Foto barang</label>
+                <div class="file-picker" data-file-picker>
+                    <input id="camera-input" class="file-picker__input" type="file" name="photo" accept=".jpg,.jpeg,.png,.webp" data-file-upload-input>
+                    <div class="file-picker__actions">
+                        <label class="btn btn-light file-picker__button" for="camera-input">Pilih file</label>
+                        <button type="button" class="btn btn-light" data-file-upload-camera hidden>Ambil foto</button>
+                    </div>
+                    <span data-file-picker-status role="status" aria-live="polite">Belum ada file dipilih</span>
+                </div>
+                <div data-file-upload-summary hidden></div>
+                <div data-file-upload-list role="list" aria-label="File yang dipilih"></div>
+            </div>
+        </form>
+
+        <form class="mt-4">
+            <div
+                class="file-upload"
+                data-file-upload
+                data-upload-policy='{"name":"employee_photo","extensions":["jpg","jpeg","png","webp"],"mimeByExtension":{"jpg":["image/jpeg"],"jpeg":["image/jpeg"],"png":["image/png"],"webp":["image/webp"]},"maxFiles":1,"maxFileBytes":15728640,"maxTotalBytes":15728640,"maxImageDimension":8000,"maxImageMegapixels":40,"preview":true,"camera":true,"cropAspectRatio":1,"clientMaxDimension":1280,"txtPreviewBytes":204800,"asyncEnabled":false}'
+            >
+                <label class="form-label" for="employee-input">Foto karyawan</label>
+                <div class="file-picker" data-file-picker>
+                    <input id="employee-input" class="file-picker__input" type="file" name="employee_photo" accept=".jpg,.jpeg,.png,.webp" data-file-upload-input>
+                    <div class="file-picker__actions">
+                        <label class="btn btn-light file-picker__button" for="employee-input">Pilih file</label>
+                        <button type="button" class="btn btn-light" data-file-upload-camera hidden>Ambil foto</button>
+                    </div>
+                    <span data-file-picker-status role="status" aria-live="polite">Belum ada file dipilih</span>
+                </div>
+                <div data-file-upload-summary hidden></div>
+                <div data-file-upload-list role="list" aria-label="File yang dipilih"></div>
+            </div>
+        </form>
+    </main>
+
+    <script type="module" src="/resources/js/components/file-upload.js"></script>
+</body>
+</html>
