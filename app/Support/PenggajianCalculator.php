@@ -8,13 +8,14 @@ class PenggajianCalculator
      * Hitung nominal hasil satu komponen gaji.
      *
      * - nominal_tetap: nilai adalah nominal Rupiah, dipakai apa adanya.
+     * - nominal_tidak_tetap: nilai Rupiah diisi pada transaksi dan dipakai apa
+     *   adanya.
+     * - nominal_tetap_list: setiap rincian membawa nilai Rupiah sendiri dan
+     *   dihitung sebagai satu detail transaksi.
      * - persentase: nilai adalah angka persentase (mis. 5 = 5%), dihitung
      *   dari $gajiPokok.
      * - per_hari: nilai adalah nominal Rupiah per hari, dikalikan
      *   $jumlahHari (jumlah absensi berstatus Hadir dalam range transaksi).
-     * - harian_sehari: nilai adalah nominal Rupiah per hari, dipakai apa
-     *   adanya (selalu 1 hari) — tanggalnya cuma snapshot untuk cetak/riwayat,
-     *   tidak memengaruhi hitungan.
      * - harian_manual: nilai adalah nominal Rupiah per hari, dikalikan
      *   $jumlahHari yang diketik manual oleh pengguna (bukan dari absensi
      *   seperti per_hari).

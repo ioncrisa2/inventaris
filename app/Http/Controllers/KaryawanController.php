@@ -90,13 +90,7 @@ class KaryawanController extends Controller
         $usia = $karyawan->tanggal_lahir->age;
         $kategoriUsia = $this->karyawanService->kategoriUsia($karyawan);
         $masaKerja = $this->karyawanService->masaKerja($karyawan);
-        $jenisPerubahanTersedia = KaryawanPerubahanSchema::allowedTypesFor($request->user());
-        $unitKerjas = $jenisPerubahanTersedia === []
-            ? collect()
-            : $this->unitKerjaRepository->orderedList();
-        $atasanOptions = $jenisPerubahanTersedia === []
-            ? collect()
-            : $this->karyawanRepository->orderedList()->reject(fn ($item) => $item->id === $karyawan->id);
+        $dapatMengubah = KaryawanPerubahanSchema::allowedTypesFor($request->user()) !== [];
         $availableAccountUsers = $request->user()->can('manageAccount', $karyawan)
             ? $this->karyawanAccountService->availableUsers($karyawan)
             : collect();
@@ -106,9 +100,7 @@ class KaryawanController extends Controller
             'usia',
             'kategoriUsia',
             'masaKerja',
-            'jenisPerubahanTersedia',
-            'unitKerjas',
-            'atasanOptions',
+            'dapatMengubah',
             'availableAccountUsers',
         ));
     }

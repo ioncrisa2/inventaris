@@ -35,4 +35,11 @@ class KomponenGajiRequest extends FormRequest
             ],
         ];
     }
+
+    protected function prepareForValidation(): void
+    {
+        if (in_array($this->input('metode_perhitungan'), KomponenGaji::METODE_INPUT_TRANSAKSI, true)) {
+            $this->merge(['nilai_default' => '0']);
+        }
+    }
 }

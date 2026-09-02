@@ -163,6 +163,7 @@ Route::middleware(['auth', 'koperasi.active'])->group(function () {
     Route::delete('karyawan/bulk', [KaryawanController::class, 'bulkDestroy'])->name('karyawan.bulk-destroy');
     Route::put('karyawan/{karyawan}/akun', [KaryawanAccountController::class, 'update'])->name('karyawan.akun.update');
     Route::delete('karyawan/{karyawan}/akun', [KaryawanAccountController::class, 'destroy'])->name('karyawan.akun.destroy');
+    Route::get('karyawan/{karyawan}/edit', [RiwayatKaryawanController::class, 'create'])->name('karyawan.edit');
     Route::resource('karyawan', KaryawanController::class)->except(['edit', 'update']);
 
     Route::post('karyawan/{karyawan}/riwayat', [RiwayatKaryawanController::class, 'store'])
@@ -215,7 +216,7 @@ Route::middleware(['auth', 'koperasi.active'])->group(function () {
     Route::delete('barang/{barang}/dokumen/{dokumenBarang}', [DokumenBarangController::class, 'destroy'])->name('barang.dokumen.destroy');
 
     Route::delete('komponen-gaji/bulk', [KomponenGajiController::class, 'bulkDestroy'])->name('komponen-gaji.bulk-destroy');
-    Route::resource('komponen-gaji', KomponenGajiController::class)->except(['show', 'create', 'edit']);
+    Route::resource('komponen-gaji', KomponenGajiController::class)->except(['show']);
 
     Route::get('transaksi-gaji/cetak-massal', [TransaksiGajiController::class, 'cetakMassal'])
         ->name('transaksi-gaji.cetak-massal');

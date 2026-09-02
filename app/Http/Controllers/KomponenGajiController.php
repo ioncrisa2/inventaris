@@ -39,6 +39,16 @@ class KomponenGajiController extends Controller
     }
 
     /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        return view('komponen-gaji.form', [
+            'komponenGaji' => new KomponenGaji,
+        ]);
+    }
+
+    /**
      * Store a newly created resource in storage.
      */
     public function store(KomponenGajiRequest $request)
@@ -46,6 +56,14 @@ class KomponenGajiController extends Controller
         $this->komponenGajiService->store($request->validated());
 
         return redirect()->route('komponen-gaji.index')->with('success', 'Komponen gaji berhasil ditambahkan.');
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(KomponenGaji $komponenGaji)
+    {
+        return view('komponen-gaji.form', compact('komponenGaji'));
     }
 
     /**

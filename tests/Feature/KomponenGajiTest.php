@@ -9,6 +9,35 @@ beforeEach(function () {
     $this->actingAs(adminUser());
 });
 
+test('tambah dan edit komponen gaji menggunakan halaman khusus', function () {
+    $this->get(route('komponen-gaji.create'))
+        ->assertOk()
+        ->assertViewIs('komponen-gaji.form')
+        ->assertSee('Simpan Komponen')
+        ->assertSee('Nominal Tidak Tetap')
+        ->assertSee('Nominal Tetap - List')
+        ->assertDontSee('Harian (Sehari)');
+
+    $komponen = KomponenGaji::create([
+        'nama_komponen' => 'Tunjangan Transport',
+        'jenis' => 'Tunjangan',
+        'metode_perhitungan' => 'nominal_tetap',
+        'nilai_default' => 500000,
+    ]);
+
+    $this->get(route('komponen-gaji.edit', $komponen))
+        ->assertOk()
+        ->assertViewIs('komponen-gaji.form')
+        ->assertSee('Simpan Perubahan')
+        ->assertSee('Tunjangan Transport');
+
+    $this->get(route('komponen-gaji.index'))
+        ->assertOk()
+        ->assertSee(route('komponen-gaji.create'), false)
+        ->assertSee(route('komponen-gaji.edit', $komponen), false)
+        ->assertDontSee('createKomponenGajiModal');
+});
+
 test('komponen gaji nominal tetap can be created', function () {
     $this->post(route('komponen-gaji.store'), [
         'nama_komponen' => 'Tunjangan Transport',
@@ -65,6 +94,32 @@ test('komponen persentase dengan pengali dapat dibuat', function () {
         'nilai_default' => 2,
         'dasar_persentase' => 'gaji_pokok',
     ]);
+});
+
+test('metode nominal input transaksi disimpan tanpa nilai default', function (string $metode) {
+    $this->post(route('komponen-gaji.store'), [
+        'nama_komponen' => 'Komponen '.$metode,
+        'jenis' => 'Tunjangan',
+        'metode_perhitungan' => $metode,
+    ])->assertRedirect(route('komponen-gaji.index'));
+
+    $this->assertDatabaseHas('komponen_gaji', [
+        'nama_komponen' => 'Komponen '.$metode,
+        'metode_perhitungan' => $metode,
+        'nilai_default' => 0,
+        'dasar_persentase' => null,
+    ]);
+})->with(['nominal_tidak_tetap', 'nominal_tetap_list']);
+
+test('metode harian sehari tidak lagi diterima', function () {
+    $this->post(route('komponen-gaji.store'), [
+        'nama_komponen' => 'Uang Harian Lama',
+        'jenis' => 'Tunjangan',
+        'metode_perhitungan' => 'harian_sehari',
+        'nilai_default' => 50000,
+    ])->assertSessionHasErrors('metode_perhitungan');
+
+    $this->assertDatabaseMissing('komponen_gaji', ['nama_komponen' => 'Uang Harian Lama']);
 });
 
 test('nilai nominal tidak boleh negatif', function () {

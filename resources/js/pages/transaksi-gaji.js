@@ -6,16 +6,16 @@ const perbaruiSuffixNilai = (select) => {
     const suffix = document.getElementById(`${idAwalan}_suffix`);
     const input = document.getElementById(`${idAwalan}_nilai`);
     const rentang = document.getElementById(`${idAwalan}_rentang`);
-    const tanggalTunggal = document.getElementById(`${idAwalan}_tanggal_tunggal`);
     const jumlahHari = document.getElementById(`${idAwalan}_jumlah_hari`);
     const jumlahPengali = document.getElementById(`${idAwalan}_jumlah_pengali`);
+    const keterangan = document.getElementById(`${idAwalan}_keterangan`);
     if (!prefix || !suffix || !input) return;
 
-    const toggle = (perHari, harianSehari, harianManual, persentasePengali = false) => {
+    const toggle = (perHari, harianManual, persentasePengali = false, nominalList = false) => {
         rentang?.classList.toggle('d-none', !perHari);
-        tanggalTunggal?.classList.toggle('d-none', !harianSehari);
         jumlahHari?.classList.toggle('d-none', !harianManual);
         jumlahPengali?.classList.toggle('d-none', !persentasePengali);
+        keterangan?.classList.toggle('d-none', !nominalList);
     };
 
     if (select.value === 'persentase') {
@@ -23,43 +23,102 @@ const perbaruiSuffixNilai = (select) => {
         suffix.textContent = '%';
         suffix.classList.remove('d-none');
         input.max = '100';
-        toggle(false, false, false);
+        toggle(false, false);
     } else if (select.value === 'persentase_pengali') {
         prefix.classList.add('d-none');
         suffix.textContent = '%';
         suffix.classList.remove('d-none');
         input.max = '100';
-        toggle(false, false, false, true);
+        toggle(false, false, true);
     } else if (select.value === 'per_hari') {
         prefix.classList.remove('d-none');
         suffix.textContent = '/hari';
         suffix.classList.remove('d-none');
         input.removeAttribute('max');
-        toggle(true, false, false);
-    } else if (select.value === 'harian_sehari') {
-        prefix.classList.remove('d-none');
-        suffix.textContent = '/hari';
-        suffix.classList.remove('d-none');
-        input.removeAttribute('max');
-        toggle(false, true, false);
+        toggle(true, false);
     } else if (select.value === 'harian_manual') {
         prefix.classList.remove('d-none');
         suffix.textContent = '/hari';
         suffix.classList.remove('d-none');
         input.removeAttribute('max');
-        toggle(false, false, true);
+        toggle(false, true);
+    } else if (select.value === 'nominal_tetap_list') {
+        prefix.classList.remove('d-none');
+        suffix.classList.add('d-none');
+        input.removeAttribute('max');
+        toggle(false, false, false, true);
     } else {
         prefix.classList.remove('d-none');
         suffix.classList.add('d-none');
         input.removeAttribute('max');
-        toggle(false, false, false);
+        toggle(false, false);
     }
+};
+
+const syncSalaryRow = (row) => {
+    const toggle = row.querySelector('[data-salary-row-toggle]');
+    if (!toggle) return;
+
+    row.querySelectorAll('input, select, textarea, button').forEach((control) => {
+        if (control === toggle) return;
+        control.disabled = !toggle.checked;
+    });
+};
+
+const syncSalaryListEmptyState = (list) => {
+    const hasRows = Boolean(list.querySelector('[data-salary-list-row]'));
+    list.querySelector('[data-salary-list-empty]')?.classList.toggle('d-none', hasRows);
+};
+
+const addSalaryListRow = (list) => {
+    const template = list.querySelector('[data-salary-list-template]');
+    const rows = list.querySelector('[data-salary-list-rows]');
+    if (!template || !rows) return;
+
+    const index = Number.parseInt(list.dataset.nextIndex || '0', 10);
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = template.innerHTML.replaceAll('__INDEX__', String(index)).trim();
+    const newRow = wrapper.firstElementChild;
+    if (!newRow) return;
+
+    rows.append(newRow);
+    list.dataset.nextIndex = String(index + 1);
+    syncSalaryListEmptyState(list);
+
+    const salaryRow = list.closest('[data-salary-row]');
+    if (salaryRow) syncSalaryRow(salaryRow);
+
+    newRow.querySelector('input')?.focus();
 };
 
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-salary-calculation-method]').forEach((select) => {
         select.addEventListener('change', () => perbaruiSuffixNilai(select));
         perbaruiSuffixNilai(select);
+    });
+
+    document.querySelectorAll('[data-salary-row]').forEach((row) => {
+        const toggle = row.querySelector('[data-salary-row-toggle]');
+        toggle?.addEventListener('change', () => syncSalaryRow(row));
+        syncSalaryRow(row);
+    });
+
+    document.querySelectorAll('[data-salary-list]').forEach(syncSalaryListEmptyState);
+
+    document.addEventListener('click', (event) => {
+        const addButton = event.target.closest('[data-salary-list-add]');
+        if (addButton) {
+            const list = addButton.closest('[data-salary-list]');
+            if (list) addSalaryListRow(list);
+            return;
+        }
+
+        const removeButton = event.target.closest('[data-salary-list-remove]');
+        if (!removeButton) return;
+
+        const list = removeButton.closest('[data-salary-list]');
+        removeButton.closest('[data-salary-list-row]')?.remove();
+        if (list) syncSalaryListEmptyState(list);
     });
 
     document.querySelectorAll('[data-slip-print-modal]').forEach((modal) => {

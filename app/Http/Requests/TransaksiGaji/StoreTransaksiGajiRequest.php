@@ -56,11 +56,10 @@ class StoreTransaksiGajiRequest extends FormRequest
      * Validasi array baris komponen ("master_{id}" atau "custom_{detailId}"
      * untuk baris yatim yang komponen master-nya sudah dihapus).
      *
-     * Baris master mengunci metode & nilai ke Komponen Gaji saat ini (tidak
-     * bisa diubah per transaksi, lihat TransaksiGajiService::siapkanBaris()),
-     * jadi metode_perhitungan/nilai kiriman client untuk baris master tidak
-     * divalidasi di sini — hanya baris "custom_*" (yatim, tanpa master) yang
-     * memang butuh input metode/nilai manual.
+     * Baris master mengunci metode ke Komponen Gaji saat ini. Nilai juga
+     * dikunci kecuali untuk metode nominal_tidak_tetap dan
+     * nominal_tetap_list yang memang meminta input per transaksi. Hanya baris
+     * "custom_*" (yatim, tanpa master) yang menerima metode dari client.
      */
     public function after(): array
     {
@@ -128,8 +127,13 @@ class StoreTransaksiGajiRequest extends FormRequest
                             continue;
                         }
 
-                        if ($komponenMaster->metode_perhitungan === 'harian_sehari'
-                            && ! $this->validasiTanggalTunggal($validator, $kunci, $row)) {
+                        if ($komponenMaster->metode_perhitungan === 'nominal_tidak_tetap'
+                            && ! $this->validasiNominalManual($validator, $kunci, $row)) {
+                            continue;
+                        }
+
+                        if ($komponenMaster->metode_perhitungan === 'nominal_tetap_list'
+                            && ! $this->validasiRincianNominal($validator, $kunci, $row)) {
                             continue;
                         }
 
@@ -174,10 +178,18 @@ class StoreTransaksiGajiRequest extends FormRequest
                         $validator->errors()->add("baris.{$kunci}.nilai", 'Nilai persentase harus berada antara 0 sampai 100.');
                     }
 
+                    if ($metode === 'nominal_tetap_list') {
+                        $keterangan = trim((string) ($row['keterangan'] ?? ''));
+
+                        if ($keterangan === '') {
+                            $validator->errors()->add("baris.{$kunci}.keterangan", 'Keterangan wajib diisi.');
+                        } elseif (mb_strlen($keterangan) > 255) {
+                            $validator->errors()->add("baris.{$kunci}.keterangan", 'Keterangan maksimal 255 karakter.');
+                        }
+                    }
+
                     if ($metode === 'per_hari') {
                         $this->validasiRentangTanggal($validator, $kunci, $row);
-                    } elseif ($metode === 'harian_sehari') {
-                        $this->validasiTanggalTunggal($validator, $kunci, $row);
                     } elseif ($metode === 'harian_manual') {
                         $this->validasiJumlahHariManual($validator, $kunci, $row);
                     } elseif ($metode === 'persentase_pengali') {
@@ -188,7 +200,7 @@ class StoreTransaksiGajiRequest extends FormRequest
                         && ! $validator->errors()->has("baris.{$kunci}.nilai")
                         && ! $validator->errors()->has("baris.{$kunci}.tanggal_awal")
                         && ! $validator->errors()->has("baris.{$kunci}.tanggal_akhir")
-                        && ! $validator->errors()->has("baris.{$kunci}.tanggal")
+                        && ! $validator->errors()->has("baris.{$kunci}.keterangan")
                         && ! $validator->errors()->has("baris.{$kunci}.jumlah_hari")) {
                         if ($validator->errors()->has("baris.{$kunci}.jumlah_pengali")) {
                             continue;
@@ -234,31 +246,68 @@ class StoreTransaksiGajiRequest extends FormRequest
         return true;
     }
 
-    /**
-     * Validasi tanggal tunggal untuk baris dengan metode harian_sehari.
-     * Dipakai untuk baris master maupun custom karena tanggalnya memang
-     * input per-transaksi.
-     */
-    private function validasiTanggalTunggal(Validator $validator, string $kunci, array $row): bool
+    private function validasiNominalManual(Validator $validator, string $kunci, array $row): bool
     {
-        $subValidator = ValidatorFacade::make($row, [
-            'tanggal' => ['required', 'date'],
-        ], [
-            'tanggal.required' => 'Tanggal wajib diisi.',
-            'tanggal.date' => 'Tanggal tidak valid.',
-        ]);
+        $nilai = Decimal15Two::normalizeNonNegative($row['nilai'] ?? null);
 
-        if ($subValidator->fails()) {
-            foreach ($subValidator->errors()->messages() as $field => $messages) {
-                foreach ($messages as $message) {
-                    $validator->errors()->add("baris.{$kunci}.{$field}", $message);
-                }
-            }
+        if ($nilai === null) {
+            $validator->errors()->add(
+                "baris.{$kunci}.nilai",
+                'Nominal wajib berupa angka non-negatif, maksimal 13 digit dan 2 angka pecahan.',
+            );
 
             return false;
         }
 
         return true;
+    }
+
+    private function validasiRincianNominal(Validator $validator, string $kunci, array $row): bool
+    {
+        $rincian = $row['rincian'] ?? null;
+
+        if (! is_array($rincian) || $rincian === []) {
+            $validator->errors()->add("baris.{$kunci}.rincian", 'Tambahkan minimal satu rincian keterangan dan nominal.');
+
+            return false;
+        }
+
+        if (count($rincian) > 100) {
+            $validator->errors()->add("baris.{$kunci}.rincian", 'Maksimal 100 rincian dalam satu komponen.');
+
+            return false;
+        }
+
+        $valid = true;
+
+        foreach ($rincian as $index => $item) {
+            if (! is_array($item)) {
+                $validator->errors()->add("baris.{$kunci}.rincian.{$index}", 'Format rincian tidak valid.');
+                $valid = false;
+
+                continue;
+            }
+
+            $keterangan = trim((string) ($item['keterangan'] ?? ''));
+
+            if ($keterangan === '') {
+                $validator->errors()->add("baris.{$kunci}.rincian.{$index}.keterangan", 'Keterangan wajib diisi.');
+                $valid = false;
+            } elseif (mb_strlen($keterangan) > 255) {
+                $validator->errors()->add("baris.{$kunci}.rincian.{$index}.keterangan", 'Keterangan maksimal 255 karakter.');
+                $valid = false;
+            }
+
+            if (Decimal15Two::normalizeNonNegative($item['nominal'] ?? null) === null) {
+                $validator->errors()->add(
+                    "baris.{$kunci}.rincian.{$index}.nominal",
+                    'Nominal wajib berupa angka non-negatif, maksimal 13 digit dan 2 angka pecahan.',
+                );
+                $valid = false;
+            }
+        }
+
+        return $valid;
     }
 
     /**

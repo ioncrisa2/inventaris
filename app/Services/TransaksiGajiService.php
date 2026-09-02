@@ -224,7 +224,7 @@ class TransaksiGajiService
 
         foreach ($barisTerpilih as $kunci => $row) {
             $kunci = (string) $kunci;
-            $baris = $this->siapkanBaris(
+            $barisDariInput = $this->siapkanBaris(
                 $kunci,
                 $row,
                 $gajiPokok,
@@ -234,13 +234,15 @@ class TransaksiGajiService
                 $detailCustomById,
             );
 
-            if ($baris['jenis_snapshot'] === 'Tunjangan') {
-                $totalTunjangan = bcadd($totalTunjangan, $baris['nominal_hasil'], 2);
-            } else {
-                $totalPotongan = bcadd($totalPotongan, $baris['nominal_hasil'], 2);
-            }
+            foreach ($barisDariInput as $baris) {
+                if ($baris['jenis_snapshot'] === 'Tunjangan') {
+                    $totalTunjangan = bcadd($totalTunjangan, $baris['nominal_hasil'], 2);
+                } else {
+                    $totalPotongan = bcadd($totalPotongan, $baris['nominal_hasil'], 2);
+                }
 
-            $barisSiapSimpan[] = $baris;
+                $barisSiapSimpan[] = $baris;
+            }
         }
 
         if ($barisSiapSimpan === []) {
@@ -269,7 +271,7 @@ class TransaksiGajiService
     }
 
     /**
-     * @return array{komponen_gaji_id: ?int, nama_komponen_snapshot: string, jenis_snapshot: string, metode_perhitungan_snapshot: string, nilai_snapshot: string, dasar_persentase_snapshot: ?string, tanggal_awal_snapshot: ?string, tanggal_akhir_snapshot: ?string, jumlah_hari_snapshot: ?int, jumlah_pengali_snapshot: ?int, nominal_hasil: string}
+     * @return list<array{komponen_gaji_id: ?int, nama_komponen_snapshot: string, keterangan_snapshot: ?string, jenis_snapshot: string, metode_perhitungan_snapshot: string, nilai_snapshot: string, dasar_persentase_snapshot: ?string, tanggal_awal_snapshot: ?string, tanggal_akhir_snapshot: ?string, jumlah_hari_snapshot: ?int, jumlah_pengali_snapshot: ?int, nominal_hasil: string}>
      */
     private function siapkanBaris(
         string $kunci,
@@ -294,16 +296,29 @@ class TransaksiGajiService
             $komponenGajiId = $komponen->id;
             // Baris master tidak boleh dikunci nilainya dari client: metode &
             // nilai selalu diambil dari Komponen Gaji saat ini, bukan dari
-            // $row. Pengecualian: rentang tanggal per_hari, tanggal untuk
-            // harian_sehari, serta jumlah hari/pengali manual memang input
+            // $row. Pengecualian: metode nominal input, rincian list, rentang
+            // tanggal per_hari, serta jumlah hari/pengali memang input
             // per-transaksi dan hanya tersedia dari $row.
             $metode = $komponen->metode_perhitungan;
-            $nilai = (string) $komponen->nilai_default;
+            $nilai = $metode === 'nominal_tidak_tetap'
+                ? Decimal15Two::normalizeNonNegative($row['nilai'] ?? null)
+                : (string) $komponen->nilai_default;
+            $keteranganSnapshot = null;
             $tanggalAwal = $row['tanggal_awal'] ?? null;
             $tanggalAkhir = $row['tanggal_akhir'] ?? null;
-            $tanggalTunggal = $row['tanggal'] ?? null;
             $jumlahHariManual = $row['jumlah_hari'] ?? null;
             $jumlahPengali = $row['jumlah_pengali'] ?? null;
+
+            if ($metode === 'nominal_tetap_list') {
+                return $this->siapkanRincianNominalList(
+                    $kunci,
+                    $row['rincian'] ?? null,
+                    $komponenGajiId,
+                    $namaSnapshot,
+                    $jenisSnapshot,
+                    $gajiPokok,
+                );
+            }
         } elseif (preg_match('/\Acustom_([1-9]\d*)\z/', $kunci, $matches) && $transaksiGaji) {
             $detailYatim = $detailCustomById->get((int) $matches[1]);
 
@@ -318,14 +333,17 @@ class TransaksiGajiService
             $komponenGajiId = null;
             $metode = $row['metode_perhitungan'] ?? null;
             $nilai = Decimal15Two::normalizeNonNegative($row['nilai'] ?? null);
+            $keteranganSnapshot = $metode === 'nominal_tetap_list'
+                ? trim((string) ($row['keterangan'] ?? ''))
+                : $detailYatim->keterangan_snapshot;
             $tanggalAwal = $row['tanggal_awal'] ?? null;
             $tanggalAkhir = $row['tanggal_akhir'] ?? null;
-            $tanggalTunggal = $row['tanggal'] ?? null;
             $jumlahHariManual = $row['jumlah_hari'] ?? null;
             $jumlahPengali = $row['jumlah_pengali'] ?? null;
 
             if (! in_array($metode, array_keys(KomponenGaji::METODE_PERHITUNGAN), true)
                 || $nilai === null
+                || ($metode === 'nominal_tetap_list' && ($keteranganSnapshot === '' || mb_strlen($keteranganSnapshot) > 255))
                 || (in_array($metode, ['persentase', 'persentase_pengali'], true) && bccomp($nilai, '100', 2) > 0)) {
                 throw ValidationException::withMessages([
                     "baris.{$kunci}" => 'Nilai atau metode komponen khusus tidak valid.',
@@ -337,6 +355,38 @@ class TransaksiGajiService
             ]);
         }
 
+        return [$this->siapkanSnapshot(
+            $kunci,
+            $komponenGajiId,
+            $namaSnapshot,
+            $keteranganSnapshot,
+            $jenisSnapshot,
+            $metode,
+            $nilai,
+            $gajiPokok,
+            $karyawanId,
+            $tanggalAwal,
+            $tanggalAkhir,
+            $jumlahHariManual,
+            $jumlahPengali,
+        )];
+    }
+
+    private function siapkanSnapshot(
+        string $kunci,
+        ?int $komponenGajiId,
+        string $namaSnapshot,
+        ?string $keteranganSnapshot,
+        string $jenisSnapshot,
+        string $metode,
+        mixed $nilai,
+        string $gajiPokok,
+        int $karyawanId,
+        mixed $tanggalAwal = null,
+        mixed $tanggalAkhir = null,
+        mixed $jumlahHariManual = null,
+        mixed $jumlahPengali = null,
+    ): array {
         $nilai = Decimal15Two::normalizeNonNegative($nilai);
 
         if ($nilai === null) {
@@ -386,18 +436,6 @@ class TransaksiGajiService
                 $awalCarbon,
                 $akhirCarbon,
             );
-        } elseif ($metode === 'harian_sehari') {
-            try {
-                $tanggalCarbon = Carbon::parse($tanggalTunggal)->startOfDay();
-            } catch (\Exception) {
-                throw ValidationException::withMessages([
-                    "baris.{$kunci}.tanggal" => 'Tanggal tidak valid.',
-                ]);
-            }
-
-            $tanggalAwalSnapshot = $tanggalCarbon->toDateString();
-            $tanggalAkhirSnapshot = $tanggalCarbon->toDateString();
-            $jumlahHariSnapshot = 1;
         } elseif ($metode === 'harian_manual') {
             $jumlahHariManual = filter_var($jumlahHariManual, FILTER_VALIDATE_INT);
 
@@ -421,6 +459,7 @@ class TransaksiGajiService
         return [
             'komponen_gaji_id' => $komponenGajiId,
             'nama_komponen_snapshot' => $namaSnapshot,
+            'keterangan_snapshot' => $keteranganSnapshot,
             'jenis_snapshot' => $jenisSnapshot,
             'metode_perhitungan_snapshot' => $metode,
             'nilai_snapshot' => $nilai,
@@ -431,6 +470,48 @@ class TransaksiGajiService
             'jumlah_pengali_snapshot' => $jumlahPengaliSnapshot,
             'nominal_hasil' => $nominalHasil,
         ];
+    }
+
+    private function siapkanRincianNominalList(
+        string $kunci,
+        mixed $rincian,
+        int $komponenGajiId,
+        string $namaSnapshot,
+        string $jenisSnapshot,
+        string $gajiPokok,
+    ): array {
+        if (! is_array($rincian) || $rincian === [] || count($rincian) > 100) {
+            throw ValidationException::withMessages([
+                "baris.{$kunci}.rincian" => 'Rincian komponen wajib berisi 1 sampai 100 baris.',
+            ]);
+        }
+
+        $hasil = [];
+
+        foreach ($rincian as $index => $item) {
+            $keterangan = is_array($item) ? trim((string) ($item['keterangan'] ?? '')) : '';
+            $nilai = is_array($item) ? Decimal15Two::normalizeNonNegative($item['nominal'] ?? null) : null;
+
+            if ($keterangan === '' || mb_strlen($keterangan) > 255 || $nilai === null) {
+                throw ValidationException::withMessages([
+                    "baris.{$kunci}.rincian.{$index}" => 'Keterangan atau nominal rincian tidak valid.',
+                ]);
+            }
+
+            $hasil[] = $this->siapkanSnapshot(
+                $kunci,
+                $komponenGajiId,
+                $namaSnapshot,
+                $keterangan,
+                $jenisSnapshot,
+                'nominal_tetap_list',
+                $nilai,
+                $gajiPokok,
+                0,
+            );
+        }
+
+        return $hasil;
     }
 
     private function masterIds(array $barisTerpilih): array
@@ -488,36 +569,47 @@ class TransaksiGajiService
     public function formData(?TransaksiGaji $transaksiGaji): array
     {
         $komponenGajis = $this->komponenGajiRepository->orderedList();
-        $detailByKunci = $transaksiGaji
-            ? $transaksiGaji->details->keyBy(fn ($detail) => $detail->komponen_gaji_id ? "master_{$detail->komponen_gaji_id}" : "custom_{$detail->id}")
+        $detailByKomponen = $transaksiGaji
+            ? $transaksiGaji->details->whereNotNull('komponen_gaji_id')->groupBy('komponen_gaji_id')
             : collect();
         $oldBaris = old('baris');
 
-        $barisMaster = $komponenGajis->map(function ($komponen) use ($detailByKunci, $oldBaris) {
+        $barisMaster = $komponenGajis->map(function ($komponen) use ($detailByKomponen, $oldBaris) {
             $kunci = "master_{$komponen->id}";
-            $detail = $detailByKunci->get($kunci);
+            $details = $detailByKomponen->get($komponen->id, collect());
+            $detail = $details->first();
+            $rincianTersimpan = $details
+                ->map(fn ($item) => [
+                    'keterangan' => $item->keterangan_snapshot,
+                    'nominal' => (string) $item->nilai_snapshot,
+                ])
+                ->values()
+                ->all();
 
             return [
                 'kunci' => $kunci,
                 'nama_komponen' => $komponen->nama_komponen,
                 'jenis' => $komponen->jenis,
-                'checked' => $oldBaris !== null ? data_get($oldBaris, "{$kunci}.pakai") !== null : (bool) $detail,
+                'checked' => $oldBaris !== null ? data_get($oldBaris, "{$kunci}.pakai") !== null : $details->isNotEmpty(),
                 // metode & nilai baris master TIDAK bisa diubah per transaksi — selalu
                 // ikut nilai_default/metode_perhitungan Komponen Gaji saat ini. Untuk
                 // mengubahnya, edit master di halaman Komponen Gaji.
                 'metode' => $komponen->metode_perhitungan,
-                'nilai' => (string) $komponen->nilai_default,
+                'nilai' => $oldBaris !== null
+                    ? data_get($oldBaris, "{$kunci}.nilai")
+                    : ($komponen->metode_perhitungan === 'nominal_tidak_tetap'
+                        ? $detail?->nilai_snapshot
+                        : (string) $komponen->nilai_default),
+                'keterangan' => null,
+                'rincian' => $oldBaris !== null
+                    ? data_get($oldBaris, "{$kunci}.rincian", [])
+                    : $rincianTersimpan,
                 'tanggal_awal' => $oldBaris !== null
                     ? data_get($oldBaris, "{$kunci}.tanggal_awal")
                     : $detail?->tanggal_awal_snapshot?->format('Y-m-d'),
                 'tanggal_akhir' => $oldBaris !== null
                     ? data_get($oldBaris, "{$kunci}.tanggal_akhir")
                     : $detail?->tanggal_akhir_snapshot?->format('Y-m-d'),
-                // harian_sehari menyimpan tanggal tunggal di kedua kolom
-                // snapshot tanggal agar struktur riwayat tetap seragam.
-                'tanggal' => $oldBaris !== null
-                    ? data_get($oldBaris, "{$kunci}.tanggal")
-                    : $detail?->tanggal_awal_snapshot?->format('Y-m-d'),
                 'jumlah_hari' => $oldBaris !== null
                     ? data_get($oldBaris, "{$kunci}.jumlah_hari")
                     : $detail?->jumlah_hari_snapshot,
@@ -541,9 +633,10 @@ class TransaksiGajiService
                         'checked' => $oldBaris !== null ? data_get($oldBaris, "{$kunci}.pakai") !== null : true,
                         'metode' => data_get($oldBaris, "{$kunci}.metode_perhitungan") ?? $detail->metode_perhitungan_snapshot,
                         'nilai' => data_get($oldBaris, "{$kunci}.nilai") ?? $detail->nilai_snapshot,
+                        'keterangan' => data_get($oldBaris, "{$kunci}.keterangan") ?? $detail->keterangan_snapshot,
+                        'rincian' => [],
                         'tanggal_awal' => data_get($oldBaris, "{$kunci}.tanggal_awal") ?? $detail->tanggal_awal_snapshot?->format('Y-m-d'),
                         'tanggal_akhir' => data_get($oldBaris, "{$kunci}.tanggal_akhir") ?? $detail->tanggal_akhir_snapshot?->format('Y-m-d'),
-                        'tanggal' => data_get($oldBaris, "{$kunci}.tanggal") ?? $detail->tanggal_awal_snapshot?->format('Y-m-d'),
                         'jumlah_hari' => data_get($oldBaris, "{$kunci}.jumlah_hari") ?? $detail->jumlah_hari_snapshot,
                         'jumlah_pengali' => data_get($oldBaris, "{$kunci}.jumlah_pengali") ?? $detail->jumlah_pengali_snapshot,
                     ];
@@ -642,7 +735,10 @@ class TransaksiGajiService
             ->merge($potongan)
             ->sum(fn ($detail) => max(
                 1,
-                (int) ceil(mb_strlen($detail->nama_komponen_snapshot) / $charactersPerRow),
+                (int) ceil(mb_strlen(implode(' — ', array_filter([
+                    $detail->nama_komponen_snapshot,
+                    $detail->keterangan_snapshot,
+                ]))) / $charactersPerRow),
             ));
 
         if ($paperLayout === SlipGajiPaperLayout::LEFT_RIGHT) {

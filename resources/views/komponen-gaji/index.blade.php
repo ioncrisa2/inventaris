@@ -3,11 +3,6 @@
 @section('title', 'Komponen Gaji')
 
 @php
-    $modal = old('_modal');
-    $createOld = fn ($field, $default = null) => $modal === 'createKomponenGajiModal' ? old($field, $default) : $default;
-    $editOld = fn ($field, $default = null) => $modal === 'editKomponenGajiModal' ? old($field, $default) : $default;
-    $createErr = fn ($field) => $modal === 'createKomponenGajiModal' && $errors->has($field);
-    $editErr = fn ($field) => $modal === 'editKomponenGajiModal' && $errors->has($field);
     $showTenant = auth()->user()->isSuperAdmin();
     $canUpdate = auth()->user()->can('komponen-gaji.update');
     $canDelete = auth()->user()->can('komponen-gaji.delete');
@@ -19,10 +14,10 @@
         <x-page-header title="Komponen Gaji" subtitle="Aturan tunjangan dan potongan untuk perhitungan gaji.">
             <x-slot:actions>
                 @can('komponen-gaji.create')
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createKomponenGajiModal">
+                    <a class="btn btn-primary" href="{{ route('komponen-gaji.create') }}">
                         <i class="bi bi-plus-circle"></i>
                         Tambah Komponen Gaji
-                    </button>
+                    </a>
                 @endcan
             </x-slot:actions>
         </x-page-header>
@@ -107,16 +102,20 @@
                                     <span class="text-body-secondary small">(dasar: gaji pokok)</span>
                                 @elseif($data->metode_perhitungan === 'per_hari')
                                     <span class="text-body-secondary small">(dikali jumlah absensi Hadir dalam range tanggal yang diinput saat transaksi)</span>
-                                @elseif($data->metode_perhitungan === 'harian_sehari')
-                                    <span class="text-body-secondary small">(dipakai sekali untuk satu tanggal yang diinput saat transaksi dibuat)</span>
                                 @elseif($data->metode_perhitungan === 'harian_manual')
                                     <span class="text-body-secondary small">(dikali jumlah hari yang diketik manual saat transaksi dibuat)</span>
+                                @elseif($data->metode_perhitungan === 'nominal_tidak_tetap')
+                                    <span class="text-body-secondary small">(nominal diisi saat transaksi dibuat)</span>
+                                @elseif($data->metode_perhitungan === 'nominal_tetap_list')
+                                    <span class="text-body-secondary small">(keterangan dan nominal diisi sebagai daftar saat transaksi dibuat)</span>
                                 @endif
                             </td>
                             <td class="text-end">
-                                @if(in_array($data->metode_perhitungan, ['persentase', 'persentase_pengali'], true))
+                                @if(in_array($data->metode_perhitungan, \App\Models\KomponenGaji::METODE_INPUT_TRANSAKSI, true))
+                                    <span class="text-body-secondary">Diisi saat transaksi</span>
+                                @elseif(in_array($data->metode_perhitungan, ['persentase', 'persentase_pengali'], true))
                                     {{ rtrim(rtrim($data->nilai_default, '0'), '.') }}%
-                                @elseif(in_array($data->metode_perhitungan, ['per_hari', 'harian_sehari', 'harian_manual'], true))
+                                @elseif(in_array($data->metode_perhitungan, ['per_hari', 'harian_manual'], true))
                                     Rp {{ number_format($data->nilai_default, 0, ',', '.') }} /hari
                                 @else
                                     Rp {{ number_format($data->nilai_default, 0, ',', '.') }}
@@ -126,21 +125,13 @@
                             <td>
                                 <div class="table-actions">
                                     @can('update', $data)
-                                    <button
-                                        type="button"
+                                    <a
                                         class="btn btn-sm btn-action btn-action-neutral"
                                         title="Edit"
                                         aria-label="Edit {{ $data->nama_komponen }}"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#editKomponenGajiModal"
-                                        data-edit-url="{{ route('komponen-gaji.update', $data->id) }}"
-                                        data-id="{{ $data->id }}"
-                                        data-nama-komponen="{{ $data->nama_komponen }}"
-                                        data-jenis="{{ $data->jenis }}"
-                                        data-metode-perhitungan="{{ $data->metode_perhitungan }}"
-                                        data-nilai-default="{{ $data->nilai_default }}">
+                                        href="{{ route('komponen-gaji.edit', $data) }}">
                                         <i class="bi bi-pencil"></i>
-                                    </button>
+                                    </a>
                                     @endcan
 
                                     @can('delete', $data)
@@ -168,98 +159,4 @@
                 </table>
         </x-data-table>
 </x-app-page>
-
-@foreach(['create' => 'createKomponenGajiModal', 'edit' => 'editKomponenGajiModal'] as $mode => $modalId)
-@if(($mode === 'create' && auth()->user()->can('komponen-gaji.create')) || ($mode === 'edit' && $canUpdate))
-<x-modal-form
-    :id="$modalId"
-    :data-auto-show-modal="$errors->any() && $modal === $modalId"
-    :title="$mode === 'create' ? 'Tambah Komponen Gaji' : 'Edit Komponen Gaji'"
-    :form-id="$mode.'KomponenGajiForm'"
-    :method="$mode === 'edit' ? 'PUT' : 'POST'"
-    :submit-label="$mode === 'create' ? 'Simpan' : 'Simpan Perubahan'"
-    :action="$mode === 'create'
-        ? route('komponen-gaji.store')
-        : (old('_modal') === 'editKomponenGajiModal' && old('_komponen_gaji_id') ? route('komponen-gaji.update', old('_komponen_gaji_id')) : '#')"
->
-    <input type="hidden" name="_modal" value="{{ $modalId }}">
-    @if($mode === 'edit')
-        <input type="hidden" name="_komponen_gaji_id" id="edit_komponen_gaji_id" value="{{ old('_komponen_gaji_id') }}">
-    @endif
-
-    <div class="row g-3">
-                        <div class="col-12">
-                            <label for="{{ $mode }}_nama_komponen" class="form-label">Nama Komponen <span class="text-danger">*</span></label>
-                            <input
-                                type="text"
-                                name="nama_komponen"
-                                id="{{ $mode }}_nama_komponen"
-                                class="form-control {{ ($mode === 'create' ? $createErr('nama_komponen') : $editErr('nama_komponen')) ? 'is-invalid' : '' }}"
-                                value="{{ $mode === 'create' ? $createOld('nama_komponen') : $editOld('nama_komponen') }}"
-                                maxlength="255"
-                                required
-                            >
-                            @if($mode === 'create' ? $createErr('nama_komponen') : $editErr('nama_komponen'))
-                                <div class="invalid-feedback d-block">{{ $errors->first('nama_komponen') }}</div>
-                            @endif
-                        </div>
-
-                        <div class="col-md-6">
-                            <label for="{{ $mode }}_jenis" class="form-label">Jenis <span class="text-danger">*</span></label>
-                            <select name="jenis" id="{{ $mode }}_jenis" class="form-select {{ ($mode === 'create' ? $createErr('jenis') : $editErr('jenis')) ? 'is-invalid' : '' }}" required>
-                                @foreach(['Tunjangan', 'Potongan'] as $jenisOpsi)
-                                    <option value="{{ $jenisOpsi }}" @selected(($mode === 'create' ? $createOld('jenis') : $editOld('jenis')) === $jenisOpsi)>{{ $jenisOpsi }}</option>
-                                @endforeach
-                            </select>
-                            @if($mode === 'create' ? $createErr('jenis') : $editErr('jenis'))
-                                <div class="invalid-feedback d-block">{{ $errors->first('jenis') }}</div>
-                            @endif
-                        </div>
-
-                        <div class="col-md-6">
-                            <label for="{{ $mode }}_metode_perhitungan" class="form-label">Metode <span class="text-danger">*</span></label>
-                            <select
-                                name="metode_perhitungan"
-                                id="{{ $mode }}_metode_perhitungan"
-                                class="form-select {{ ($mode === 'create' ? $createErr('metode_perhitungan') : $editErr('metode_perhitungan')) ? 'is-invalid' : '' }}"
-                                required
-                                data-component-value-mode="{{ $mode }}"
-                            >
-                                <option value="nominal_tetap" @selected(($mode === 'create' ? $createOld('metode_perhitungan', 'nominal_tetap') : $editOld('metode_perhitungan', 'nominal_tetap')) === 'nominal_tetap')>Nominal Tetap</option>
-                                <option value="persentase" @selected(($mode === 'create' ? $createOld('metode_perhitungan', 'nominal_tetap') : $editOld('metode_perhitungan', 'nominal_tetap')) === 'persentase')>Persentase</option>
-                                <option value="persentase_pengali" @selected(($mode === 'create' ? $createOld('metode_perhitungan', 'nominal_tetap') : $editOld('metode_perhitungan', 'nominal_tetap')) === 'persentase_pengali')>Persentase × Pengali</option>
-                                <option value="per_hari" @selected(($mode === 'create' ? $createOld('metode_perhitungan', 'nominal_tetap') : $editOld('metode_perhitungan', 'nominal_tetap')) === 'per_hari')>Per Hari Hadir (Periode Gaji)</option>
-                                <option value="harian_sehari" @selected(($mode === 'create' ? $createOld('metode_perhitungan', 'nominal_tetap') : $editOld('metode_perhitungan', 'nominal_tetap')) === 'harian_sehari')>Harian (Sehari)</option>
-                                <option value="harian_manual" @selected(($mode === 'create' ? $createOld('metode_perhitungan', 'nominal_tetap') : $editOld('metode_perhitungan', 'nominal_tetap')) === 'harian_manual')>Harian (Dikali Jumlah Hari)</option>
-                            </select>
-                            @if($mode === 'create' ? $createErr('metode_perhitungan') : $editErr('metode_perhitungan'))
-                                <div class="invalid-feedback d-block">{{ $errors->first('metode_perhitungan') }}</div>
-                            @endif
-                        </div>
-
-                        <div class="col-12">
-                            <label for="{{ $mode }}_nilai_default" class="form-label">Nilai Default <span class="text-danger">*</span></label>
-                            <div class="input-group">
-                                <span class="input-group-text" id="{{ $mode }}_nilai_default_prefix">Rp</span>
-                                <input
-                                    type="number"
-                                    name="nilai_default"
-                                    id="{{ $mode }}_nilai_default"
-                                    class="form-control {{ ($mode === 'create' ? $createErr('nilai_default') : $editErr('nilai_default')) ? 'is-invalid' : '' }}"
-                                    value="{{ $mode === 'create' ? $createOld('nilai_default') : $editOld('nilai_default') }}"
-                                    min="0"
-                                    step="0.01"
-                                    required
-                                >
-                                <span class="input-group-text d-none" id="{{ $mode }}_nilai_default_suffix">%</span>
-                                @if($mode === 'create' ? $createErr('nilai_default') : $editErr('nilai_default'))
-                                    <div class="invalid-feedback d-block">{{ $errors->first('nilai_default') }}</div>
-                                @endif
-                            </div>
-                            <div class="form-text" id="{{ $mode }}_nilai_default_help"></div>
-                        </div>
-                    </div>
-</x-modal-form>
-@endif
-@endforeach
 @endsection

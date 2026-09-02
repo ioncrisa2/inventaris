@@ -13,7 +13,7 @@
 @section('content')
 <x-form-page
     :title="$transaksiGaji->exists ? 'Edit Transaksi Gaji' : 'Buat Transaksi Gaji'"
-    subtitle="Pilih karyawan, periode, dan komponen yang berlaku. Komponen Per Hari Hadir memakai jumlah absensi Hadir dalam range yang diinput."
+    subtitle="Pilih karyawan, periode, dan komponen yang berlaku. Nominal manual dan rincian list diisi khusus untuk transaksi ini."
     :action="$transaksiGaji->exists ? route('transaksi-gaji.update', $transaksiGaji) : route('transaksi-gaji.store')"
     :method="$transaksiGaji->exists ? 'PUT' : 'POST'"
     :cancel-route="route('transaksi-gaji.index')"
@@ -72,7 +72,7 @@
         </div>
     </div>
 
-    <x-form.section title="Komponen Gaji" description="Centang komponen yang berlaku. Metode dan nilai mengikuti master Komponen Gaji, lalu nominal dihitung ulang saat disimpan.">
+    <x-form.section title="Komponen Gaji" description="Centang komponen yang berlaku. Nilai tetap mengikuti master; metode manual dan list wajib dilengkapi pada baris yang dipilih.">
         <x-slot:actions>
             <a href="{{ route('komponen-gaji.index') }}" class="small">Ubah di Komponen Gaji</a>
         </x-slot:actions>

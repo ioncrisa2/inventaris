@@ -1011,52 +1011,12 @@ test('tunjangan per hari wajib memakai range tanggal yang valid', function () {
     expect(TransaksiGaji::count())->toBe(0);
 });
 
-test('tunjangan harian sehari dihitung sekali untuk satu tanggal, bukan dikali jumlah hari', function () {
-    $uangLembur = KomponenGaji::create([
-        'nama_komponen' => 'Uang Lembur',
+test('nominal tidak tetap wajib diisi dan disimpan dari input transaksi', function () {
+    $bonus = KomponenGaji::create([
+        'nama_komponen' => 'Bonus Kinerja',
         'jenis' => 'Tunjangan',
-        'metode_perhitungan' => 'harian_sehari',
-        'nilai_default' => 75000,
-        'dasar_persentase' => null,
-    ]);
-
-    $response = $this->post(route('transaksi-gaji.store'), [
-        'karyawan_id' => $this->karyawan->id,
-        'bulan' => 7,
-        'tahun' => 2026,
-        'baris' => [
-            "master_{$uangLembur->id}" => [
-                'pakai' => '1',
-                'tanggal' => '2026-07-15',
-            ],
-        ],
-    ]);
-
-    $transaksi = TransaksiGaji::first();
-    $response->assertRedirect(route('transaksi-gaji.show', $transaksi));
-
-    expect((string) $transaksi->gaji_bersih)->toBe('5075000.00');
-
-    $this->assertDatabaseHas('transaksi_gaji_detail', [
-        'transaksi_gaji_id' => $transaksi->id,
-        'komponen_gaji_id' => $uangLembur->id,
-        'metode_perhitungan_snapshot' => 'harian_sehari',
-        'nilai_snapshot' => 75000,
-        'jumlah_hari_snapshot' => 1,
-        'nominal_hasil' => 75000,
-    ]);
-
-    $detail = $transaksi->details()->where('komponen_gaji_id', $uangLembur->id)->first();
-    expect($detail->tanggal_awal_snapshot->toDateString())->toBe('2026-07-15');
-    expect($detail->tanggal_akhir_snapshot->toDateString())->toBe('2026-07-15');
-});
-
-test('tunjangan harian sehari yang dicentang tanpa tanggal ditolak validasi', function () {
-    $uangLembur = KomponenGaji::create([
-        'nama_komponen' => 'Uang Lembur',
-        'jenis' => 'Tunjangan',
-        'metode_perhitungan' => 'harian_sehari',
-        'nilai_default' => 75000,
+        'metode_perhitungan' => 'nominal_tidak_tetap',
+        'nilai_default' => 0,
         'dasar_persentase' => null,
     ]);
 
@@ -1066,11 +1026,149 @@ test('tunjangan harian sehari yang dicentang tanpa tanggal ditolak validasi', fu
             'bulan' => 7,
             'tahun' => 2026,
             'baris' => [
-                "master_{$uangLembur->id}" => ['pakai' => '1'],
+                "master_{$bonus->id}" => ['pakai' => '1'],
             ],
         ])
         ->assertRedirect(route('transaksi-gaji.create'))
-        ->assertSessionHasErrors("baris.master_{$uangLembur->id}.tanggal");
+        ->assertSessionHasErrors("baris.master_{$bonus->id}.nilai");
+
+    $response = $this->post(route('transaksi-gaji.store'), [
+        'karyawan_id' => $this->karyawan->id,
+        'bulan' => 7,
+        'tahun' => 2026,
+        'baris' => [
+            "master_{$bonus->id}" => [
+                'pakai' => '1',
+                'nilai' => '275000.50',
+            ],
+        ],
+    ]);
+
+    $transaksi = TransaksiGaji::first();
+    $response->assertRedirect(route('transaksi-gaji.show', $transaksi));
+
+    expect((string) $transaksi->gaji_bersih)->toBe('5275000.50');
+
+    $this->assertDatabaseHas('transaksi_gaji_detail', [
+        'transaksi_gaji_id' => $transaksi->id,
+        'komponen_gaji_id' => $bonus->id,
+        'metode_perhitungan_snapshot' => 'nominal_tidak_tetap',
+        'nilai_snapshot' => 275000.50,
+        'nominal_hasil' => 275000.50,
+    ]);
+});
+
+test('nominal tetap list menyimpan setiap rincian dan memuatnya kembali saat edit', function () {
+    $tunjanganBeras = KomponenGaji::create([
+        'nama_komponen' => 'Tunjangan Beras',
+        'jenis' => 'Tunjangan',
+        'metode_perhitungan' => 'nominal_tetap_list',
+        'nilai_default' => 0,
+        'dasar_persentase' => null,
+    ]);
+
+    $response = $this->post(route('transaksi-gaji.store'), [
+        'karyawan_id' => $this->karyawan->id,
+        'bulan' => 7,
+        'tahun' => 2026,
+        'baris' => [
+            "master_{$tunjanganBeras->id}" => [
+                'pakai' => '1',
+                'rincian' => [
+                    ['keterangan' => 'Laki-laki', 'nominal' => 150000],
+                    ['keterangan' => 'Perempuan', 'nominal' => 125000],
+                ],
+            ],
+        ],
+    ]);
+
+    $transaksi = TransaksiGaji::firstOrFail();
+    $response->assertRedirect(route('transaksi-gaji.show', $transaksi));
+
+    expect((string) $transaksi->gaji_bersih)->toBe('5275000.00')
+        ->and($transaksi->details()->where('komponen_gaji_id', $tunjanganBeras->id)->count())->toBe(2);
+
+    $this->assertDatabaseHas('transaksi_gaji_detail', [
+        'transaksi_gaji_id' => $transaksi->id,
+        'komponen_gaji_id' => $tunjanganBeras->id,
+        'keterangan_snapshot' => 'Laki-laki',
+        'metode_perhitungan_snapshot' => 'nominal_tetap_list',
+        'nilai_snapshot' => 150000,
+        'nominal_hasil' => 150000,
+    ]);
+    $this->assertDatabaseHas('transaksi_gaji_detail', [
+        'transaksi_gaji_id' => $transaksi->id,
+        'komponen_gaji_id' => $tunjanganBeras->id,
+        'keterangan_snapshot' => 'Perempuan',
+        'nilai_snapshot' => 125000,
+        'nominal_hasil' => 125000,
+    ]);
+
+    $this->get(route('transaksi-gaji.edit', $transaksi))
+        ->assertOk()
+        ->assertSee('Laki-laki')
+        ->assertSee('Perempuan')
+        ->assertSee('value="150000.00"', false)
+        ->assertSee('value="125000.00"', false);
+
+    $this->get(route('transaksi-gaji.show', $transaksi))
+        ->assertOk()
+        ->assertSee('Tunjangan Beras')
+        ->assertSee('Laki-laki')
+        ->assertSee('Perempuan');
+
+    $this->put(route('transaksi-gaji.update', $transaksi), [
+        'karyawan_id' => $this->karyawan->id,
+        'bulan' => 7,
+        'tahun' => 2026,
+        'baris' => [
+            "master_{$tunjanganBeras->id}" => [
+                'pakai' => '1',
+                'rincian' => [
+                    ['keterangan' => 'Laki-laki', 'nominal' => 175000],
+                    ['keterangan' => 'Perempuan', 'nominal' => 130000],
+                ],
+            ],
+        ],
+    ])->assertRedirect(route('transaksi-gaji.show', $transaksi));
+
+    expect((string) $transaksi->fresh()->gaji_bersih)->toBe('5305000.00')
+        ->and($transaksi->details()->where('komponen_gaji_id', $tunjanganBeras->id)->count())->toBe(2);
+
+    $this->assertDatabaseHas('transaksi_gaji_detail', [
+        'transaksi_gaji_id' => $transaksi->id,
+        'keterangan_snapshot' => 'Laki-laki',
+        'nominal_hasil' => 175000,
+    ]);
+});
+
+test('nominal tetap list menolak rincian kosong atau tidak lengkap', function () {
+    $tunjanganBeras = KomponenGaji::create([
+        'nama_komponen' => 'Tunjangan Beras',
+        'jenis' => 'Tunjangan',
+        'metode_perhitungan' => 'nominal_tetap_list',
+        'nilai_default' => 0,
+    ]);
+
+    $this->from(route('transaksi-gaji.create'))
+        ->post(route('transaksi-gaji.store'), [
+            'karyawan_id' => $this->karyawan->id,
+            'bulan' => 7,
+            'tahun' => 2026,
+            'baris' => [
+                "master_{$tunjanganBeras->id}" => [
+                    'pakai' => '1',
+                    'rincian' => [
+                        ['keterangan' => '', 'nominal' => 'tidak-valid'],
+                    ],
+                ],
+            ],
+        ])
+        ->assertRedirect(route('transaksi-gaji.create'))
+        ->assertSessionHasErrors([
+            "baris.master_{$tunjanganBeras->id}.rincian.0.keterangan",
+            "baris.master_{$tunjanganBeras->id}.rincian.0.nominal",
+        ]);
 
     expect(TransaksiGaji::count())->toBe(0);
 });

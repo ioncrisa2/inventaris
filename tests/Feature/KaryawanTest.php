@@ -131,6 +131,26 @@ test('karyawan can be viewed', function () {
         ->assertSee(route('absensi.show', $karyawan), false);
 });
 
+test('edit data karyawan menggunakan halaman khusus dan tetap menyimpan melalui histori', function () {
+    $karyawan = Karyawan::create(payloadKaryawanDasar($this->unitKerja, [
+        'nama_lengkap' => 'Budi Santoso',
+    ]));
+
+    $this->get(route('karyawan.show', $karyawan))
+        ->assertOk()
+        ->assertSee(route('karyawan.edit', $karyawan), false)
+        ->assertDontSee('employeeChangeModal');
+
+    $this->get(route('karyawan.edit', $karyawan))
+        ->assertOk()
+        ->assertViewIs('karyawan.edit')
+        ->assertSee('Edit Data Karyawan')
+        ->assertSee('Budi Santoso')
+        ->assertSee(route('karyawan.riwayat.store', $karyawan), false)
+        ->assertSee('Simpan Perubahan')
+        ->assertDontSee('id="employeeChangeModal"', false);
+});
+
 test('nomor_ktp harus 16 digit', function () {
     $this->post(route('karyawan.store'), payloadKaryawan($this->unitKerja, ['nomor_ktp' => '12345']))
         ->assertSessionHasErrors('nomor_ktp');

@@ -1,19 +1,23 @@
+@extends('layouts.app')
+
+@section('title', 'Edit Data Karyawan')
+
 @php
     $jenisTerpilih = old('jenis_perubahan', array_key_first($jenisPerubahanTersedia));
     $konfigurasiJenis = collect($jenisPerubahanTersedia)
         ->map(fn (array $jenis) => ['dokumen_wajib' => (bool) $jenis['dokumen_wajib']]);
 @endphp
 
-<x-modal-form
-    id="employeeChangeModal"
+@section('content')
+<x-form-page
     title="Edit Data Karyawan"
+    subtitle="{{ $karyawan->nama_lengkap }} — {{ $karyawan->nik }}"
     :action="route('karyawan.riwayat.store', $karyawan)"
+    :cancel-route="route('karyawan.show', $karyawan)"
     submit-label="Simpan Perubahan"
-    dialog-class="modal-lg modal-dialog-scrollable"
-    :data-auto-show-modal="old('_modal') === 'employeeChangeModal' && $errors->any()"
+    class="is-wide"
 >
     <div data-karyawan-change-form>
-        <input type="hidden" name="_modal" value="employeeChangeModal">
         <script type="application/json" data-karyawan-change-config>@json($konfigurasiJenis)</script>
 
         <div class="alert alert-secondary small">
@@ -347,4 +351,5 @@
             <div class="invalid-feedback d-block">{{ $message }}</div>
         @enderror
     </div>
-</x-modal-form>
+</x-form-page>
+@endsection

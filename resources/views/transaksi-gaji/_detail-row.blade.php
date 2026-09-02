@@ -1,5 +1,10 @@
 <tr>
-    <td>{{ $detail->nama_komponen_snapshot }}</td>
+    <td>
+        {{ $detail->nama_komponen_snapshot }}
+        @if($detail->keterangan_snapshot)
+            <span class="text-body-secondary small d-block">{{ $detail->keterangan_snapshot }}</span>
+        @endif
+    </td>
     <td>
         <x-badge :color="$detail->jenis_snapshot === 'Tunjangan' ? 'text-bg-success' : 'text-bg-secondary'">{{ $detail->jenis_snapshot }}</x-badge>
     </td>
@@ -13,11 +18,6 @@
             Rp {{ number_format($detail->nilai_snapshot, 0, ',', '.') }} /hari &times; {{ $detail->jumlah_hari_snapshot ?? 0 }} hari Hadir
             @if($detail->tanggal_awal_snapshot && $detail->tanggal_akhir_snapshot)
                 <span class="text-body-secondary small d-block">Periode {{ $detail->tanggal_awal_snapshot->format('d/m/Y') }} s.d. {{ $detail->tanggal_akhir_snapshot->format('d/m/Y') }}</span>
-            @endif
-        @elseif($detail->metode_perhitungan_snapshot === 'harian_sehari')
-            Rp {{ number_format($detail->nilai_snapshot, 0, ',', '.') }} /hari
-            @if($detail->tanggal_awal_snapshot)
-                <span class="text-body-secondary small d-block">{{ $detail->tanggal_awal_snapshot->format('d/m/Y') }}</span>
             @endif
         @elseif($detail->metode_perhitungan_snapshot === 'harian_manual')
             Rp {{ number_format($detail->nilai_snapshot, 0, ',', '.') }} /hari &times; {{ $detail->jumlah_hari_snapshot ?? 0 }} hari

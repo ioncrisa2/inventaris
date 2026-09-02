@@ -14,11 +14,11 @@
                         <i class="bi bi-calendar-check"></i>
                         Lihat Absensi
                     </a>
-                    @if($jenisPerubahanTersedia !== [])
-                        <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#employeeChangeModal">
+                    @if($dapatMengubah)
+                        <a class="btn btn-primary" href="{{ route('karyawan.edit', $karyawan) }}">
                             <i class="bi bi-pencil-square" aria-hidden="true"></i>
                             Edit Data Karyawan
-                        </button>
+                        </a>
                     @endif
                     <a class="btn btn-light" href="{{ route('karyawan.index') }}">Kembali</a>
                 </div>
@@ -335,7 +335,4 @@
 
 </x-app-page>
 
-@if($jenisPerubahanTersedia !== [])
-    @include('karyawan._modal-perubahan')
-@endif
 @endsection

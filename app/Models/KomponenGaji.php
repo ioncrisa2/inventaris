@@ -11,11 +11,17 @@ class KomponenGaji extends Model
 
     public const METODE_PERHITUNGAN = [
         'nominal_tetap' => 'Nominal Tetap',
+        'nominal_tidak_tetap' => 'Nominal Tidak Tetap',
+        'nominal_tetap_list' => 'Nominal Tetap - List',
         'persentase' => 'Persentase',
         'persentase_pengali' => 'Persentase × Pengali',
         'per_hari' => 'Per Hari Hadir (Periode Gaji)',
-        'harian_sehari' => 'Harian (Sehari)',
         'harian_manual' => 'Harian (Dikali Jumlah Hari)',
+    ];
+
+    public const METODE_INPUT_TRANSAKSI = [
+        'nominal_tidak_tetap',
+        'nominal_tetap_list',
     ];
 
     protected $table = 'komponen_gaji';

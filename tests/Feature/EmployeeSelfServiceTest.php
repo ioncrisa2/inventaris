@@ -87,9 +87,17 @@ test('portal slip hanya menampilkan slip published milik user login', function (
         'bulan' => 7,
         'tahun' => 2026,
         'gaji_pokok' => 5000000,
-        'gaji_bersih' => 5000000,
+        'gaji_bersih' => 5150000,
         'published_at' => now(),
         'published_by' => $admin->id,
+    ]);
+    $published->details()->create([
+        'nama_komponen_snapshot' => 'Tunjangan Beras',
+        'keterangan_snapshot' => 'Laki-laki',
+        'jenis_snapshot' => 'Tunjangan',
+        'metode_perhitungan_snapshot' => 'nominal_tetap_list',
+        'nilai_snapshot' => 150000,
+        'nominal_hasil' => 150000,
     ]);
     $draft = TransaksiGaji::create([
         'karyawan_id' => $ownKaryawan->id,
@@ -118,7 +126,9 @@ test('portal slip hanya menampilkan slip published milik user login', function (
     $this->get(route('me.salary-slips.show', $published))
         ->assertOk()
         ->assertSeeInOrder(['Pendapatan', 'Gaji Pokok', 'Total Gaji', 'Potongan', 'Total Potongan', 'Take Home Pay'])
-        ->assertSee('Rp 5.000.000');
+        ->assertSee('Rp 5.000.000')
+        ->assertSee('Tunjangan Beras')
+        ->assertSee('Laki-laki');
     $this->assertDatabaseHas('salary_access_logs', [
         'actor_user_id' => $user->id,
         'transaksi_gaji_id' => $published->id,

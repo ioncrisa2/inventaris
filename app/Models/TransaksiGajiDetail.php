@@ -12,6 +12,7 @@ class TransaksiGajiDetail extends Model
         'transaksi_gaji_id',
         'komponen_gaji_id',
         'nama_komponen_snapshot',
+        'keterangan_snapshot',
         'jenis_snapshot',
         'metode_perhitungan_snapshot',
         'nilai_snapshot',

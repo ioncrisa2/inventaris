@@ -23,7 +23,10 @@
                         </div>
                         @foreach($transaksiGaji->details->where('jenis_snapshot', 'Tunjangan') as $detail)
                             <div>
-                                <dt>{{ $detail->nama_komponen_snapshot }}</dt>
+                                <dt>
+                                    {{ $detail->nama_komponen_snapshot }}
+                                    @if($detail->keterangan_snapshot)<small class="text-body-secondary d-block">{{ $detail->keterangan_snapshot }}</small>@endif
+                                </dt>
                                 <dd>Rp {{ number_format($detail->nominal_hasil, 0, ',', '.') }}</dd>
                             </div>
                         @endforeach
@@ -39,7 +42,10 @@
                     <dl class="salary-detail-breakdown__list">
                         @forelse($transaksiGaji->details->where('jenis_snapshot', 'Potongan') as $detail)
                             <div>
-                                <dt>{{ $detail->nama_komponen_snapshot }}</dt>
+                                <dt>
+                                    {{ $detail->nama_komponen_snapshot }}
+                                    @if($detail->keterangan_snapshot)<small class="text-body-secondary d-block">{{ $detail->keterangan_snapshot }}</small>@endif
+                                </dt>
                                 <dd>- Rp {{ number_format($detail->nominal_hasil, 0, ',', '.') }}</dd>
                             </div>
                         @empty

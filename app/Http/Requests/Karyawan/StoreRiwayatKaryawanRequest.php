@@ -31,7 +31,6 @@ class StoreRiwayatKaryawanRequest extends FormRequest
         $dokumenWajib = (bool) ($schema['dokumen_wajib'] ?? false);
 
         $rules = [
-            '_modal' => ['nullable', 'string'],
             'jenis_perubahan' => ['required', Rule::in(array_keys(KaryawanPerubahanSchema::types()))],
             'tanggal_berlaku' => [
                 'required',

@@ -13,7 +13,10 @@
             <div class="salary-slip__component-list">
                 @forelse($slip['tunjangan'] as $detail)
                     <div class="salary-slip__component-row">
-                        <span>{{ $detail->nama_komponen_snapshot }}</span>
+                        <span>
+                            {{ $detail->nama_komponen_snapshot }}
+                            @if($detail->keterangan_snapshot)<small class="d-block">{{ $detail->keterangan_snapshot }}</small>@endif
+                        </span>
                         <strong>Rp {{ number_format($detail->nominal_hasil, 0, ',', '.') }}</strong>
                     </div>
                 @empty
@@ -35,7 +38,10 @@
             <div class="salary-slip__component-list">
                 @forelse($slip['potongan'] as $detail)
                     <div class="salary-slip__component-row">
-                        <span>{{ $detail->nama_komponen_snapshot }}</span>
+                        <span>
+                            {{ $detail->nama_komponen_snapshot }}
+                            @if($detail->keterangan_snapshot)<small class="d-block">{{ $detail->keterangan_snapshot }}</small>@endif
+                        </span>
                         <strong>Rp {{ number_format($detail->nominal_hasil, 0, ',', '.') }}</strong>
                     </div>
                 @empty

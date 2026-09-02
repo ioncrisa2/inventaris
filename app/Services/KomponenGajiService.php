@@ -73,13 +73,18 @@ class KomponenGajiService
     /**
      * dasar_persentase tidak diambil dari input pengguna: nilainya ditentukan
      * otomatis dari metode_perhitungan supaya konsisten ("gaji_pokok" untuk
-     * persentase, kosong untuk nominal tetap).
+     * persentase, kosong untuk metode nominal). Metode yang nilainya diisi
+     * saat transaksi tidak menyimpan nilai default yang menyesatkan.
      */
     private function withDasarPersentase(array $data): array
     {
         $data['dasar_persentase'] = in_array($data['metode_perhitungan'], ['persentase', 'persentase_pengali'], true)
             ? 'gaji_pokok'
             : null;
+
+        if (in_array($data['metode_perhitungan'], KomponenGaji::METODE_INPUT_TRANSAKSI, true)) {
+            $data['nilai_default'] = '0';
+        }
 
         return $data;
     }
