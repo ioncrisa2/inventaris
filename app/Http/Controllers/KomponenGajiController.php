@@ -59,6 +59,22 @@ class KomponenGajiController extends Controller
     }
 
     /**
+     * Display the specified resource.
+     */
+    public function show(KomponenGaji $komponenGaji)
+    {
+        $komponenGaji->load([
+            'koperasi:id,nama',
+            'rincian' => fn ($query) => $query->orderBy('urutan')->orderBy('id'),
+        ]);
+        $jumlahTransaksi = $komponenGaji->transaksiGajiDetails()
+            ->distinct()
+            ->count('transaksi_gaji_id');
+
+        return view('komponen-gaji.show', compact('komponenGaji', 'jumlahTransaksi'));
+    }
+
+    /**
      * Show the form for editing the specified resource.
      */
     public function edit(KomponenGaji $komponenGaji)

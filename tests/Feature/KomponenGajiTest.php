@@ -1,6 +1,11 @@
 <?php
 
+use App\Models\Karyawan;
 use App\Models\KomponenGaji;
+use App\Models\TransaksiGaji;
+use App\Models\TransaksiGajiDetail;
+use App\Models\UnitKerja;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -35,8 +40,100 @@ test('tambah dan edit komponen gaji menggunakan halaman khusus', function () {
     $this->get(route('komponen-gaji.index'))
         ->assertOk()
         ->assertSee(route('komponen-gaji.create'), false)
+        ->assertSee(route('komponen-gaji.show', $komponen), false)
         ->assertSee(route('komponen-gaji.edit', $komponen), false)
         ->assertDontSee('createKomponenGajiModal');
+});
+
+test('detail komponen gaji menampilkan ringkasan rincian dan aksi di header', function () {
+    $komponen = KomponenGaji::create([
+        'nama_komponen' => 'Tunjangan Beras',
+        'jenis' => 'Tunjangan',
+        'metode_perhitungan' => 'nominal_tetap_list',
+        'nilai_default' => 0,
+    ]);
+    $komponen->rincian()->createMany([
+        ['keterangan' => 'Laki-laki', 'nominal' => 150000, 'urutan' => 0],
+        ['keterangan' => 'Perempuan', 'nominal' => 125000, 'urutan' => 1],
+    ]);
+
+    $this->get(route('komponen-gaji.show', $komponen))
+        ->assertOk()
+        ->assertViewIs('komponen-gaji.show')
+        ->assertViewHas('jumlahTransaksi', 0)
+        ->assertSee('Tunjangan Beras')
+        ->assertSee('Nominal Tetap - List')
+        ->assertSee('Laki-laki')
+        ->assertSee('Perempuan')
+        ->assertSee('Rp 275.000')
+        ->assertSee('Belum digunakan')
+        ->assertSee(route('komponen-gaji.edit', $komponen), false)
+        ->assertSee('data-delete-url="'.route('komponen-gaji.destroy', $komponen).'"', false);
+});
+
+test('detail komponen gaji hanya menampilkan aksi sesuai izin pengguna', function () {
+    $komponen = KomponenGaji::create([
+        'nama_komponen' => 'Tunjangan Transport',
+        'jenis' => 'Tunjangan',
+        'metode_perhitungan' => 'nominal_tetap',
+        'nilai_default' => 500000,
+    ]);
+    $viewer = User::factory()->create([
+        'koperasi_id' => auth()->user()->koperasi_id,
+    ]);
+    $viewer->givePermissionTo('komponen-gaji.view');
+
+    $this->actingAs($viewer)
+        ->get(route('komponen-gaji.show', $komponen))
+        ->assertOk()
+        ->assertSee('Tunjangan Transport')
+        ->assertDontSee(route('komponen-gaji.edit', $komponen), false)
+        ->assertDontSee('data-delete-url="'.route('komponen-gaji.destroy', $komponen).'"', false);
+});
+
+test('detail komponen gaji menghitung transaksi unik dan menjelaskan penghapusan yang diblokir', function () {
+    $komponen = KomponenGaji::create([
+        'nama_komponen' => 'Tunjangan Beras',
+        'jenis' => 'Tunjangan',
+        'metode_perhitungan' => 'nominal_tetap_list',
+        'nilai_default' => 0,
+    ]);
+    $unitKerja = UnitKerja::create(['nama_unit' => 'Keuangan']);
+    $karyawan = Karyawan::create([
+        'nik' => 'EMP-KG-001',
+        'nama_lengkap' => 'Pegawai Komponen',
+        'tanggal_lahir' => '1990-01-01',
+        'unit_kerja_id' => $unitKerja->id,
+        'jabatan' => 'Staf',
+        'status_karyawan' => 'Tetap',
+        'gaji_pokok' => 5000000,
+    ]);
+    $transaksi = TransaksiGaji::create([
+        'karyawan_id' => $karyawan->id,
+        'bulan' => 8,
+        'tahun' => 2026,
+        'gaji_pokok' => 5000000,
+        'gaji_bersih' => 5275000,
+    ]);
+
+    foreach ([['Laki-laki', 150000], ['Perempuan', 125000]] as [$keterangan, $nominal]) {
+        TransaksiGajiDetail::create([
+            'transaksi_gaji_id' => $transaksi->id,
+            'komponen_gaji_id' => $komponen->id,
+            'nama_komponen_snapshot' => $komponen->nama_komponen,
+            'keterangan_snapshot' => $keterangan,
+            'jenis_snapshot' => $komponen->jenis,
+            'metode_perhitungan_snapshot' => $komponen->metode_perhitungan,
+            'nilai_snapshot' => $nominal,
+            'nominal_hasil' => $nominal,
+        ]);
+    }
+
+    $this->get(route('komponen-gaji.show', $komponen))
+        ->assertOk()
+        ->assertViewHas('jumlahTransaksi', 1)
+        ->assertSee('1 transaksi')
+        ->assertSee('Komponen gaji tidak dapat dihapus karena sudah digunakan pada 1 transaksi gaji.');
 });
 
 test('komponen gaji nominal tetap can be created', function () {

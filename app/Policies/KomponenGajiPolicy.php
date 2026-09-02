@@ -11,6 +11,11 @@ class KomponenGajiPolicy
         return $user->can('komponen-gaji.view');
     }
 
+    public function view(User $user): bool
+    {
+        return $user->can('komponen-gaji.view');
+    }
+
     public function create(User $user): bool
     {
         return $user->can('komponen-gaji.create');

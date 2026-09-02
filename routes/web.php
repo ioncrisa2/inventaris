@@ -216,7 +216,7 @@ Route::middleware(['auth', 'koperasi.active'])->group(function () {
     Route::delete('barang/{barang}/dokumen/{dokumenBarang}', [DokumenBarangController::class, 'destroy'])->name('barang.dokumen.destroy');
 
     Route::delete('komponen-gaji/bulk', [KomponenGajiController::class, 'bulkDestroy'])->name('komponen-gaji.bulk-destroy');
-    Route::resource('komponen-gaji', KomponenGajiController::class)->except(['show']);
+    Route::resource('komponen-gaji', KomponenGajiController::class);
 
     Route::get('transaksi-gaji/cetak-massal', [TransaksiGajiController::class, 'cetakMassal'])
         ->name('transaksi-gaji.cetak-massal');

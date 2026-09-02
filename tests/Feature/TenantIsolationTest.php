@@ -81,7 +81,7 @@ test('admin_primer cannot see karyawan, absensi, hari libur, komponen gaji, or t
         ->and(TransaksiGaji::count())->toBe(1)->and(TransaksiGaji::first()->id)->toBe($dataA['transaksiGaji']->id);
 });
 
-test('admin_primer cannot open another koperasi karyawan or transaksi gaji detail page', function () {
+test('admin_primer cannot open another koperasi operational detail page', function () {
     ['adminA' => $adminA, 'adminB' => $adminB] = seedTwoTenants();
 
     test()->actingAs($adminA);
@@ -89,6 +89,7 @@ test('admin_primer cannot open another koperasi karyawan or transaksi gaji detai
 
     test()->actingAs($adminB);
     test()->get(route('karyawan.show', $dataA['karyawan']))->assertNotFound();
+    test()->get(route('komponen-gaji.show', $dataA['komponenGaji']))->assertNotFound();
     test()->get(route('transaksi-gaji.show', $dataA['transaksiGaji']))->assertNotFound();
 });
 

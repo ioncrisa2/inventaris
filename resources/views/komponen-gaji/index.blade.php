@@ -4,9 +4,7 @@
 
 @php
     $showTenant = auth()->user()->isSuperAdmin();
-    $canUpdate = auth()->user()->can('komponen-gaji.update');
     $canDelete = auth()->user()->can('komponen-gaji.delete');
-    $showActions = $canUpdate || $canDelete;
 @endphp
 
 @section('content')
@@ -76,9 +74,7 @@
                             <th class="table-col-width-120">Jenis</th>
                             <th>Metode Perhitungan</th>
                             <th class="text-end table-col-width-150">Nilai Default</th>
-                            @if($showActions)
-                                <th class="table-col-width-100">Aksi</th>
-                            @endif
+                            <th class="text-nowrap table-col-width-130">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -124,9 +120,15 @@
                                     Rp {{ number_format($data->nilai_default, 0, ',', '.') }}
                                 @endif
                             </td>
-                            @if($showActions)
                             <td>
                                 <div class="table-actions">
+                                    <a
+                                        class="btn btn-sm btn-action btn-action-neutral"
+                                        title="Detail"
+                                        aria-label="Detail {{ $data->nama_komponen }}"
+                                        href="{{ route('komponen-gaji.show', $data) }}">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
                                     @can('update', $data)
                                     <a
                                         class="btn btn-sm btn-action btn-action-neutral"
@@ -146,10 +148,9 @@
                                     @endcan
                                 </div>
                             </td>
-                            @endif
                         </tr>
                         @empty
-                        <x-empty-row :colspan="4 + ($showTenant ? 1 : 0) + ($canDelete ? 1 : 0) + ($showActions ? 1 : 0)">
+                        <x-empty-row :colspan="5 + ($showTenant ? 1 : 0) + ($canDelete ? 1 : 0)">
                             @if(request()->hasAny(['jenis', 'search', 'koperasi_id']))
                                 Tidak ada komponen gaji yang cocok dengan filter.
                                 <a href="{{ route('komponen-gaji.index') }}">Hapus filter</a>.

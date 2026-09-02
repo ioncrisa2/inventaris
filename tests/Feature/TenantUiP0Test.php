@@ -101,7 +101,13 @@ test('super admin operational UI is explicitly global read only and tenant-quali
         ->assertOk()
         ->assertDontSee('createKomponenGajiModal')
         ->assertDontSee('editKomponenGajiModal')
-        ->assertDontSee(route('komponen-gaji.destroy', $dataA['komponen']), false);
+        ->assertDontSee('data-delete-url="'.route('komponen-gaji.destroy', $dataA['komponen']).'"', false);
+
+    $this->get(route('komponen-gaji.show', $dataA['komponen']))
+        ->assertOk()
+        ->assertSee('Primer Alpha')
+        ->assertDontSee(route('komponen-gaji.edit', $dataA['komponen']), false)
+        ->assertDontSee('data-delete-url="'.route('komponen-gaji.destroy', $dataA['komponen']).'"', false);
 
     $this->get(route('transaksi-gaji.show', $dataA['transaksi']))
         ->assertOk()
