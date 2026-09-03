@@ -57,3 +57,33 @@ test('non owner requests are never written to the owner audit log', function () 
 
     expect(DB::table('system_owner_audit_logs')->count())->toBe(0);
 });
+
+test('system owner can view and filter the activity log while other users cannot', function () {
+    $owner = systemOwnerUser();
+    $koperasi = Koperasi::create(['nama' => 'Koperasi Activity Log']);
+
+    DB::table('system_owner_audit_logs')->insert([
+        'actor_user_id' => $owner->id,
+        'koperasi_id' => $koperasi->id,
+        'action' => 'owner.features.update',
+        'route' => 'PATCH /owner/features/inventaris',
+        'response_status' => 200,
+        'ip_address' => '127.0.0.1',
+        'created_at' => now(),
+    ]);
+
+    $this->actingAs($owner)
+        ->get(route('owner.activity-logs.index', [
+            'koperasi_id' => $koperasi->id,
+            'method' => 'PATCH',
+            'response_status' => 200,
+        ]))
+        ->assertOk()
+        ->assertSeeText('Activity Log')
+        ->assertSeeText('owner.features.update')
+        ->assertSeeText('Koperasi Activity Log');
+
+    $this->actingAs(superAdminUser())
+        ->get(route('owner.activity-logs.index'))
+        ->assertForbidden();
+});

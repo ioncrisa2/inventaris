@@ -21,6 +21,7 @@ use App\Http\Controllers\MyProfileController;
 use App\Http\Controllers\MySalarySlipController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OnboardingTourController;
+use App\Http\Controllers\Owner\ActivityLogController;
 use App\Http\Controllers\Owner\AnnouncementController as OwnerAnnouncementController;
 use App\Http\Controllers\Owner\MaintenanceController;
 use App\Http\Controllers\Owner\PlatformFeatureController;
@@ -76,6 +77,7 @@ Route::middleware(['auth', 'system_owner', AuditSystemOwnerAccess::class])
         Route::delete('roles/bulk', [OwnerRoleController::class, 'bulkDestroy'])->name('roles.bulk-destroy');
         Route::resource('roles', OwnerRoleController::class)->except(['show']);
         Route::get('analytics', [OwnerAnalyticsController::class, 'index'])->name('analytics');
+        Route::get('activity-logs', ActivityLogController::class)->name('activity-logs.index');
         Route::get('analytics/koperasi/{koperasi}', [OwnerAnalyticsController::class, 'koperasi'])
             ->whereNumber('koperasi')
             ->name('analytics.koperasi');

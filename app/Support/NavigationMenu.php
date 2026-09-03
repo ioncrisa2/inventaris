@@ -146,6 +146,7 @@ class NavigationMenu
                 'label' => 'Observability',
                 'items' => [
                     ['label' => 'Analitik Koperasi', 'icon' => 'bi-graph-up-arrow', 'route' => 'owner.analytics', 'active_routes' => ['owner.analytics', 'owner.analytics.koperasi'], 'permission' => null],
+                    ['label' => 'Activity Log', 'icon' => 'bi-clock-history', 'route' => 'owner.activity-logs.index', 'active_routes' => ['owner.activity-logs.*'], 'permission' => null],
                     ['label' => 'Kesehatan Sistem', 'icon' => 'bi-heart-pulse', 'route' => 'owner.system-health', 'active_routes' => ['owner.system-health'], 'permission' => null],
                     ['label' => 'Penyimpanan', 'icon' => 'bi-device-ssd', 'route' => 'owner.storage', 'active_routes' => ['owner.storage'], 'permission' => null],
                     ['label' => 'Maintenance', 'icon' => 'bi-tools', 'route' => 'owner.maintenance.edit', 'active_routes' => ['owner.maintenance.*'], 'permission' => null],
