@@ -31,10 +31,17 @@ class PengaturanController extends Controller
         $slipGajiTemplateState = null;
 
         if (request()->user()->can('pengaturan.view')) {
-            $formatKodeBarang = $this->kodeBarangGenerator->template();
-            $digitNomorUrut = $this->kodeBarangGenerator->sequenceDigits();
+            if (request()->user()->isSuperAdmin()) {
+                $formatKodeBarang = KodeBarangGenerator::DEFAULT_TEMPLATE;
+                $digitNomorUrut = KodeBarangGenerator::DEFAULT_SEQUENCE_DIGITS;
+                $hariOperasional = HariOperasionalService::DEFAULT_HARI;
+            } else {
+                $formatKodeBarang = $this->kodeBarangGenerator->template();
+                $digitNomorUrut = $this->kodeBarangGenerator->sequenceDigits();
+                $hariOperasional = $this->hariOperasionalService->hariOperasional();
+            }
+
             $contohKodeBarang = $this->kodeBarangGenerator->contoh($formatKodeBarang, $digitNomorUrut);
-            $hariOperasional = $this->hariOperasionalService->hariOperasional();
             $identitasNama = $this->identitasAplikasiService->nama();
             $identitasAlamat = $this->identitasAplikasiService->alamat();
             $identitasLogoUrl = $this->identitasAplikasiService->logoUrl();

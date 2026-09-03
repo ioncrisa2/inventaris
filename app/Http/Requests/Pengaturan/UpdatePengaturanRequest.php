@@ -46,7 +46,8 @@ class UpdatePengaturanRequest extends FormRequest
                     return;
                 }
 
-                preg_match_all('/\{[A-Z_]+\}/', (string) $this->input('format_kode_barang'), $matches);
+                $template = (string) $this->input('format_kode_barang');
+                preg_match_all('/\{[^{}]*\}/', $template, $matches);
 
                 $tidakDikenal = array_diff($matches[0], KodeBarangGenerator::TOKENS);
 
@@ -57,11 +58,36 @@ class UpdatePengaturanRequest extends FormRequest
                     );
                 }
 
-                if (! str_contains((string) $this->input('format_kode_barang'), '{URUT}')) {
+                $sisaTemplate = str_replace($matches[0], '', $template);
+                if (str_contains($sisaTemplate, '{') || str_contains($sisaTemplate, '}')) {
+                    $validator->errors()->add(
+                        'format_kode_barang',
+                        'Susunan kurung token tidak valid. Gunakan token utuh seperti {UNIT} atau {URUT}.'
+                    );
+                }
+
+                if (! str_contains($template, '{URUT}')) {
                     $validator->errors()->add(
                         'format_kode_barang',
                         'Template wajib memuat token {URUT} agar setiap barang memperoleh kode unik.'
                     );
+                }
+
+                $digits = filter_var($this->input('digit_nomor_urut'), FILTER_VALIDATE_INT);
+                if ($digits !== false
+                    && $digits >= KodeBarangGenerator::MIN_SEQUENCE_DIGITS
+                    && $digits <= KodeBarangGenerator::MAX_SEQUENCE_DIGITS) {
+                    $maximumLength = app(KodeBarangGenerator::class)->maximumGeneratedLength(
+                        (string) $this->input('format_kode_barang'),
+                        $digits,
+                    );
+
+                    if ($maximumLength > KodeBarangGenerator::MAX_CODE_LENGTH) {
+                        $validator->errors()->add(
+                            'format_kode_barang',
+                            'Kode hasil template dapat mencapai '.$maximumLength.' karakter, melebihi batas '.KodeBarangGenerator::MAX_CODE_LENGTH.' karakter.'
+                        );
+                    }
                 }
             },
         ];

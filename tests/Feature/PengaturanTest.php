@@ -90,6 +90,20 @@ test('pengaturan rejects unknown tokens', function () {
     ])->assertSessionHasErrors('format_kode_barang');
 });
 
+test('pengaturan rejects malformed and partially parsed tokens', function (string $template) {
+    $this->actingAs(adminUser());
+
+    $this->put(route('pengaturan.update'), [
+        'format_kode_barang' => $template,
+        'digit_nomor_urut' => 4,
+    ])->assertSessionHasErrors('format_kode_barang');
+})->with([
+    'token containing a digit' => 'INV-{FOO1}-{URUT}',
+    'empty token' => 'INV-{}-{URUT}',
+    'nested braces' => 'INV-{{URUT}}',
+    'unclosed token' => 'INV-{UNIT-{URUT}',
+]);
+
 test('pengaturan requires the sequence token to preserve unique codes', function () {
     $this->actingAs(adminUser());
 
@@ -135,6 +149,71 @@ test('kode barang generator increments sequence and avoids collisions', function
     $kode2 = $generator->generate('Bukan Bangunan - Kelompok 1', $unitKerja->id, '2026-07-21');
 
     expect($kode2)->not->toBe($kode1);
+});
+
+test('kode barang generator continues past more than twenty occupied numbers after deletions', function () {
+    $this->actingAs(adminPrimerUser());
+
+    $generator = app(KodeBarangGenerator::class);
+    $unitKerja = UnitKerja::create(['nama_unit' => 'IT', 'kode' => 'IT']);
+
+    $generator->simpanPengaturan('INV-{URUT}', 4);
+
+    foreach (range(26, 50) as $sequence) {
+        Barang::create([
+            'kode_barang' => 'INV-'.str_pad((string) $sequence, 4, '0', STR_PAD_LEFT),
+            'nama_barang' => 'Barang '.$sequence,
+            'kategori' => 'Bukan Bangunan - Kelompok 1',
+            'unit_kerja_id' => $unitKerja->id,
+            'tanggal_perolehan' => '2026-07-21',
+            'harga_perolehan' => 1000000,
+        ]);
+    }
+
+    expect($generator->generate('Bukan Bangunan - Kelompok 1', $unitKerja->id, '2026-07-21'))
+        ->toBe('INV-0051');
+});
+
+test('kode barang generator does not reuse a sequence after its barang is deleted', function () {
+    $this->actingAs(adminPrimerUser());
+
+    $generator = app(KodeBarangGenerator::class);
+    $unitKerja = UnitKerja::create(['nama_unit' => 'IT', 'kode' => 'IT']);
+
+    $generator->simpanPengaturan('INV-{URUT}', 4);
+    $firstCode = $generator->generate('Bukan Bangunan - Kelompok 1', $unitKerja->id, '2026-07-21');
+    $barang = Barang::create([
+        'kode_barang' => $firstCode,
+        'nama_barang' => 'Barang pertama',
+        'kategori' => 'Bukan Bangunan - Kelompok 1',
+        'unit_kerja_id' => $unitKerja->id,
+        'tanggal_perolehan' => '2026-07-21',
+        'harga_perolehan' => 1000000,
+    ]);
+
+    $barang->delete();
+
+    expect($firstCode)->toBe('INV-0001')
+        ->and($generator->generate('Bukan Bangunan - Kelompok 1', $unitKerja->id, '2026-07-21'))
+        ->toBe('INV-0002');
+});
+
+test('inventory numbering rejects a template whose generated code can exceed database capacity', function () {
+    $this->actingAs(adminPrimerUser());
+
+    $this->put(route('pengaturan.update'), [
+        'format_kode_barang' => str_repeat('A', 249).'{URUT}',
+        'digit_nomor_urut' => 8,
+    ])->assertSessionHasErrors('format_kode_barang');
+});
+
+test('inventory numbering accepts a generated code exactly at database capacity', function () {
+    $this->actingAs(adminPrimerUser());
+
+    $this->put(route('pengaturan.update'), [
+        'format_kode_barang' => str_repeat('A', 247).'{URUT}',
+        'digit_nomor_urut' => 8,
+    ])->assertSessionDoesntHaveErrors('format_kode_barang');
 });
 
 test('identitas koperasi falls back to app name when not configured', function () {
@@ -295,6 +374,17 @@ test('super_admin sees read-only settings page, not editable forms', function ()
         ->assertDontSee('id="inventoryNumberingForm"', false)
         ->assertDontSee('id="hariOperasionalForm"', false)
         ->assertSee('dikelola oleh admin_primer masing-masing koperasi');
+});
+
+test('super_admin settings page does not display an arbitrary tenant numbering format', function () {
+    $this->actingAs(adminPrimerUser());
+    app(KodeBarangGenerator::class)->simpanPengaturan('RAHASIA-{URUT}', 7);
+
+    $this->actingAs(superAdminUser());
+
+    $this->get(route('pengaturan.edit'))
+        ->assertOk()
+        ->assertDontSee('RAHASIA-{URUT}');
 });
 
 test('login page always shows the default app identity, never a tenant\'s branding', function () {

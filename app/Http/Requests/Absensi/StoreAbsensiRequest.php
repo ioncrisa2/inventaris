@@ -31,7 +31,7 @@ class StoreAbsensiRequest extends FormRequest
     }
 
     /**
-     * Hari libur (Minggu atau libur nasional) hanya menerima status
+     * Hari non-operasional atau libur nasional hanya menerima status
      * non-hari-kerja yang relevan.
      */
     public function after(): array
@@ -49,7 +49,7 @@ class StoreAbsensiRequest extends FormRequest
                     $tanggalAbsensi,
                     $this->route('karyawan')?->koperasi_id,
                 ) && ! $statusDiizinkanDiHariLibur) {
-                    $validator->errors()->add('absensi', 'Hari libur (Minggu/libur nasional) hanya dapat dicatat dengan status Izin, Sakit, atau Dinas Luar Kota.');
+                    $validator->errors()->add('absensi', 'Hari non-operasional atau libur nasional hanya dapat dicatat dengan status Izin, Sakit, atau Dinas Luar Kota.');
                 }
             },
         ];
