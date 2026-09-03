@@ -11,8 +11,8 @@
 
     <x-data-table
         :paginator="$logs"
-        title="Aktivitas System Owner"
-        subtitle="Log terbaru ditampilkan lebih dahulu. Isi formulir dan payload sensitif tidak direkam."
+        title="Aktivitas Penting Pengguna"
+        subtitle="Mencakup perubahan data, autentikasi, download, ekspor, dan cetak. Isi formulir dan payload sensitif tidak direkam."
     >
         <x-slot:toolbar>
             <x-filter-form
@@ -23,7 +23,7 @@
                 <div class="col-12 col-md-auto">
                     <label class="visually-hidden" for="activity_actor">Aktor</label>
                     <select class="form-select" id="activity_actor" name="actor_user_id">
-                        <option value="">Semua owner</option>
+                        <option value="">Semua pengguna</option>
                         @foreach($owners as $owner)
                             <option value="{{ $owner->id }}" @selected((string) request('actor_user_id') === (string) $owner->id)>{{ $owner->name }}</option>
                         @endforeach
@@ -113,7 +113,7 @@
                     <x-empty-row :colspan="6">
                         {{ request()->hasAny(['actor_user_id', 'koperasi_id', 'action', 'method', 'response_status', 'date_from', 'date_to'])
                             ? 'Tidak ada aktivitas yang cocok dengan filter.'
-                            : 'Belum ada aktivitas System Owner yang tercatat.' }}
+                            : 'Belum ada aktivitas penting pengguna yang tercatat.' }}
                     </x-empty-row>
                 @endforelse
             </tbody>

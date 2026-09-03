@@ -18,11 +18,7 @@ test('system owner has an audited role management control plane without operatio
 
     $this->get(route('role.index'))->assertForbidden();
 
-    $this->assertDatabaseHas('system_owner_audit_logs', [
-        'actor_user_id' => $owner->id,
-        'action' => 'owner.roles.index',
-        'response_status' => 200,
-    ]);
+    expect(DB::table('activity_logs')->count())->toBe(0);
 });
 
 test('super admin role and user screens do not reveal the system owner identity', function () {
@@ -131,5 +127,5 @@ test('non owner accounts cannot enter the owner role management routes', functio
         ->get(route('owner.roles.index'))
         ->assertForbidden();
 
-    expect(DB::table('system_owner_audit_logs')->count())->toBe(0);
+    expect(DB::table('activity_logs')->count())->toBe(0);
 });

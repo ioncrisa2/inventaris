@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\AuditUserActivity;
 use App\Http\Middleware\EnsureIsSuperAdmin;
 use App\Http\Middleware\EnsureIsSystemOwner;
 use App\Http\Middleware\EnsureKoperasiActive;
@@ -26,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->trustProxies(at: '*');
         $middleware->web(append: [
+            AuditUserActivity::class,
             EnsurePlatformAvailable::class,
             EnsurePlatformFeatureEnabled::class,
             EnsureUploadCapacity::class,

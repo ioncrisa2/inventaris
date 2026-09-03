@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'user_agent',
     'filters',
 ])]
-class SystemOwnerAuditLog extends Model
+class ActivityLog extends Model
 {
     public const UPDATED_AT = null;
 

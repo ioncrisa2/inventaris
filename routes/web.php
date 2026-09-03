@@ -47,7 +47,6 @@ use App\Http\Controllers\TransaksiGajiController;
 use App\Http\Controllers\UnitKerjaController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\UserController;
-use App\Http\Middleware\AuditSystemOwnerAccess;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -59,7 +58,7 @@ Route::middleware('auth')->group(function () {
     Route::get('koperasi/masa-aktif-berakhir', KoperasiExpiredController::class)->name('koperasi.expired');
 });
 
-Route::middleware(['auth', 'system_owner', AuditSystemOwnerAccess::class])
+Route::middleware(['auth', 'system_owner'])
     ->prefix('owner')
     ->name('owner.')
     ->group(function () {

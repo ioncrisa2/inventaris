@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Owner;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActivityLog;
 use App\Models\Koperasi;
-use App\Models\SystemOwnerAuditLog;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -24,7 +24,7 @@ class ActivityLogController extends Controller
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
         ]);
 
-        $logs = SystemOwnerAuditLog::query()
+        $logs = ActivityLog::query()
             ->with(['actor:id,name,email', 'koperasi:id,nama'])
             ->when($filters['actor_user_id'] ?? null, fn ($query, $actorId) => $query->where('actor_user_id', $actorId))
             ->when($filters['koperasi_id'] ?? null, fn ($query, $koperasiId) => $query->where('koperasi_id', $koperasiId))
@@ -40,7 +40,7 @@ class ActivityLogController extends Controller
         return view('owner.activity-logs.index', [
             'logs' => $logs,
             'owners' => User::query()
-                ->whereHas('roles', fn ($query) => $query->where('name', 'system_owner'))
+                ->whereIn('id', ActivityLog::query()->select('actor_user_id')->whereNotNull('actor_user_id'))
                 ->orderBy('name')
                 ->get(['id', 'name']),
             'koperasis' => Koperasi::query()->orderBy('nama')->get(['id', 'nama']),

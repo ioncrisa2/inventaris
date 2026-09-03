@@ -159,7 +159,7 @@ test('owner mutations are audited without body internal note or sensitive reason
             'body' => $secret,
         ])->assertRedirect();
 
-    $audit = DB::table('system_owner_audit_logs')->latest('id')->first();
+    $audit = DB::table('activity_logs')->latest('id')->first();
     expect($audit->action)->toBe('owner.product-requests.messages.store')
         ->and(str_contains((string) $audit->filters, $secret))->toBeFalse()
         ->and(str_contains((string) $audit->route, $secret))->toBeFalse();

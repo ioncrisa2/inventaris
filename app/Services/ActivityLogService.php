@@ -2,17 +2,15 @@
 
 namespace App\Services;
 
-use App\Models\SystemOwnerAuditLog;
+use App\Models\ActivityLog;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-class SystemOwnerAuditService
+class ActivityLogService
 {
-    /**
-     * Hanya filter analitik yang tidak sensitif yang boleh masuk audit log.
-     * Hasil agregat dan seluruh payload request sengaja tidak pernah disimpan.
-     */
+    /** Payload request tidak pernah disimpan; hanya filter aman berikut. */
     private const ALLOWED_FILTERS = [
         'koperasi_id',
         'periode',
@@ -29,11 +27,11 @@ class SystemOwnerAuditService
         'date_to',
     ];
 
-    public function record(Request $request, int $responseStatus): void
+    public function record(Request $request, int $responseStatus, ?User $actor = null): void
     {
-        $actor = $request->user();
+        $actor ??= $request->user();
 
-        if (! $actor?->isSystemOwner()) {
+        if (! $actor) {
             return;
         }
 
@@ -50,12 +48,17 @@ class SystemOwnerAuditService
                 $filters['koperasi_id'] = (string) (int) $routeKoperasi;
             }
 
-            SystemOwnerAuditLog::query()->create([
+            $targetKoperasiId = $actor->koperasi_id;
+            if ($targetKoperasiId === null
+                && isset($filters['koperasi_id'])
+                && ctype_digit($filters['koperasi_id'])) {
+                $targetKoperasiId = (int) $filters['koperasi_id'];
+            }
+
+            ActivityLog::query()->create([
                 'actor_user_id' => $actor->getKey(),
-                'koperasi_id' => isset($filters['koperasi_id']) && ctype_digit($filters['koperasi_id'])
-                    ? (int) $filters['koperasi_id']
-                    : null,
-                'action' => mb_substr((string) ($request->route()?->getName() ?? 'owner.request'), 0, 255),
+                'koperasi_id' => $targetKoperasiId,
+                'action' => mb_substr((string) ($request->route()?->getName() ?? 'user.request'), 0, 255),
                 'route' => mb_substr($request->method().' /'.$request->path(), 0, 255),
                 'response_status' => $responseStatus,
                 'ip_address' => $request->ip(),
@@ -63,9 +66,7 @@ class SystemOwnerAuditService
                 'filters' => $filters ?: null,
             ]);
         } catch (Throwable $exception) {
-            // Audit observability tidak boleh menjatuhkan halaman owner. Pesan
-            // dibatasi pada tipe exception agar query/credential tidak bocor.
-            Log::warning('Pencatatan audit system owner gagal.', [
+            Log::warning('Pencatatan activity log gagal.', [
                 'exception' => $exception::class,
             ]);
         }
