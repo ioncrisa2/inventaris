@@ -137,6 +137,7 @@ class NavigationMenu
                 'key' => 'keamanan-akses-platform',
                 'label' => 'Keamanan & Akses',
                 'items' => [
+                    ['label' => 'User List', 'icon' => 'bi-people', 'route' => 'owner.userlist.index', 'active_routes' => ['owner.userlist.*'], 'permission' => null],
                     ['label' => 'Role & Hak Akses', 'icon' => 'bi-shield-lock', 'route' => 'owner.roles.index', 'active_routes' => ['owner.roles.*'], 'permission' => null],
                 ],
             ],

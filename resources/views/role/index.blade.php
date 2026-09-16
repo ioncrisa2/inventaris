@@ -40,23 +40,6 @@
         </div>
         @endif
 
-        <div class="alert alert-info app-alert" role="note">
-            <i class="bi bi-lock" aria-hidden="true"></i>
-            <div>
-                <strong>Role sistem dilindungi.</strong>
-                @if($isOwnerRoleManager)
-                    Nama Super Admin dan Admin Primer tetap dikunci sebagai jangkar identitas, tetapi permission keduanya dapat Anda atur.
-                    Identitas pemilik platform sengaja tidak ditampilkan di halaman ini.
-                @elseif(auth()->user()->isSuperAdmin())
-                    Role Super Admin tidak dapat diubah. Untuk Admin Primer, nama role tetap dikunci tetapi permission dapat Anda atur.
-                    Semua role sistem tidak dapat dihapus.
-                @else
-                    Super Admin dan Admin Primer menjadi jangkar identitas sehingga tidak dapat diubah atau dihapus dari halaman ini.
-                    Klik jumlah pengguna untuk mengelola akun pemegang role tersebut.
-                @endif
-            </div>
-        </div>
-
         <x-data-table :paginator="$roles">
                 <table class="table table-hover align-middle mb-0">
                     <thead>
