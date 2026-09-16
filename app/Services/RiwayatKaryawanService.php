@@ -91,7 +91,9 @@ class RiwayatKaryawanService
                     fn (string $field) => $nilaiBaru[$field] ?? null,
                 );
 
-                if ($perubahan === []) {
+                $adaDokumenBaru = $dokumen !== [] || $dokumenToken !== [];
+
+                if ($perubahan === [] && ! $adaDokumenBaru) {
                     throw ValidationException::withMessages([
                         'jenis_perubahan' => 'Tidak ada nilai yang berubah. Periksa kembali data yang Anda masukkan.',
                     ]);

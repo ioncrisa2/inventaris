@@ -198,6 +198,31 @@ test('dokumen repeater rows are uploaded when creating karyawan', function () {
     Storage::disk('local')->assertExists($dokumenKtp->path);
 });
 
+test('dokumen dapat ditambahkan melalui pembaruan data tanpa mengubah data master', function () {
+    $this->post(route('karyawan.store'), payloadKaryawan($this->unitKerja))
+        ->assertRedirect(route('karyawan.index'));
+
+    $karyawan = Karyawan::where('nik', 'EMP-001')->firstOrFail();
+    $dokumen = UploadedFile::fake()->create('kartu-keluarga.pdf', 200, 'application/pdf');
+
+    $this->post(route('karyawan.riwayat.store', $karyawan), array_merge(
+        payloadKaryawan($this->unitKerja, ['foto_karyawan' => null]),
+        [
+            'jenis_perubahan' => 'perbaruan_data',
+            'tanggal_berlaku' => now()->toDateString(),
+            'alasan' => 'Menambahkan kartu keluarga.',
+            'dokumen' => [
+                ['jenis_dokumen' => 'Lainnya', 'dokumen' => $dokumen],
+            ],
+        ],
+    ))->assertRedirect(route('karyawan.show', $karyawan));
+
+    expect($karyawan->fresh()->riwayatPerubahan()->count())->toBe(1);
+    $dokumenTersimpan = $karyawan->fresh()->dokumen()->sole();
+    expect($dokumenTersimpan->nama_asli)->toBe('kartu-keluarga.pdf');
+    Storage::disk('local')->assertExists($dokumenTersimpan->path);
+});
+
 test('empty dokumen repeater rows left over from add/remove are silently ignored', function () {
     $this->post(route('karyawan.store'), payloadKaryawan($this->unitKerja, [
         'dokumen' => [
