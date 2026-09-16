@@ -146,7 +146,7 @@
             >
         <div class="report-stat-grid">
             <x-stat-card icon="bi-box-seam" label="Total Barang" :value="number_format($totalBarang, 0, ',', '.')" plain />
-            <x-stat-card icon="bi-cash-stack" label="Total Nilai Perolehan" :value="'Rp '.number_format($totalNilai, 0, ',', '.')" compact plain />
+            <x-stat-card icon="bi-cash-stack" label="Total Nilai Buku" :value="'Rp '.number_format($totalNilai, 0, ',', '.')" compact plain />
             <x-stat-card icon="bi-tools" label="Perlu Perbaikan" :value="number_format($barangPerluPerbaikan, 0, ',', '.')" plain accent />
         </div>
             </x-report-tab-pane>
@@ -154,7 +154,7 @@
             <x-report-tab-pane
                 id="inventaris-rekap"
                 title="Rekapitulasi per Golongan"
-                description="Perbandingan jumlah barang dan nilai perolehan pada setiap golongan."
+                description="Perbandingan aset yang masih bernilai pada setiap golongan."
             >
             <div class="table-responsive report-tab-table">
                 <table class="table table-hover align-middle mb-0">
@@ -179,7 +179,7 @@
                     <tfoot class="table-light fw-semibold">
                         <tr>
                             <td>Total</td>
-                            <td class="text-end">{{ number_format($totalBarang, 0, ',', '.') }}</td>
+                            <td class="text-end">{{ number_format($totalBarangTerekap, 0, ',', '.') }}</td>
                             <td class="text-end">Rp {{ number_format($totalNilai, 0, ',', '.') }}</td>
                         </tr>
                     </tfoot>
@@ -225,7 +225,7 @@
                             <td>{{ $barang->unitKerja?->nama_unit ?? '—' }}</td>
                             <td>{{ $barang->tanggal_perolehan->format('d/m/Y') }}</td>
                             <td><x-badge :color="config('inventaris.kondisi_warna')[$kondisi] ?? 'bg-secondary'">{{ $kondisi }}</x-badge></td>
-                            <td class="text-end">Rp {{ number_format($barang->harga_perolehan, 0, ',', '.') }}</td>
+                            <td class="text-end">Rp {{ number_format($barang->nilaiBukuTerakhir(), 0, ',', '.') }}</td>
                         </tr>
                         @empty
                         <x-empty-row :colspan="$showTenant ? 9 : 8">Tidak ada inventaris yang cocok dengan filter.</x-empty-row>

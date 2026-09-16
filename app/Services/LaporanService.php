@@ -24,14 +24,17 @@ class LaporanService
     {
         $query = $this->laporanRepository->inventarisQuery($filters);
         $barangs = (clone $query)->latest()->paginate($perPage)->withQueryString();
-        $ringkasan = $this->laporanRepository->ringkasanInventaris($query);
+        $semuaBarang = (clone $query)->get();
+        $ringkasan = $this->ringkasanNilaiInventaris($semuaBarang);
+        $rekapKategori = $this->rekapKategoriInventaris($semuaBarang);
 
         return [
             'barangs' => $barangs,
             'totalBarang' => $barangs->total(),
             'totalNilai' => $ringkasan['totalNilai'],
             'barangPerluPerbaikan' => $this->laporanRepository->barangPerluPerbaikan($query),
-            'rekapKategori' => $this->laporanRepository->rekapKategoriInventaris($query),
+            'rekapKategori' => $rekapKategori,
+            'totalBarangTerekap' => $rekapKategori->sum('total_barang'),
             'unitKerjas' => isset($filters['koperasi_id'])
                 ? $this->unitKerjaRepository->orderedList((int) $filters['koperasi_id'])
                 : $this->unitKerjaRepository->orderedList(),
@@ -41,13 +44,16 @@ class LaporanService
     public function inventarisCetak(array $filters): array
     {
         $query = $this->laporanRepository->inventarisQuery($filters);
-        $ringkasan = $this->laporanRepository->ringkasanInventaris($query);
+        $barangs = (clone $query)->orderBy('tanggal_perolehan')->orderBy('kode_barang')->get();
+        $ringkasan = $this->ringkasanNilaiInventaris($barangs);
+        $rekapKategori = $this->rekapKategoriInventaris($barangs);
 
         return [
-            'barangs' => (clone $query)->orderBy('tanggal_perolehan')->orderBy('kode_barang')->get(),
+            'barangs' => $barangs,
             ...$ringkasan,
             'barangPerluPerbaikan' => $this->laporanRepository->barangPerluPerbaikan($query),
-            'rekapKategori' => $this->laporanRepository->rekapKategoriInventaris($query),
+            'rekapKategori' => $rekapKategori,
+            'totalBarangTerekap' => $rekapKategori->sum('total_barang'),
             'selectedUnitKerja' => $this->selectedUnitKerja($filters['unit_kerja_id'] ?? null),
         ];
     }
@@ -252,6 +258,43 @@ class LaporanService
             'totalAkumulasiPenyusutan' => $rincian->reduce(fn ($total, $r) => bcadd($total, $r['akumulasi_akhir_tahun'], 2), '0.00'),
             'totalNilaiBuku' => $rincian->reduce(fn ($total, $r) => bcadd($total, $r['nilai_buku_akhir_tahun'], 2), '0.00'),
         ];
+    }
+
+    /** @return array{totalBarang: int, totalNilai: string} */
+    private function ringkasanNilaiInventaris(Collection $barangs): array
+    {
+        return [
+            'totalBarang' => $barangs->count(),
+            'totalNilai' => $barangs->reduce(
+                fn (string $total, Barang $barang) => bcadd($total, $barang->nilaiBukuTerakhir(), 2),
+                '0.00',
+            ),
+        ];
+    }
+
+    /**
+     * Aset tanpa nilai buku tidak disertakan dalam rekap nilai. Rekamannya
+     * tetap tersedia pada detail inventaris dan tetap dihitung sebagai barang.
+     */
+    private function rekapKategoriInventaris(Collection $barangs): Collection
+    {
+        return $barangs
+            ->map(fn (Barang $barang) => [
+                'kategori' => $barang->kategori,
+                'nilai_buku' => $barang->nilaiBukuTerakhir(),
+            ])
+            ->filter(fn (array $barang) => bccomp($barang['nilai_buku'], '0.00', 2) > 0)
+            ->groupBy('kategori')
+            ->map(fn (Collection $barangs, string $kategori) => (object) [
+                'kategori' => $kategori,
+                'total_barang' => $barangs->count(),
+                'total_nilai' => $barangs->reduce(
+                    fn (string $total, array $barang) => bcadd($total, $barang['nilai_buku'], 2),
+                    '0.00',
+                ),
+            ])
+            ->sortKeys()
+            ->values();
     }
 
     private function selectedUnitKerja(?string $unitKerjaId)

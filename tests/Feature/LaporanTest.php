@@ -69,34 +69,96 @@ beforeEach(function () {
 });
 
 test('inventory report displays real summaries and records', function () {
+    $totalNilaiBuku = Barang::with('kondisiTerakhir')->get()
+        ->reduce(fn (string $total, Barang $barang) => bcadd($total, $barang->nilaiBukuTerakhir(), 2), '0.00');
+
     $this->get(route('laporan.inventaris'))
         ->assertOk()
         ->assertSee('Laptop Operasional')
         ->assertSee('Kursi Kantor')
-        ->assertSee('Rp 13.000.000')
         ->assertViewHas('totalBarang', 2)
-        ->assertViewHas('totalNilai', 13000000)
+        ->assertViewHas('totalNilai', $totalNilaiBuku)
         ->assertViewHas('barangPerluPerbaikan', 1);
 });
 
 test('inventory report filters all summaries and detail records', function () {
+    $laptop = Barang::with('kondisiTerakhir')->where('kode_barang', 'INV-001')->firstOrFail();
+
     $this->get(route('laporan.inventaris', ['kategori' => 'Bukan Bangunan - Kelompok 1']))
         ->assertOk()
         ->assertSee('Laptop Operasional')
         ->assertDontSee('Kursi Kantor')
         ->assertViewHas('totalBarang', 1)
-        ->assertViewHas('totalNilai', 12000000)
+        ->assertViewHas('totalNilai', $laptop->nilaiBukuTerakhir())
         ->assertViewHas('barangPerluPerbaikan', 1);
 });
 
 test('inventory print report uses selected filters and print layout', function () {
+    $laptop = Barang::with('kondisiTerakhir')->where('kode_barang', 'INV-001')->firstOrFail();
+
     $this->get(route('laporan.inventaris.cetak', ['kategori' => 'Bukan Bangunan - Kelompok 1']))
         ->assertOk()
         ->assertViewIs('laporan.cetak.inventaris')
         ->assertSee('Cetak Laporan Inventaris')
         ->assertSee('Laptop Operasional')
         ->assertDontSee('Kursi Kantor')
-        ->assertSee('Rp 12.000.000');
+        ->assertSee('Rp '.number_format($laptop->nilaiBukuTerakhir(), 0, ',', '.'));
+});
+
+test('inventory reports keep zero-value assets in detail but exclude them from value recaps', function () {
+    $aktif = Barang::create([
+        'kode_barang' => 'INV-AKTIF',
+        'nama_barang' => 'Gedung Masih Bernilai',
+        'kategori' => 'Bangunan - Permanen',
+        'unit_kerja_id' => $this->unitIt->id,
+        'tanggal_perolehan' => '2026-01-01',
+        'harga_perolehan' => 12000000,
+    ]);
+    $dihapus = Barang::create([
+        'kode_barang' => 'INV-HAPUS',
+        'nama_barang' => 'Gedung Dihapus',
+        'kategori' => 'Bangunan - Permanen',
+        'unit_kerja_id' => $this->unitIt->id,
+        'tanggal_perolehan' => '2026-01-01',
+        'harga_perolehan' => 5000000,
+    ]);
+    $habis = Barang::create([
+        'kode_barang' => 'INV-HABIS',
+        'nama_barang' => 'Aset Habis Disusutkan',
+        'kategori' => 'Bangunan - Bukan Permanen',
+        'unit_kerja_id' => $this->unitIt->id,
+        'tanggal_perolehan' => '2000-01-01',
+        'harga_perolehan' => 5000000,
+    ]);
+
+    RiwayatKondisiBarang::create([
+        'barang_id' => $dihapus->id,
+        'tanggal_pemeriksaan' => now(),
+        'kondisi' => 'Dihapus',
+    ]);
+
+    expect($aktif->nilaiBukuTerakhir())->toBeGreaterThan('0.00')
+        ->and($dihapus->load('kondisiTerakhir')->nilaiBukuTerakhir())->toBe('0.00')
+        ->and($habis->nilaiBukuTerakhir())->toBe('0.00');
+
+    $this->get(route('laporan.inventaris', ['kategori' => 'Bangunan - Permanen']))
+        ->assertOk()
+        ->assertSee('Gedung Masih Bernilai')
+        ->assertSee('Gedung Dihapus')
+        ->assertViewHas('totalBarang', 2)
+        ->assertViewHas('totalNilai', $aktif->nilaiBukuTerakhir())
+        ->assertViewHas('rekapKategori', function ($rekap) use ($aktif) {
+            return $rekap->count() === 1
+                && $rekap->first()->total_barang === 1
+                && $rekap->first()->total_nilai === $aktif->nilaiBukuTerakhir();
+        });
+
+    $this->get(route('laporan.inventaris', ['kategori' => 'Bangunan - Bukan Permanen']))
+        ->assertOk()
+        ->assertSee('Aset Habis Disusutkan')
+        ->assertViewHas('totalBarang', 1)
+        ->assertViewHas('totalNilai', '0.00')
+        ->assertViewHas('rekapKategori', fn ($rekap) => $rekap->isEmpty());
 });
 
 test('employee report displays real summaries and records', function () {

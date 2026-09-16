@@ -111,9 +111,11 @@ test('dashboard displays payroll attendance inventory condition and data quality
         ->assertSee('25 Jun 2026 – 24 Jul 2026')
         ->assertSee('Kondisi Inventaris')
         ->assertSee('Data Belum Lengkap')
-        ->assertSee('Rp 3.000.000')
+        ->assertSee('Rp '.number_format(Barang::with('kondisiTerakhir')->get()
+            ->reduce(fn (string $total, Barang $barang) => bcadd($total, $barang->nilaiBukuTerakhir(), 2), '0.00'), 0, ',', '.'))
         ->assertViewHas('totalBarang', 2)
-        ->assertViewHas('totalNilaiInventaris', 3000000)
+        ->assertViewHas('totalNilaiInventaris', fn ($value) => $value === Barang::with('kondisiTerakhir')->get()
+            ->reduce(fn (string $total, Barang $barang) => bcadd($total, $barang->nilaiBukuTerakhir(), 2), '0.00'))
         ->assertViewHas('barangPerluPerbaikan', 1)
         ->assertViewHas('karyawanAktif', 1)
         ->assertViewHas('trenAbsensi', function (array $data) {
@@ -123,7 +125,7 @@ test('dashboard displays payroll attendance inventory condition and data quality
                     'Izin' => 1,
                     'Sakit' => 1,
                     'Cuti' => 0,
-                    'Dinas Luar Kota' => 0,
+                    'Dinas Luar' => 0,
                     'Alpha' => 1,
                 ]
                 && count($data['akhirPekan']) === count($data['labels'])

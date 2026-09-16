@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Models\Absensi;
+use App\Models\Barang;
 use App\Models\Karyawan;
 use App\Support\CurrentTenant;
 use Carbon\CarbonInterface;
@@ -13,14 +14,14 @@ class DashboardRepository
     /** @return array{total: int, nilai: string} */
     public function ringkasanInventaris(): array
     {
-        $ringkasan = CurrentTenant::scopeQuery(DB::table('barang'))
-            ->selectRaw('COUNT(*) AS total')
-            ->selectRaw('COALESCE(SUM(harga_perolehan), 0) AS nilai')
-            ->first();
+        $barangs = Barang::query()->with('kondisiTerakhir')->get();
 
         return [
-            'total' => (int) $ringkasan->total,
-            'nilai' => (string) $ringkasan->nilai,
+            'total' => $barangs->count(),
+            'nilai' => $barangs->reduce(
+                fn (string $total, Barang $barang) => bcadd($total, $barang->nilaiBukuTerakhir(), 2),
+                '0.00',
+            ),
         ];
     }
 

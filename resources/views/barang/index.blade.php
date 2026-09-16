@@ -128,7 +128,7 @@
                             <th class="table-col-width-100">Golongan</th>
                             <th>Unit Kerja</th>
                             <th class="table-col-width-120">Tanggal Perolehan</th>
-                            <th class="text-end table-col-width-150">Harga Perolehan</th>
+                            <th class="text-end table-col-width-150">Nilai Buku</th>
                             <th class="table-col-width-130">Kondisi</th>
                             <th class="text-nowrap table-col-width-130">Aksi</th>
                         </tr>
@@ -158,7 +158,7 @@
                                 <div class="small text-body-secondary">{{ $barang->lokasi_penempatan }}</div>
                             </td>
                             <td>{{ $barang->tanggal_perolehan->format('d/m/Y') }}</td>
-                            <td class="text-end">Rp {{ number_format($barang->harga_perolehan, 0, ',', '.') }}</td>
+                            <td class="text-end">Rp {{ number_format($barang->nilaiBukuTerakhir(), 0, ',', '.') }}</td>
                             <td><x-badge :color="config('inventaris.kondisi_warna')[$kondisi] ?? 'bg-secondary'">{{ $kondisi }}</x-badge></td>
                             <td class="text-nowrap">
                                 <div class="table-actions">

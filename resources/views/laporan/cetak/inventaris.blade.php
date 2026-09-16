@@ -18,7 +18,7 @@
 
 <section class="summary-grid">
     <x-print.summary-item label="Total Barang" :value="number_format($totalBarang, 0, ',', '.')" />
-    <x-print.summary-item label="Total Nilai Perolehan" :value="'Rp '.number_format($totalNilai, 0, ',', '.')" />
+    <x-print.summary-item label="Total Nilai Buku" :value="'Rp '.number_format($totalNilai, 0, ',', '.')" />
     <x-print.summary-item label="Perlu Perbaikan" :value="number_format($barangPerluPerbaikan, 0, ',', '.')" />
     <x-print.summary-item label="Jumlah Golongan" :value="number_format($rekapKategori->count(), 0, ',', '.')" />
 </section>
@@ -46,7 +46,7 @@
     <tfoot>
         <tr>
             <td>Total</td>
-            <td class="text-end">{{ number_format($totalBarang, 0, ',', '.') }}</td>
+            <td class="text-end">{{ number_format($totalBarangTerekap, 0, ',', '.') }}</td>
             <td class="text-end">Rp {{ number_format($totalNilai, 0, ',', '.') }}</td>
         </tr>
     </tfoot>
@@ -76,7 +76,7 @@
                 <td>{{ $barang->unitKerja?->nama_unit ?? '-' }}</td>
                 <td>{{ $barang->tanggal_perolehan->format('d/m/Y') }}</td>
                 <td>{{ $barang->kondisiTerakhir?->kondisi ?? 'Belum diperiksa' }}</td>
-                <td class="text-end">Rp {{ number_format($barang->harga_perolehan, 0, ',', '.') }}</td>
+                <td class="text-end">Rp {{ number_format($barang->nilaiBukuTerakhir(), 0, ',', '.') }}</td>
             </tr>
         @empty
             <tr><td colspan="8" class="text-center muted">Tidak ada inventaris yang cocok dengan filter.</td></tr>
