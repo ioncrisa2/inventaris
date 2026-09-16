@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\Barang;
 use App\Models\DokumenBarang;
 use App\Models\DokumenKaryawan;
-use App\Models\DokumenRiwayatKaryawan;
 use App\Models\FotoBarang;
 use App\Models\Karyawan;
 use App\Models\Koperasi;
@@ -166,16 +165,6 @@ class MediaBackfillService
                 'query' => fn () => DokumenKaryawan::query()->with('karyawan:id,koperasi_id')->whereNotNull('path')->where('path', '<>', ''),
                 'map' => fn (DokumenKaryawan $dokumen) => $dokumen->karyawan
                     ? $this->candidate($dokumen, (int) $dokumen->karyawan->koperasi_id, 'business_documents', 'dokumen', 'local', $dokumen->path, $dokumen->nama_asli)
-                    : null,
-            ],
-            [
-                'label' => 'Dokumen histori karyawan',
-                'query' => fn () => DokumenRiwayatKaryawan::query()
-                    ->with('riwayat.karyawan:id,koperasi_id')
-                    ->whereNotNull('path')
-                    ->where('path', '<>', ''),
-                'map' => fn (DokumenRiwayatKaryawan $dokumen) => $dokumen->riwayat?->karyawan
-                    ? $this->candidate($dokumen, (int) $dokumen->riwayat->karyawan->koperasi_id, 'business_documents', 'dokumen', 'local', $dokumen->path, $dokumen->nama_asli)
                     : null,
             ],
             [

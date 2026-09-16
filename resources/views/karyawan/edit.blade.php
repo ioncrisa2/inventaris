@@ -72,6 +72,129 @@
 
         <hr class="my-4">
 
+        @if(isset($jenisPerubahanTersedia['perbaruan_data']))
+            <section
+                class="row g-3"
+                data-karyawan-change-panel="perbaruan_data"
+                @if($jenisTerpilih !== 'perbaruan_data') hidden @endif
+            >
+                <div class="col-md-6">
+                    <x-form.input name="nik" label="NIK Internal" :value="$karyawan->nik" maxlength="20" />
+                </div>
+                <div class="col-md-6">
+                    <x-form.input name="nama_lengkap" label="Nama Lengkap" :value="$karyawan->nama_lengkap" maxlength="255" />
+                </div>
+                <div class="col-md-6">
+                    <x-form.input name="tempat_lahir" label="Tempat Lahir" :value="$karyawan->tempat_lahir" maxlength="255" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="perubahan_tanggal_lahir">Tanggal Lahir</label>
+                    <input
+                        class="form-control @error('tanggal_lahir') is-invalid @enderror"
+                        id="perubahan_tanggal_lahir"
+                        name="tanggal_lahir"
+                        type="date"
+                        value="{{ old('tanggal_lahir', $karyawan->tanggal_lahir?->toDateString()) }}"
+                        max="{{ now()->toDateString() }}"
+                    >
+                    @error('tanggal_lahir')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-md-6">
+                    <x-form.select
+                        name="jenis_kelamin"
+                        label="Jenis Kelamin"
+                        :options="collect(config('kepegawaian.jenis_kelamin'))->mapWithKeys(fn ($opsi) => [$opsi => $opsi])"
+                        :value="$karyawan->jenis_kelamin"
+                    />
+                </div>
+                <div class="col-md-6">
+                    <x-form.select
+                        name="agama"
+                        label="Agama"
+                        :options="collect(config('kepegawaian.agama'))->mapWithKeys(fn ($opsi) => [$opsi => $opsi])"
+                        :value="$karyawan->agama"
+                    />
+                </div>
+                <div class="col-md-6">
+                    <x-form.input name="nomor_ktp" label="Nomor KTP/NIK" :value="$karyawan->nomor_ktp" maxlength="16" />
+                </div>
+                <div class="col-md-6">
+                    <x-form.input name="npwp" label="NPWP" :value="$karyawan->npwp" maxlength="30" help="Opsional — isi jika karyawan sudah memiliki NPWP." />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="perubahan_alamat_ktp">Alamat sesuai KTP</label>
+                    <textarea
+                        class="form-control @error('alamat_ktp') is-invalid @enderror"
+                        id="perubahan_alamat_ktp"
+                        name="alamat_ktp"
+                        rows="3"
+                        maxlength="2000"
+                    >{{ old('alamat_ktp', $karyawan->alamat_ktp) }}</textarea>
+                    @error('alamat_ktp')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="perubahan_alamat_domisili">Alamat Domisili</label>
+                    <textarea
+                        class="form-control @error('alamat_domisili') is-invalid @enderror"
+                        id="perubahan_alamat_domisili"
+                        name="alamat_domisili"
+                        rows="3"
+                        maxlength="2000"
+                    >{{ old('alamat_domisili', $karyawan->alamat_domisili) }}</textarea>
+                    @error('alamat_domisili')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-md-6">
+                    <x-form.select
+                        name="status_perkawinan"
+                        label="Status Perkawinan"
+                        :options="collect(config('kepegawaian.status_perkawinan'))->mapWithKeys(fn ($opsi) => [$opsi => $opsi])"
+                        :value="$karyawan->status_perkawinan"
+                    />
+                </div>
+                <div class="col-md-6">
+                    <x-form.select
+                        name="pendidikan_terakhir"
+                        label="Pendidikan Terakhir"
+                        :options="collect(config('kepegawaian.pendidikan_terakhir'))->mapWithKeys(fn ($opsi) => [$opsi => $opsi])"
+                        :value="$karyawan->pendidikan_terakhir"
+                    />
+                </div>
+                <div class="col-md-6">
+                    <x-form.input name="jurusan" label="Jurusan" :value="$karyawan->jurusan" maxlength="255" />
+                </div>
+                <div class="col-md-6">
+                    <x-form.input name="nama_sekolah" label="Sekolah/Perguruan Tinggi" :value="$karyawan->nama_sekolah" maxlength="255" />
+                </div>
+                <div class="col-md-4">
+                    <x-form.input name="tahun_lulus" label="Tahun Lulus" type="number" :value="$karyawan->tahun_lulus" min="1950" :max="now()->year" />
+                </div>
+                <div class="col-md-4">
+                    <x-form.input name="nama_pasangan" label="Nama Pasangan" :value="$karyawan->nama_pasangan" maxlength="255" help="Opsional." />
+                </div>
+                <div class="col-md-4">
+                    <x-form.input name="jumlah_anak" label="Jumlah Anak" type="number" :value="$karyawan->jumlah_anak" min="0" help="Opsional." />
+                </div>
+                <div class="col-12">
+                    <div class="d-flex flex-wrap align-items-center gap-3">
+                        <x-image-preview
+                            :src="$karyawan->foto_karyawan ? \Illuminate\Support\Facades\Storage::url($karyawan->foto_karyawan) : null"
+                            alt="Foto {{ $karyawan->nama_lengkap }} saat ini"
+                            icon="bi-person"
+                            size="avatar"
+                        />
+                        <div class="flex-grow-1">
+                            <x-form.file
+                                name="foto_karyawan"
+                                label="Ganti Foto Karyawan"
+                                policy="employee_photo"
+                            />
+                            <div class="form-text">Kosongkan jika foto tidak berubah.</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        @endif
+
         @if(isset($jenisPerubahanTersedia['data_pribadi']))
             <section
                 class="row g-3"
@@ -122,7 +245,7 @@
                     <x-form.input name="nomor_ktp" label="Nomor KTP/NIK" :value="$karyawan->nomor_ktp" maxlength="16" required />
                 </div>
                 <div class="col-md-6">
-                    <x-form.input name="npwp" label="NPWP" :value="$karyawan->npwp" maxlength="30" required />
+                    <x-form.input name="npwp" label="NPWP" :value="$karyawan->npwp" maxlength="30" help="Opsional — isi jika karyawan sudah memiliki NPWP." />
                 </div>
                 <div class="col-md-6">
                     <label class="form-label" for="perubahan_alamat_ktp">Alamat sesuai KTP <span class="text-danger">*</span></label>
@@ -339,15 +462,14 @@
 
         <hr class="my-4">
 
-        <x-form.file
-            name="dokumen_pendukung"
-            label="Dokumen Pendukung"
+        <x-form.dokumen-repeater
+            name="dokumen"
+            :jenis-options="config('kepegawaian.jenis_dokumen')"
             policy="business_documents"
-            multiple
             data-karyawan-change-documents
         />
         <div class="form-text fw-medium" data-karyawan-change-document-requirement></div>
-        @error('dokumen_pendukung')
+        @error('dokumen')
             <div class="invalid-feedback d-block">{{ $message }}</div>
         @enderror
     </div>

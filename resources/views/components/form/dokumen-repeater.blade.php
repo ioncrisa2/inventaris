@@ -9,18 +9,21 @@
 --}}
 <p class="form-text mb-3">{{ \App\Support\UploadPolicy::get($policy)['help'] }}</p>
 
-<div id="{{ $name }}-repeater-rows" data-repeater-rows></div>
+<div {{ $attributes }}>
+    <div id="{{ $name }}-repeater-rows" data-repeater-rows>
+    </div>
 
-<button
-    type="button"
-    class="btn btn-outline-primary btn-sm"
-    data-repeater-add
-    data-repeater-target="{{ $name }}-repeater-rows"
-    data-repeater-template="{{ $name }}-repeater-template"
->
-    <i class="bi bi-plus-circle"></i>
-    Tambah Dokumen
-</button>
+    <button
+        type="button"
+        class="btn btn-outline-primary btn-sm"
+        data-repeater-add
+        data-repeater-target="{{ $name }}-repeater-rows"
+        data-repeater-template="{{ $name }}-repeater-template"
+    >
+        <i class="bi bi-plus-circle"></i>
+        Tambah Dokumen
+    </button>
+</div>
 
 <template id="{{ $name }}-repeater-template">
     <div class="row g-3 align-items-end dokumen-repeater-row mb-3 pb-3 border-bottom">

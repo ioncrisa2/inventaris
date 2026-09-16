@@ -2,7 +2,6 @@ const initializeEmployeeChangeForms = () => {
     document.querySelectorAll('[data-karyawan-change-form]').forEach((formRoot) => {
         const typeSelect = formRoot.querySelector('[data-karyawan-change-type]');
         const configElement = formRoot.querySelector('[data-karyawan-change-config]');
-        const documentInput = formRoot.querySelector('[data-karyawan-change-documents]');
         const documentRequirement = formRoot.querySelector('[data-karyawan-change-document-requirement]');
 
         if (!typeSelect || !configElement) return;
@@ -34,17 +33,11 @@ const initializeEmployeeChangeForms = () => {
 
             const documentsRequired = Boolean(config[selectedType]?.dokumen_wajib);
 
-            if (documentInput) {
-                documentInput.required = documentsRequired;
-                documentInput.setAttribute('aria-required', String(documentsRequired));
-            }
-
             if (documentRequirement) {
                 documentRequirement.textContent = documentsRequired
                     ? 'Dokumen pendukung wajib untuk jenis perubahan ini.'
                     : 'Dokumen pendukung bersifat opsional untuk jenis perubahan ini.';
             }
-
         };
 
         typeSelect.addEventListener('change', syncType);

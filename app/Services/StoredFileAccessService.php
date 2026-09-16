@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\Barang;
 use App\Models\DokumenBarang;
 use App\Models\DokumenKaryawan;
-use App\Models\DokumenRiwayatKaryawan;
 use App\Models\FotoBarang;
 use App\Models\Karyawan;
 use App\Models\Koperasi;
@@ -34,8 +33,6 @@ class StoredFileAccessService
             $owner->loadMissing('barang');
         } elseif ($owner instanceof DokumenKaryawan) {
             $owner->loadMissing('karyawan');
-        } elseif ($owner instanceof DokumenRiwayatKaryawan) {
-            $owner->loadMissing('riwayat.karyawan');
         } elseif ($owner instanceof ProductRequestAttachment) {
             $owner->loadMissing('productRequest');
         }
@@ -46,9 +43,6 @@ class StoredFileAccessService
             $owner instanceof DokumenBarang => $owner->barang !== null && Gate::forUser($user)->allows('view', $owner->barang),
             $owner instanceof Karyawan => Gate::forUser($user)->allows('view', $owner),
             $owner instanceof DokumenKaryawan => $owner->karyawan !== null && Gate::forUser($user)->allows('view', $owner->karyawan),
-            $owner instanceof DokumenRiwayatKaryawan => $owner->riwayat?->karyawan !== null
-                && $user->can('karyawan.riwayat.view')
-                && Gate::forUser($user)->allows('view', $owner->riwayat->karyawan),
             $owner instanceof ProductRequestAttachment => $owner->productRequest !== null
                 && Gate::forUser($user)->allows('downloadAttachment', $owner->productRequest),
             $owner instanceof Koperasi => (int) $owner->id === (int) $user->koperasi_id && $user->can('pengaturan.view'),

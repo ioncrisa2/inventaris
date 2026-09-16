@@ -4,6 +4,7 @@ namespace App\Http\Requests\Karyawan;
 
 use App\Models\Karyawan;
 use App\Rules\Decimal15Two;
+use App\Rules\ValidUploadFile;
 use App\Support\KaryawanPerubahanSchema;
 use App\Support\TenantRule;
 use App\Support\UploadPolicy;
@@ -41,21 +42,47 @@ class StoreRiwayatKaryawanRequest extends FormRequest
                     : []),
             ],
             'alasan' => ['required', 'string', 'max:1000'],
-            'dokumen_pendukung' => [
-                Rule::requiredIf($dokumenWajib && empty($this->input('dokumen_pendukung_upload_uuids'))),
+            'dokumen' => [
+                Rule::requiredIf($dokumenWajib && empty($this->input('dokumen'))),
                 ...UploadPolicy::collectionRules('business_documents'),
             ],
-            'dokumen_pendukung.*' => UploadPolicy::fileRules('business_documents', true),
-            'dokumen_pendukung_upload_uuids' => [
-                Rule::requiredIf($dokumenWajib && empty($this->file('dokumen_pendukung'))),
-                'nullable',
-                'array',
-                'max:5',
+            'dokumen.*.jenis_dokumen' => ['nullable', 'required_with:dokumen.*.dokumen,dokumen.*.dokumen_upload_uuid', Rule::in(config('kepegawaian.jenis_dokumen'))],
+            'dokumen.*.dokumen' => [
+                'exclude_without:dokumen.*.jenis_dokumen',
+                'required_without:dokumen.*.dokumen_upload_uuid',
+                'file',
+                new ValidUploadFile('business_documents'),
             ],
-            'dokumen_pendukung_upload_uuids.*' => UploadPolicy::tokenRules('business_documents'),
+            'dokumen.*.dokumen_upload_uuid' => [
+                'exclude_without:dokumen.*.jenis_dokumen',
+                'required_without:dokumen.*.dokumen',
+                'uuid',
+            ],
         ];
 
         return match ($jenis) {
+            'perbaruan_data' => [
+                ...$rules,
+                'nik' => ['nullable', 'string', 'max:20'],
+                'nama_lengkap' => ['nullable', 'string', 'max:255'],
+                'tempat_lahir' => ['nullable', 'string', 'max:255'],
+                'tanggal_lahir' => ['nullable', 'date', 'before_or_equal:today'],
+                'jenis_kelamin' => ['nullable', Rule::in(config('kepegawaian.jenis_kelamin'))],
+                'agama' => ['nullable', Rule::in(config('kepegawaian.agama'))],
+                'nomor_ktp' => ['nullable', 'digits:16'],
+                'npwp' => ['nullable', 'string', 'max:30'],
+                'alamat_ktp' => ['nullable', 'string', 'max:2000'],
+                'alamat_domisili' => ['nullable', 'string', 'max:2000'],
+                'status_perkawinan' => ['nullable', Rule::in(config('kepegawaian.status_perkawinan'))],
+                'pendidikan_terakhir' => ['nullable', Rule::in(config('kepegawaian.pendidikan_terakhir'))],
+                'jurusan' => ['nullable', 'string', 'max:255'],
+                'nama_sekolah' => ['nullable', 'string', 'max:255'],
+                'tahun_lulus' => ['nullable', 'integer', 'min:1950', 'max:'.now()->year],
+                'nama_pasangan' => ['nullable', 'string', 'max:255'],
+                'jumlah_anak' => ['nullable', 'integer', 'min:0'],
+                'foto_karyawan' => UploadPolicy::fileRules('employee_photo'),
+                'foto_karyawan_upload_uuid' => UploadPolicy::tokenRules('employee_photo'),
+            ],
             'data_pribadi' => [
                 ...$rules,
                 'nik' => [
@@ -76,7 +103,7 @@ class StoreRiwayatKaryawanRequest extends FormRequest
                     TenantRule::uniqueFor('karyawan', 'nomor_ktp', $karyawan?->koperasi_id)
                         ->ignore($karyawan?->id),
                 ],
-                'npwp' => ['required', 'string', 'max:30'],
+                'npwp' => ['nullable', 'string', 'max:30'],
                 'alamat_ktp' => ['required', 'string', 'max:2000'],
                 'alamat_domisili' => ['required', 'string', 'max:2000'],
                 'status_perkawinan' => ['required', Rule::in(config('kepegawaian.status_perkawinan'))],
@@ -156,8 +183,8 @@ class StoreRiwayatKaryawanRequest extends FormRequest
             'tanggal_berlaku.before_or_equal' => 'Tanggal berlaku tidak boleh melewati hari ini.',
             'tanggal_berlaku.after_or_equal' => 'Tanggal berlaku tidak boleh sebelum tanggal masuk kerja.',
             'alasan.required' => 'Alasan perubahan wajib dijelaskan.',
-            'dokumen_pendukung.required' => 'Dokumen pendukung wajib diunggah untuk jenis perubahan ini.',
-            'dokumen_pendukung.max' => 'Maksimal 5 dokumen pendukung dalam satu perubahan.',
+            'dokumen.required' => 'Dokumen pendukung wajib diunggah untuk jenis perubahan ini.',
+            'dokumen.max' => 'Maksimal 5 dokumen pendukung dalam satu perubahan.',
             'tanggal_mengundurkan_diri.required' => 'Tanggal keluar wajib diisi saat karyawan dinonaktifkan.',
             'tanggal_mengundurkan_diri.after_or_equal' => 'Tanggal keluar tidak boleh sebelum tanggal masuk kerja.',
         ];

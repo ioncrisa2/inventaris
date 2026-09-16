@@ -111,8 +111,8 @@ const sampleContent = (block) => {
         return `
             <div class="slip-sample-signatures slip-sample-signatures--${escapeHtml(block.variant)}">
                 <div><span>Dibuat oleh,</span><span class="slip-sample-signature-space"></span><b>Siti Pembuat</b></div>
-                <div><span>Diterima oleh,</span><span class="slip-sample-signature-space"></span><b>Andreas Suwandi</b></div>
-                <div><span>Mengetahui,</span><span class="slip-sample-signature-space"></span><b>Rina Mengetahui</b></div>
+                <div><span>Diterima oleh,</span><span class="slip-sample-signature-space"></span><b>Marko Penerima</b></div>
+                <div><span>Mengetahui,</span><span class="slip-sample-signature-space"></span><b>Rian Mengetahui</b></div>
             </div>`;
     }
 

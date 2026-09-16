@@ -55,7 +55,7 @@
             </div>
             <div class="col-sm-6 col-xl-2">
                 <x-stat-card :class="(int) $totalDinasLuarKota === 0 ? 'attendance-stat-card--zero' : ''" icon="bi-geo-alt"
-                    label="Dinas Luar Kota" :value="$totalDinasLuarKota" variant="secondary" compact />
+                    label="Dinas Luar" :value="$totalDinasLuarKota" variant="secondary" compact />
             </div>
             <div class="col-sm-6 col-xl-2">
                 <x-stat-card :class="(int) $totalAlpha === 0 ? 'attendance-stat-card--zero' : ''" icon="bi-person-x"
@@ -171,7 +171,7 @@
 
         <div class="mb-3">
             <x-form.select name="status" label="Status" :options="collect(\App\Models\Absensi::STATUSES)->mapWithKeys(fn($status) => [$status => $status])" required
-                help="Hari libur (Minggu/nasional) hanya dapat diisi Izin, Sakit, atau Dinas Luar Kota." />
+                help="Hari libur (Minggu/nasional) hanya dapat diisi Izin, Sakit, atau Dinas Luar." />
         </div>
 
         <div>

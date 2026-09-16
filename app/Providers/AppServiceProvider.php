@@ -6,7 +6,6 @@ use App\Contracts\VirusScanner;
 use App\Models\Barang;
 use App\Models\DokumenBarang;
 use App\Models\DokumenKaryawan;
-use App\Models\DokumenRiwayatKaryawan;
 use App\Models\FotoBarang;
 use App\Models\Karyawan;
 use App\Models\Koperasi;
@@ -40,7 +39,6 @@ class AppServiceProvider extends ServiceProvider
             'karyawan' => Karyawan::class,
             'dokumen_karyawan' => DokumenKaryawan::class,
             'riwayat_karyawan' => RiwayatKaryawan::class,
-            'dokumen_riwayat_karyawan' => DokumenRiwayatKaryawan::class,
             'koperasi' => Koperasi::class,
             'product_request_attachment' => ProductRequestAttachment::class,
         ]);

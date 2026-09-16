@@ -6,7 +6,6 @@ use App\Jobs\ScanStoredFile;
 use App\Models\Barang;
 use App\Models\DokumenBarang;
 use App\Models\DokumenKaryawan;
-use App\Models\DokumenRiwayatKaryawan;
 use App\Models\FotoBarang;
 use App\Models\Karyawan;
 use App\Models\Koperasi;
@@ -223,7 +222,6 @@ class AsyncUploadService
             $owner instanceof FotoBarang, $owner instanceof DokumenBarang => (int) $owner->barang?->koperasi_id,
             $owner instanceof DokumenKaryawan => (int) $owner->karyawan?->koperasi_id,
             $owner instanceof RiwayatKaryawan => (int) $owner->karyawan?->koperasi_id,
-            $owner instanceof DokumenRiwayatKaryawan => (int) $owner->riwayat?->karyawan?->koperasi_id,
             $owner instanceof ProductRequestAttachment => (int) DB::table('product_requests')
                 ->where('id', $owner->product_request_id)
                 ->value('koperasi_id'),

@@ -121,14 +121,14 @@ class StorageUsageService
                     'path' => 'foto_sampul',
                     'disk' => 'public',
                     'tenant' => ['table' => 'barang', 'column' => 'koperasi_id'],
-                ],
+                ])
                 [
                     'table' => 'foto_barang',
                     'path' => 'path',
                     'disk' => 'public',
                     'joins' => [['barang', 'barang.id', '=', 'foto_barang.barang_id']],
                     'tenant' => ['table' => 'barang', 'column' => 'koperasi_id'],
-                ],
+                ])
             ]),
             $this->measureCategory('item_documents', 'Dokumen barang', [
                 $this->registryReference(['business_documents'], ['dokumen_barang']),
@@ -138,7 +138,7 @@ class StorageUsageService
                     'disk' => 'local',
                     'joins' => [['barang', 'barang.id', '=', 'dokumen_barang.barang_id']],
                     'tenant' => ['table' => 'barang', 'column' => 'koperasi_id'],
-                ],
+                ])
             ]),
             $this->measureCategory('employee_photos', 'Foto karyawan', [
                 $this->registryReference(['employee_photo']),
@@ -147,29 +147,18 @@ class StorageUsageService
                     'path' => 'foto_karyawan',
                     'disk' => 'public',
                     'tenant' => ['table' => 'karyawan', 'column' => 'koperasi_id'],
-                ],
+                ])
             ]),
             $this->measureCategory('employee_documents', 'Dokumen karyawan', [
                 $this->registryReference(
                     ['business_documents'],
-                    ['dokumen_karyawan', 'dokumen_riwayat_karyawan'],
+                    ['dokumen_karyawan'],
                 ),
                 [
                     'table' => 'dokumen_karyawan',
                     'path' => 'path',
                     'disk' => 'local',
                     'joins' => [['karyawan', 'karyawan.id', '=', 'dokumen_karyawan.karyawan_id']],
-                    'tenant' => ['table' => 'karyawan', 'column' => 'koperasi_id'],
-                ],
-                [
-                    'table' => 'dokumen_riwayat_karyawan',
-                    'path' => 'path',
-                    'disk' => 'local',
-                    'size' => 'ukuran',
-                    'joins' => [
-                        ['riwayat_karyawan', 'riwayat_karyawan.id', '=', 'dokumen_riwayat_karyawan.riwayat_karyawan_id'],
-                        ['karyawan', 'karyawan.id', '=', 'riwayat_karyawan.karyawan_id'],
-                    ],
                     'tenant' => ['table' => 'karyawan', 'column' => 'koperasi_id'],
                 ],
             ]),
@@ -181,7 +170,7 @@ class StorageUsageService
                     'disk' => 'public',
                     'where' => ['key', '=', 'identitas_logo_path'],
                     'tenant' => ['table' => 'pengaturan', 'column' => 'koperasi_id'],
-                ],
+                ])
             ]),
             $this->measureCategory('request_attachments', 'Lampiran request produk', [
                 $this->registryReference(['product_attachments']),
@@ -192,7 +181,7 @@ class StorageUsageService
                     'size' => 'size_bytes',
                     'joins' => [['product_requests', 'product_requests.id', '=', 'product_request_attachments.product_request_id']],
                     'tenant' => ['table' => 'product_requests', 'column' => 'koperasi_id'],
-                ],
+                ])
             ]),
             $this->backupCategory(),
         ];

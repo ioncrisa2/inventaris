@@ -109,7 +109,7 @@
                             </div>
                             <div class="card-body">
                                 <div class="attendance-summary" aria-label="Ringkasan absensi periode terpilih">
-                                    @foreach (['Hadir', 'Izin', 'Sakit', 'Cuti', 'Dinas Luar Kota', 'Alpha'] as $status)
+                                    @foreach (['Hadir', 'Izin', 'Sakit', 'Cuti', 'Dinas Luar', 'Alpha'] as $status)
                                         <div class="attendance-summary__item">
                                             <span>{{ $status }}</span>
                                             <strong>{{ number_format($trenAbsensi['ringkasan'][$status], 0, ',', '.') }}</strong>

@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\Barang;
 use App\Models\DokumenBarang;
 use App\Models\DokumenKaryawan;
-use App\Models\DokumenRiwayatKaryawan;
 use App\Models\FotoBarang;
 use App\Models\Karyawan;
 use App\Models\Koperasi;
@@ -342,7 +341,7 @@ class StoredFileService
             $owner->forceFill(['foto_karyawan' => $file->path])->save();
         } elseif ($owner instanceof FotoBarang) {
             $owner->forceFill(['path' => $file->path])->save();
-        } elseif ($owner instanceof DokumenBarang || $owner instanceof DokumenKaryawan || $owner instanceof DokumenRiwayatKaryawan) {
+        } elseif ($owner instanceof DokumenBarang || $owner instanceof DokumenKaryawan) {
             $owner->forceFill(['path' => $file->path])->save();
         } elseif ($owner instanceof ProductRequestAttachment) {
             $owner->forceFill([

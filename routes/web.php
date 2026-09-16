@@ -169,10 +169,6 @@ Route::middleware(['auth', 'koperasi.active'])->group(function () {
 
     Route::post('karyawan/{karyawan}/riwayat', [RiwayatKaryawanController::class, 'store'])
         ->name('karyawan.riwayat.store');
-    Route::get(
-        'karyawan/{karyawan}/riwayat/{riwayatKaryawan}/dokumen/{dokumenRiwayatKaryawan}',
-        [RiwayatKaryawanController::class, 'download'],
-    )->name('karyawan.riwayat.dokumen.download');
 
     Route::get('karyawan/{karyawan}/dokumen/{dokumenKaryawan}/download', [DokumenKaryawanController::class, 'download'])->name('karyawan.dokumen.download');
 

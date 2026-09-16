@@ -81,7 +81,7 @@ class KaryawanController extends Controller
         if ($request->user()->can('karyawan.riwayat.view')) {
             $karyawan->load([
                 'riwayatPerubahan' => fn ($query) => $query
-                    ->with(['pelaku:id,name', 'perubahan', 'dokumen.storedFiles'])
+                    ->with(['pelaku:id,name', 'perubahan'])
                     ->orderByDesc('tanggal_berlaku')
                     ->orderByDesc('created_at'),
             ]);

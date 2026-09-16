@@ -9,6 +9,32 @@ class KaryawanPerubahanSchema
     public static function types(): array
     {
         return [
+            'perbaruan_data' => [
+                'label' => 'Perbaruan Data / Lengkapi Data',
+                'description' => 'Memperbarui atau melengkapi data karyawan yang sudah ada.',
+                'permission' => 'karyawan.update',
+                'dokumen_wajib' => false,
+                'fields' => [
+                    'nik',
+                    'nama_lengkap',
+                    'tempat_lahir',
+                    'tanggal_lahir',
+                    'jenis_kelamin',
+                    'agama',
+                    'nomor_ktp',
+                    'npwp',
+                    'alamat_ktp',
+                    'alamat_domisili',
+                    'status_perkawinan',
+                    'pendidikan_terakhir',
+                    'jurusan',
+                    'nama_sekolah',
+                    'tahun_lulus',
+                    'nama_pasangan',
+                    'jumlah_anak',
+                    'foto_karyawan',
+                ],
+            ],
             'data_pribadi' => [
                 'label' => 'Perubahan Data Pribadi',
                 'description' => 'Identitas, alamat, status perkawinan, pendidikan, dan data keluarga.',

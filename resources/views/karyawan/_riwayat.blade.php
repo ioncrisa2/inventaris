@@ -43,21 +43,6 @@
                     </tbody>
                 </table>
             </div>
-
-            @if($riwayat->dokumen->isNotEmpty())
-                <div class="d-flex flex-wrap gap-2 mt-3">
-                    @foreach($riwayat->dokumen as $dokumen)
-                        <a
-                            class="btn btn-sm btn-light"
-                            href="{{ route('karyawan.riwayat.dokumen.download', [$karyawan, $riwayat, $dokumen]) }}"
-                            target="_blank"
-                        >
-                            <i class="bi bi-paperclip" aria-hidden="true"></i>
-                            {{ $dokumen->nama_asli }}
-                        </a>
-                    @endforeach
-                </div>
-            @endif
         </article>
     @empty
         <x-empty-state icon="bi-clock-history" title="Belum ada histori perubahan">

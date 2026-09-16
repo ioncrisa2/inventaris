@@ -14,7 +14,7 @@ class Absensi extends Model
         'Izin',
         'Sakit',
         'Cuti',
-        'Dinas Luar Kota',
+        'Dinas Luar',
         'Alpha',
     ];
 
@@ -22,7 +22,7 @@ class Absensi extends Model
     public const LIBUR_ALLOWED_STATUSES = [
         'Izin',
         'Sakit',
-        'Dinas Luar Kota',
+        'Dinas Luar',
     ];
 
     /**
@@ -35,13 +35,13 @@ class Absensi extends Model
         'Izin' => 'bg-warning text-dark',
         'Sakit' => 'bg-info text-dark',
         'Cuti' => 'bg-primary',
-        'Dinas Luar Kota' => 'bg-secondary',
+        'Dinas Luar' => 'bg-secondary',
         'Alpha' => 'bg-danger',
     ];
 
     /** Label ringkas agar status panjang tetap terbaca di sel kalender. */
     public const CALENDAR_LABELS = [
-        'Dinas Luar Kota' => 'Dinas Luar',
+        'Dinas Luar' => 'Dinas Luar',
     ];
 
     protected $table = 'absensi';

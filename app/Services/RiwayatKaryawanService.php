@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\DokumenRiwayatKaryawan;
 use App\Models\Karyawan;
 use App\Models\RiwayatKaryawan;
 use App\Models\RiwayatKaryawanPerubahan;
@@ -38,11 +37,8 @@ class RiwayatKaryawanService
             $foto = ($data['foto_karyawan'] ?? null) instanceof UploadedFile
                 ? $this->storedFiles->prepare($data['foto_karyawan'], 'employee_photo')
                 : null;
-            $dokumen = $this->storedFiles->prepareMany(
-                array_values(array_filter($data['dokumen_pendukung'] ?? [], fn ($file) => $file instanceof UploadedFile)),
-                'business_documents',
-            );
-            $dokumenToken = array_values($data['dokumen_pendukung_upload_uuids'] ?? []);
+            $dokumen = $this->prepareDokumenPendukung($data);
+            $dokumenToken = $this->dokumenTokenPendukung($data);
 
             return DB::transaction(function () use ($karyawan, $pelaku, $data, $foto, $dokumen, $dokumenToken) {
                 $karyawanTerkunci = $this->karyawanRepository->findOrFailForUpdate($karyawan->id);
@@ -118,33 +114,22 @@ class RiwayatKaryawanService
                     $perubahan,
                 );
 
-                $this->simpanDokumen($riwayat, $dokumen, $pelaku->id, (int) $karyawanTerkunci->koperasi_id);
-                $this->simpanDokumenToken($riwayat, $dokumenToken, $pelaku);
+                $this->simpanDokumenKaryawan($karyawanTerkunci, $dokumen, $pelaku->id);
+                $this->simpanDokumenTokenKaryawan($karyawanTerkunci, $dokumenToken, $pelaku);
                 $this->fileStorage->deleteAfterCommit('public', $fotoLama);
                 $this->dashboardCache->invalidateAfterCommit();
 
-                return $riwayat->load(['perubahan', 'dokumen']);
+                return $riwayat->load(['perubahan']);
             }, 3);
         } finally {
             $foto?->cleanup();
-            foreach ($dokumen as $upload) {
-                $upload->cleanup();
+            foreach ($dokumen as $item) {
+                $item['upload']?->cleanup();
             }
         }
     }
 
-    public function streamedDownload(DokumenRiwayatKaryawan $dokumen)
-    {
-        return $this->storedFiles->privateResponse(
-            $dokumen,
-            'local',
-            $dokumen->path,
-            $dokumen->nama_asli,
-            'dokumen',
-        );
-    }
-
-    /**
+     /**
      * @param  list<string>  $fields
      * @return list<array<string, mixed>>
      */
@@ -231,40 +216,61 @@ class RiwayatKaryawanService
     }
 
     /**
-     * @param  array<int, PreparedUpload>  $dokumen
+     * @return list<array{jenis_dokumen:string, upload:PreparedUpload}>
      */
-    private function simpanDokumen(RiwayatKaryawan $riwayat, array $dokumen, int $uploaderId, int $koperasiId): void
+    private function prepareDokumenPendukung(array $data): array
     {
-        foreach ($dokumen as $upload) {
+        return collect($data['dokumen'] ?? [])
+            ->filter(fn (array $baris) => isset($baris['dokumen']) && $baris['dokumen'] instanceof UploadedFile)
+            ->map(fn (array $baris) => [
+                'jenis_dokumen' => $baris['jenis_dokumen'],
+                'upload' => $this->storedFiles->prepare($baris['dokumen'], 'business_documents'),
+            ])
+            ->values()
+            ->all();
+    }
+
+    /** @return list<array{jenis_dokumen:string, uuid:string}> */
+    private function dokumenTokenPendukung(array $data): array
+    {
+        return array_values(array_filter(
+            array_map(
+                fn (array $baris) => ['jenis_dokumen' => $baris['jenis_dokumen'], 'uuid' => $baris['dokumen_upload_uuid'] ?? null],
+                $data['dokumen'] ?? [],
+            ),
+            fn (array $item) => filled($item['uuid']),
+        ));
+    }
+
+    private function simpanDokumenKaryawan(Karyawan $karyawan, array $dokumen, int $uploaderId): void
+    {
+        foreach ($dokumen as $item) {
+            $upload = $item['upload'];
             $registry = $this->storedFiles->persist(
                 $upload,
-                $koperasiId,
+                (int) $karyawan->koperasi_id,
                 'dokumen_pendukung',
-                $riwayat,
+                $karyawan,
                 $uploaderId,
             );
-            $record = $riwayat->dokumen()->create([
+            $record = $karyawan->dokumen()->create([
+                'jenis_dokumen' => $item['jenis_dokumen'],
                 'nama_asli' => $upload->originalName,
                 'path' => $registry->path,
-                'mime_type' => $registry->mime_type,
-                'ukuran' => $registry->final_size_bytes,
-                'checksum_sha256' => $registry->final_checksum_sha256,
             ]);
             $this->storedFiles->assignOwner($registry, $record, 'dokumen');
         }
     }
 
-    /** @param list<string> $uuids */
-    private function simpanDokumenToken(RiwayatKaryawan $riwayat, array $uuids, User $pelaku): void
+    /** @param list<array{jenis_dokumen:string, uuid:string}> */
+    private function simpanDokumenTokenKaryawan(Karyawan $karyawan, array $dokumenTokens, User $pelaku): void
     {
-        foreach ($uuids as $uuid) {
-            $token = StoredFile::query()->where('uuid', $uuid)->firstOrFail();
-            $record = $riwayat->dokumen()->create([
+        foreach ($dokumenTokens as $item) {
+            $token = StoredFile::query()->where('uuid', $item['uuid'])->firstOrFail();
+            $record = $karyawan->dokumen()->create([
+                'jenis_dokumen' => $item['jenis_dokumen'],
                 'nama_asli' => $token->original_name,
                 'path' => $token->path ?: 'pending/'.$token->uuid,
-                'mime_type' => $token->mime_type,
-                'ukuran' => $token->final_size_bytes ?: $token->source_size_bytes,
-                'checksum_sha256' => $token->final_checksum_sha256 ?: $token->source_checksum_sha256,
             ]);
             $claimed = $this->asyncUploads->claim(
                 $token,
