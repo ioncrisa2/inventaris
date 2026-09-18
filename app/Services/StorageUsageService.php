@@ -121,14 +121,14 @@ class StorageUsageService
                     'path' => 'foto_sampul',
                     'disk' => 'public',
                     'tenant' => ['table' => 'barang', 'column' => 'koperasi_id'],
-                ])
+                ],
                 [
                     'table' => 'foto_barang',
                     'path' => 'path',
                     'disk' => 'public',
                     'joins' => [['barang', 'barang.id', '=', 'foto_barang.barang_id']],
                     'tenant' => ['table' => 'barang', 'column' => 'koperasi_id'],
-                ])
+                ],
             ]),
             $this->measureCategory('item_documents', 'Dokumen barang', [
                 $this->registryReference(['business_documents'], ['dokumen_barang']),
@@ -138,7 +138,7 @@ class StorageUsageService
                     'disk' => 'local',
                     'joins' => [['barang', 'barang.id', '=', 'dokumen_barang.barang_id']],
                     'tenant' => ['table' => 'barang', 'column' => 'koperasi_id'],
-                ])
+                ],
             ]),
             $this->measureCategory('employee_photos', 'Foto karyawan', [
                 $this->registryReference(['employee_photo']),
@@ -147,7 +147,7 @@ class StorageUsageService
                     'path' => 'foto_karyawan',
                     'disk' => 'public',
                     'tenant' => ['table' => 'karyawan', 'column' => 'koperasi_id'],
-                ])
+                ],
             ]),
             $this->measureCategory('employee_documents', 'Dokumen karyawan', [
                 $this->registryReference(
@@ -170,7 +170,7 @@ class StorageUsageService
                     'disk' => 'public',
                     'where' => ['key', '=', 'identitas_logo_path'],
                     'tenant' => ['table' => 'pengaturan', 'column' => 'koperasi_id'],
-                ])
+                ],
             ]),
             $this->measureCategory('request_attachments', 'Lampiran request produk', [
                 $this->registryReference(['product_attachments']),
@@ -181,7 +181,7 @@ class StorageUsageService
                     'size' => 'size_bytes',
                     'joins' => [['product_requests', 'product_requests.id', '=', 'product_request_attachments.product_request_id']],
                     'tenant' => ['table' => 'product_requests', 'column' => 'koperasi_id'],
-                ])
+                ],
             ]),
             $this->backupCategory(),
         ];
