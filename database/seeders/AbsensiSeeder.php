@@ -17,7 +17,7 @@ class AbsensiSeeder extends Seeder
         'Izin' => 4,
         'Sakit' => 4,
         'Cuti' => 2,
-        'Dinas Luar Kota' => 2,
+        'Dinas' => 2,
         'Alpha' => 2,
     ];
 
@@ -85,7 +85,7 @@ class AbsensiSeeder extends Seeder
             'Izin' => 'Izin keperluan pribadi',
             'Sakit' => 'Sakit, ada surat keterangan',
             'Cuti' => 'Cuti karyawan',
-            'Dinas Luar Kota' => 'Penugasan di luar kota',
+            'Dinas' => 'Penugasan di luar kota',
             'Alpha' => null,
             default => null,
         };

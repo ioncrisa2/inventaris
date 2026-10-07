@@ -296,7 +296,7 @@
             <x-section-card
                 id="hari-operasional"
                 title="Hari Operasional"
-                subtitle="Tentukan hari kerja untuk kalender dan validasi absensi. Uang makan dihitung langsung dari absensi berstatus Hadir pada periode gaji."
+                subtitle="Tentukan hari kerja untuk kalender dan validasi absensi. Uang makan dihitung langsung dari absensi berstatus Hadir atau Dinas pada periode gaji."
                 class="settings-section"
             >
                 @if(auth()->user()->can('pengaturan.hari-operasional.update') && ! auth()->user()->isSuperAdmin())

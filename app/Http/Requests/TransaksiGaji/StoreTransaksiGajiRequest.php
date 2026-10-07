@@ -219,8 +219,8 @@ class StoreTransaksiGajiRequest extends FormRequest
     }
 
     /**
-     * Validasi rentang tanggal untuk komponen Per Hari Hadir. Rentang ini
-     * menjadi batas pencarian absensi Hadir pada transaksi bersangkutan.
+     * Validasi rentang tanggal untuk komponen Per Hari Hadir/Dinas. Rentang ini
+     * menjadi batas pencarian absensi Hadir/Dinas pada transaksi bersangkutan.
      */
     private function validasiRentangTanggal(Validator $validator, string $kunci, array $row): bool
     {

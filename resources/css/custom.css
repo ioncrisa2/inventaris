@@ -4619,6 +4619,34 @@ input[data-date-range] {
     padding: 1rem 1.2rem;
 }
 
+.slip-print-modal {
+    margin-top: .75rem;
+    margin-bottom: .75rem;
+}
+
+.slip-print-modal .modal-header,
+.slip-print-modal .modal-footer {
+    padding: .75rem 1rem;
+}
+
+.slip-print-modal .modal-body {
+    padding: .85rem 1rem;
+}
+
+.slip-print-modal fieldset,
+.slip-print-modal [data-print-filter-panel] {
+    margin-bottom: 1rem !important;
+}
+
+.slip-print-modal .form-label {
+    margin-bottom: .35rem;
+}
+
+.slip-print-modal .slip-print-choice {
+    min-height: 52px;
+    padding: .55rem .7rem;
+}
+
 .slip-print-choice {
     display: flex;
     min-height: 64px;

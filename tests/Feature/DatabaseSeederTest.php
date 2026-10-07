@@ -97,7 +97,7 @@ test('database seeder creates a complete usable demo dataset', function () {
         ->and(Karyawan::whereNotNull('foto_karyawan')->count())->toBe(12)
         ->and(Barang::whereNotNull('foto_sampul')->count())->toBe(40)
         ->and(Absensi::where('status', 'Cuti')->exists())->toBeTrue()
-        ->and(Absensi::where('status', 'Dinas Luar Kota')->exists())->toBeTrue();
+        ->and(Absensi::where('status', 'Dinas')->exists())->toBeTrue();
 
     expect(TransaksiGajiDetail::where('metode_perhitungan_snapshot', 'per_hari')->count())->toBe(39)
         ->and(TransaksiGajiDetail::where('metode_perhitungan_snapshot', 'per_hari')->whereNull('jumlah_hari_snapshot')->count())->toBe(0)

@@ -50,12 +50,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const tanggalSebelumnya = parseData(chartTrenAbsensi, 'previousDates');
     const akhirPekan = parseData(chartTrenAbsensi, 'weekends');
     const seri = parseData(chartTrenAbsensi, 'series', {});
-    const statusAbsen = ['Izin', 'Sakit', 'Cuti', 'Dinas Luar Kota', 'Alpha'];
+    const statusAbsen = ['Izin', 'Sakit', 'Cuti', 'Dinas', 'Alpha'];
     const warnaAbsen = {
         Izin: '#d29a11',
         Sakit: '#0b7285',
         Cuti: '#5b8c85',
-        'Dinas Luar Kota': '#7b828a',
+        Dinas: '#7b828a',
         Alpha: '#dc3545',
     };
     const maksimumAbsenHarian = Math.max(

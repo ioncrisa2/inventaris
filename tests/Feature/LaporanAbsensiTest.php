@@ -55,7 +55,7 @@ describe('laporan absensi', function () {
         Absensi::create([
             'karyawan_id' => $karyawan->id,
             'tanggal' => '2026-07-04',
-            'status' => 'Dinas Luar Kota',
+            'status' => 'Dinas',
         ]);
 
         $this->actingAs($user)

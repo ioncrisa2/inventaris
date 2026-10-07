@@ -15,7 +15,7 @@ class AbsensiRepository
 
         return Absensi::query()
             ->where('karyawan_id', $karyawanId)
-            ->where('status', 'Hadir')
+            ->whereIn('status', Absensi::GAJI_HARI_KERJA_STATUSES)
             ->where('tanggal', '>=', $mulai->toDateString())
             ->where('tanggal', '<', $selesaiEksklusif->toDateString())
             ->count();

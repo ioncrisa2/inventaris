@@ -46,8 +46,8 @@ class DashboardRepository
             ->get()
             ->groupBy(fn ($baris) => $baris->tanggal->toDateString())
             ->map(fn ($barisPerTanggal) => $barisPerTanggal
-                ->pluck('total', 'status')
-                ->map(fn ($total) => (int) $total)
+                ->groupBy(fn ($baris) => Absensi::normalizeStatus((string) $baris->status))
+                ->map(fn ($barisPerStatus) => (int) $barisPerStatus->sum('total'))
                 ->all())
             ->all();
     }

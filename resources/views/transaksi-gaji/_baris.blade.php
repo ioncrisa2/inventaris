@@ -71,7 +71,7 @@
                     :value-awal="$baris['tanggal_awal'] ?? null"
                     :value-akhir="$baris['tanggal_akhir'] ?? null"
                 />
-                <span class="form-text d-block mt-1">Hanya absensi berstatus Hadir dalam periode ini yang dihitung.</span>
+                <span class="form-text d-block mt-1">Hanya absensi berstatus Hadir atau Dinas dalam periode ini yang dihitung.</span>
             </div>
             <div class="salary-jumlah-hari mt-2 {{ $baris['metode'] === 'harian_manual' ? '' : 'd-none' }}" id="{{ $idAwalan }}_jumlah_hari">
                 <x-form.input name="{{ $namaField }}[jumlah_hari]" type="number" label="Jumlah Hari" :value="$baris['jumlah_hari'] ?? null" min="1" max="366" />
@@ -139,7 +139,7 @@
                         :value-awal="$baris['tanggal_awal'] ?? null"
                         :value-akhir="$baris['tanggal_akhir'] ?? null"
                     />
-                    <span class="form-text d-block mt-1">Hanya absensi berstatus Hadir dalam periode ini yang dihitung.</span>
+                    <span class="form-text d-block mt-1">Hanya absensi berstatus Hadir atau Dinas dalam periode ini yang dihitung.</span>
                 </div>
             @elseif($baris['metode'] === 'harian_manual')
                 Rp {{ number_format($baris['nilai'], 0, ',', '.') }} /hari

@@ -125,7 +125,7 @@ test('dashboard displays payroll attendance inventory condition and data quality
                     'Izin' => 1,
                     'Sakit' => 1,
                     'Cuti' => 0,
-                    'Dinas Luar' => 0,
+                    'Dinas' => 0,
                     'Alpha' => 1,
                 ]
                 && count($data['akhirPekan']) === count($data['labels'])

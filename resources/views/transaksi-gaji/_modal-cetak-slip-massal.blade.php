@@ -18,7 +18,7 @@
     data-default-action="{{ route('transaksi-gaji.cetak-massal') }}"
     data-open-on-load="{{ $openOnLoad ? 'true' : 'false' }}"
 >
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable slip-print-modal">
         <div class="modal-content">
             <form
                 method="GET"

@@ -132,7 +132,7 @@ class LaporanRepository
             'totalIzin' => (int) $jumlah->get('Izin', 0),
             'totalSakit' => (int) $jumlah->get('Sakit', 0),
             'totalCuti' => (int) $jumlah->get('Cuti', 0),
-            'totalDinasLuarKota' => (int) $jumlah->get('Dinas Luar Kota', 0),
+            'totalDinasLuarKota' => collect(Absensi::DINAS_STATUSES)->sum(fn (string $status) => (int) $jumlah->get($status, 0)),
             'totalAlpha' => (int) $jumlah->get('Alpha', 0),
         ];
     }

@@ -20,7 +20,7 @@
     <x-print.summary-item label="Izin" :value="number_format($totalIzin, 0, ',', '.')" />
     <x-print.summary-item label="Sakit" :value="number_format($totalSakit, 0, ',', '.')" />
     <x-print.summary-item label="Cuti" :value="number_format($totalCuti, 0, ',', '.')" />
-    <x-print.summary-item label="Dinas Luar Kota" :value="number_format($totalDinasLuarKota, 0, ',', '.')" />
+    <x-print.summary-item label="Dinas" :value="number_format($totalDinasLuarKota, 0, ',', '.')" />
     <x-print.summary-item label="Alpha" :value="number_format($totalAlpha, 0, ',', '.')" />
 </section>
 

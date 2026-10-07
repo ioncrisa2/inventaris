@@ -134,7 +134,7 @@
             <x-stat-card icon="bi-envelope-check" label="Izin" :value="number_format($totalIzin, 0, ',', '.')" plain />
             <x-stat-card icon="bi-heart-pulse" label="Sakit" :value="number_format($totalSakit, 0, ',', '.')" plain />
             <x-stat-card icon="bi-calendar2-week" label="Cuti" :value="number_format($totalCuti, 0, ',', '.')" plain />
-            <x-stat-card icon="bi-geo-alt" label="Dinas Luar Kota" :value="number_format($totalDinasLuarKota, 0, ',', '.')" compact plain />
+            <x-stat-card icon="bi-geo-alt" label="Dinas" :value="number_format($totalDinasLuarKota, 0, ',', '.')" compact plain />
             <x-stat-card icon="bi-person-x" label="Alpha" :value="number_format($totalAlpha, 0, ',', '.')" plain accent />
         </div>
             </x-report-tab-pane>

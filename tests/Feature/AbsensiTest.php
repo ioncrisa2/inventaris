@@ -83,7 +83,7 @@ describe('absensi show (kalender)', function () {
         Absensi::create(['karyawan_id' => $karyawan->id, 'tanggal' => '2026-03-02', 'status' => 'Hadir']);
         Absensi::create(['karyawan_id' => $karyawan->id, 'tanggal' => '2026-03-03', 'status' => 'Izin']);
         Absensi::create(['karyawan_id' => $karyawan->id, 'tanggal' => '2026-03-04', 'status' => 'Cuti']);
-        Absensi::create(['karyawan_id' => $karyawan->id, 'tanggal' => '2026-03-05', 'status' => 'Dinas Luar Kota']);
+        Absensi::create(['karyawan_id' => $karyawan->id, 'tanggal' => '2026-03-05', 'status' => 'Dinas']);
         // Entri di bulan lain tidak boleh ikut terhitung.
         Absensi::create(['karyawan_id' => $karyawan->id, 'tanggal' => '2026-04-01', 'status' => 'Sakit']);
 
@@ -94,7 +94,7 @@ describe('absensi show (kalender)', function () {
             ->assertSee('Budi Aktif')
             ->assertSee($namaBulan.' 2026')
             ->assertSee('Cuti')
-            ->assertSee('Dinas Luar Kota')
+            ->assertSee('Dinas')
             ->assertSee('Hari libur (Minggu & nasional)')
             ->assertSee('Di luar bulan')
             ->assertSee('calendar-cell-holiday', false)
@@ -189,7 +189,7 @@ describe('absensi store', function () {
         expect($absensi->catatan)->toBe('Demam');
     });
 
-    it('accepts Cuti and Dinas Luar Kota as attendance statuses', function () {
+    it('accepts Cuti and Dinas as attendance statuses', function () {
         $karyawan = Karyawan::create([
             'nik' => 'EMP-STATUS-BARU',
             'nama_lengkap' => 'Status Baru',
@@ -200,7 +200,7 @@ describe('absensi store', function () {
             'gaji_pokok' => 7000000,
         ]);
 
-        foreach (['Cuti', 'Dinas Luar Kota'] as $index => $status) {
+        foreach (['Cuti', 'Dinas'] as $index => $status) {
             $tanggal = now()->subDays($index + 2);
             if ($tanggal->isSunday()) {
                 $tanggal = $tanggal->subDay();
@@ -250,10 +250,10 @@ describe('absensi store', function () {
 
         $this->post(route('absensi.store', $karyawan), [
             'tanggal' => $hariMinggu,
-            'status' => 'Dinas Luar Kota',
+            'status' => 'Dinas',
         ])->assertRedirect();
 
-        expect($absensi->refresh()->status)->toBe('Dinas Luar Kota');
+        expect($absensi->refresh()->status)->toBe('Dinas');
 
         $this->post(route('absensi.store', $karyawan), [
             'tanggal' => $hariMinggu,

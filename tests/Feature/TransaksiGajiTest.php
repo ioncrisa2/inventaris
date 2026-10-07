@@ -823,7 +823,7 @@ test('slip dengan rincian panjang memakai satu lembar penuh agar tanda tangan ti
     }
 });
 
-test('tunjangan per hari hanya menghitung absensi Hadir di dalam range input', function () {
+test('tunjangan per hari menghitung absensi Hadir dan Dinas di dalam range input', function () {
     $uangMakan = KomponenGaji::create([
         'nama_komponen' => 'Tunjangan Uang Makan',
         'jenis' => 'Tunjangan',
@@ -837,7 +837,7 @@ test('tunjangan per hari hanya menghitung absensi Hadir di dalam range input', f
         '2026-07-02' => 'Izin',
         '2026-07-03' => 'Sakit',
         '2026-07-04' => 'Cuti',
-        '2026-07-05' => 'Dinas Luar Kota',
+        '2026-07-05' => 'Dinas',
         '2026-07-06' => 'Alpha',
         '2026-07-07' => 'Hadir',
     ] as $tanggal => $status) {
@@ -864,16 +864,16 @@ test('tunjangan per hari hanya menghitung absensi Hadir di dalam range input', f
     $transaksi = TransaksiGaji::first();
     $response->assertRedirect(route('transaksi-gaji.show', $transaksi));
 
-    // Hadir tanggal 7 berada di luar range; status selain Hadir tidak dihitung.
-    expect((string) $transaksi->gaji_bersih)->toBe('5030000.00');
+    // Hadir tanggal 7 berada di luar range; selain Hadir/Dinas tidak dihitung.
+    expect((string) $transaksi->gaji_bersih)->toBe('5060000.00');
 
     $this->assertDatabaseHas('transaksi_gaji_detail', [
         'transaksi_gaji_id' => $transaksi->id,
         'komponen_gaji_id' => $uangMakan->id,
         'metode_perhitungan_snapshot' => 'per_hari',
         'nilai_snapshot' => 30000,
-        'jumlah_hari_snapshot' => 1,
-        'nominal_hasil' => 30000,
+        'jumlah_hari_snapshot' => 2,
+        'nominal_hasil' => 60000,
     ]);
 
     $detail = $transaksi->details()->where('komponen_gaji_id', $uangMakan->id)->first();
@@ -1658,7 +1658,7 @@ test('form only shows the component management link once', function () {
     expect(substr_count($response->getContent(), 'Ubah di Komponen Gaji'))->toBe(1);
 });
 
-test('form komponen Per Hari Hadir menampilkan input range tanggal', function () {
+test('form komponen Per Hari Hadir/Dinas menampilkan input range tanggal', function () {
     $uangMakan = KomponenGaji::create([
         'nama_komponen' => 'Konsumsi',
         'jenis' => 'Tunjangan',
@@ -1668,8 +1668,8 @@ test('form komponen Per Hari Hadir menampilkan input range tanggal', function ()
 
     $this->get(route('transaksi-gaji.create'))
         ->assertOk()
-        ->assertSee('Per Hari Hadir (Periode Gaji)')
-        ->assertSee('Hanya absensi berstatus Hadir dalam periode ini yang dihitung.')
+        ->assertSee('Per Hari Hadir/Dinas (Periode Gaji)')
+        ->assertSee('Hanya absensi berstatus Hadir atau Dinas dalam periode ini yang dihitung.')
         ->assertSee('name="baris[master_'.$uangMakan->id.'][tanggal_awal]"', false)
         ->assertSee('name="baris[master_'.$uangMakan->id.'][tanggal_akhir]"', false);
 });
