@@ -14,9 +14,7 @@
     <x-app-page long-footer>
         <x-page-header
             title="Hari Libur {{ $tahun }}"
-            :subtitle="$isSuperAdmin
-                ? 'Baseline nasional yang otomatis berlaku untuk seluruh koperasi primer.'
-                : 'Gabungan baseline nasional dan hari libur tambahan milik '.($koperasi?->nama ?? 'koperasi Anda').'.'"
+            :
         >
             <x-slot:actions>
                 <a

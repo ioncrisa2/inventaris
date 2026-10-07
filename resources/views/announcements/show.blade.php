@@ -4,7 +4,7 @@
 
 @section('content')
 <x-app-page>
-    <x-page-header :title="$announcement->title" subtitle="Pengumuman resmi dari pengelola platform">
+    <x-page-header :title="$announcement->title">
         <x-slot:actions><a class="btn btn-light" href="{{ route('notifications.index') }}">Kembali ke Notifikasi</a></x-slot:actions>
     </x-page-header>
 

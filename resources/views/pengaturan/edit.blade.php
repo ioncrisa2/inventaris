@@ -6,7 +6,7 @@
 <x-app-page>
     <x-page-header
         title="Pengaturan Aplikasi"
-        subtitle="Atur pengalaman penggunaan aplikasi dan standar penomoran inventaris."
+        
     />
 
     <x-flash-alert />
@@ -55,7 +55,7 @@
             <x-section-card
                 id="identitas"
                 title="Identitas Koperasi"
-                subtitle="Nama, alamat, dan logo ini tampil di sidebar, halaman login, dan kop slip gaji."
+                
                 class="settings-section"
             >
                 @if(auth()->user()->can('pengaturan.identitas.update') && ! auth()->user()->isSuperAdmin())
@@ -144,7 +144,7 @@
             <x-section-card
                 id="format-slip-gaji"
                 title="Format Slip Gaji"
-                subtitle="Atur susunan blok, tipografi, dan tampilan slip. Ukuran cetak dikunci ke F4 portrait dengan dua slip per lembar."
+                
                 class="settings-section"
             >
                 <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
@@ -174,7 +174,7 @@
             <x-section-card
                 id="penomoran-inventaris"
                 title="Format Penomoran Inventaris"
-                subtitle="Tentukan struktur kode yang dibuat otomatis ketika inventaris baru ditambahkan."
+                
                 class="settings-section"
             >
                 @if(auth()->user()->can('pengaturan.kode-barang.update') && ! auth()->user()->isSuperAdmin())
@@ -296,7 +296,7 @@
             <x-section-card
                 id="hari-operasional"
                 title="Hari Operasional"
-                subtitle="Tentukan hari kerja untuk kalender dan validasi absensi. Uang makan dihitung langsung dari absensi berstatus Hadir atau Dinas pada periode gaji."
+                
                 class="settings-section"
             >
                 @if(auth()->user()->can('pengaturan.hari-operasional.update') && ! auth()->user()->isSuperAdmin())

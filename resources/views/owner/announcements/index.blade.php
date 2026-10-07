@@ -4,7 +4,7 @@
 
 @section('content')
 <x-app-page>
-    <x-page-header title="Pengumuman Platform" subtitle="Kirim pemberitahuan platform kepada seluruh Admin Primer atau satu koperasi tertentu." />
+    <x-page-header title="Pengumuman Platform" />
     <x-flash-alert />
 
     <div class="row g-4">

@@ -2,6 +2,7 @@
 
 namespace App\Exports;
 
+use App\Models\Absensi;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromQuery;
@@ -38,7 +39,7 @@ class AbsensiExport implements FromQuery, ShouldAutoSize, WithHeadings, WithMapp
             $absensi->karyawan?->nik ?? '-',
             $absensi->karyawan?->nama_lengkap ?? '-',
             $absensi->karyawan?->unitKerja?->nama_unit ?? '-',
-            $absensi->status,
+            Absensi::statusLabel($absensi->status),
             $absensi->catatan ?? '',
         ];
     }

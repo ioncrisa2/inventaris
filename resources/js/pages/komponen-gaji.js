@@ -59,7 +59,7 @@ const initializeSalaryComponentForm = (formRoot) => {
             suffix.textContent = '/hari';
             suffix.classList.remove('d-none');
             input.removeAttribute('max');
-            help.textContent = 'Nominal per hari dikalikan jumlah absensi Hadir dalam periode yang dipilih saat transaksi.';
+            help.textContent = 'Nominal per hari dikalikan jumlah absensi Hadir atau Dinas dalam periode yang dipilih saat transaksi.';
         } else if (method.value === 'harian_manual') {
             prefix.classList.remove('d-none');
             suffix.textContent = '/hari';

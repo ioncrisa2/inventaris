@@ -6,22 +6,11 @@
     <x-form-page
         class="is-wide"
         title="Ajukan request produk"
-        subtitle="Jelaskan kebutuhan dan dampaknya agar tim produk dapat menilai dengan tepat."
         :action="route('product-requests.store')"
         :cancel-route="route('product-requests.index')"
         submit-label="Kirim request"
     >
-        <x-slot:top>
-            <div class="request-safety-note mb-4" role="note">
-                <i class="bi bi-shield-check" aria-hidden="true"></i>
-                <div>
-                    <strong>Kirim informasi secukupnya</strong>
-                    <p>Jangan menyertakan password, token, atau data pribadi yang tidak diperlukan. Lampiran dapat dibaca oleh tim pengelola produk.</p>
-                </div>
-            </div>
-        </x-slot:top>
-
-        @if($errors->any())
+@if($errors->any())
             <div class="alert alert-danger" role="alert">
                 Periksa kembali isian yang ditandai sebelum mengirim request.
             </div>

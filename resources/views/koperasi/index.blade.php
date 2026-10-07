@@ -4,7 +4,7 @@
 
 @section('content')
 <x-app-page>
-        <x-page-header title="Manajemen Koperasi" subtitle="Kelola koperasi pelanggan dan masa aktif langganannya.">
+        <x-page-header title="Manajemen Koperasi" >
             <x-slot:actions>
                 <a class="btn btn-primary" href="{{ route('koperasi.create') }}">
                     <i class="bi bi-building-add"></i>

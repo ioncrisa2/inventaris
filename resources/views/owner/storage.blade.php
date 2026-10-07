@@ -18,7 +18,7 @@
     @endphp
 
     <x-app-page long-footer>
-        <x-page-header title="Penyimpanan" subtitle="Kapasitas volume dan penggunaan file aplikasi tanpa akses ke isi file.">
+        <x-page-header title="Penyimpanan">
             <x-slot:actions>
                 <a class="btn btn-outline-secondary" href="{{ route('owner.storage') }}">
                     <i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Ukur ulang

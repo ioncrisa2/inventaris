@@ -24,13 +24,13 @@
 @endphp
 <x-form-page
     :title="$user->exists ? 'Edit Pengguna' : 'Tambah Pengguna'"
-    :subtitle="$subtitle"
+    :
     :action="$user->exists ? route('pengguna.update', $user) : route('pengguna.store')"
     :method="$user->exists ? 'PUT' : 'POST'"
     :cancel-route="route('pengguna.index', request()->only(['koperasi_id', 'role_id']))"
     :submit-label="$user->exists ? 'Simpan Perubahan' : 'Simpan Pengguna'"
 >
-    <x-form.section title="Data Pengguna" description="Semua field bertanda bintang wajib diisi." />
+    <x-form.section title="Data Pengguna" />
 
     <div class="row g-3">
         <div class="col-md-6">

@@ -29,7 +29,7 @@
             };
         @endphp
 
-        <x-page-header title="Laporan Inventaris" subtitle="Nilai aset dan kondisi terakhir sesuai filter.">
+        <x-page-header title="Laporan Inventaris" >
             <x-slot:actions>
                 <div class="d-flex flex-wrap gap-2 d-print-none">
                     <x-report-filter-button
@@ -141,7 +141,7 @@
             <x-report-tab-pane
                 id="inventaris-ringkasan"
                 title="Ringkasan Inventaris"
-                description="Nilai utama inventaris berdasarkan filter yang sedang diterapkan."
+                
                 active
             >
         <div class="report-stat-grid">
@@ -154,7 +154,7 @@
             <x-report-tab-pane
                 id="inventaris-rekap"
                 title="Rekapitulasi per Golongan"
-                description="Perbandingan aset yang masih bernilai pada setiap golongan."
+                
             >
             <div class="table-responsive report-tab-table">
                 <table class="table table-hover align-middle mb-0">
@@ -190,7 +190,7 @@
             <x-report-tab-pane
                 id="inventaris-detail"
                 title="Detail Inventaris"
-                description="Daftar lengkap barang inventaris yang cocok dengan filter."
+                
             >
             <div class="table-responsive report-tab-table">
                 <table class="table table-hover align-middle mb-0">

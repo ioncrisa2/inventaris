@@ -8,9 +8,7 @@
     <x-app-page long-footer>
         <x-page-header
             title="Hari Libur"
-            :subtitle="$isSuperAdmin
-                ? 'Baseline hari libur nasional yang berlaku otomatis untuk seluruh koperasi primer.'
-                : 'Baseline nasional dan hari libur tambahan koperasi — dasar kalender Absensi dan perhitungan hari operasional.'"
+            :
         >
             <x-slot:actions>
                 @if($isSuperAdmin)

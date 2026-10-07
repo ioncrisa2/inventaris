@@ -31,9 +31,7 @@
                 <div class="modal-header">
                     <div>
                         <h2 class="modal-title fs-5" id="{{ $modalId }}Label">Cetak Slip Gaji</h2>
-                        <p class="mb-0 mt-1 text-body-secondary small">
-                            Atur susunan kertas dan penanda tangan untuk <span data-slip-print-context>{{ $bulkGroup ? 'slip terpilih' : 'slip ini' }}</span>.
-                        </p>
+                        
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
                 </div>

@@ -9,7 +9,7 @@
 
 @section('content')
 <x-app-page long-footer>
-        <x-page-header title="Komponen Gaji" subtitle="Aturan tunjangan dan potongan untuk perhitungan gaji.">
+        <x-page-header title="Komponen Gaji" >
             <x-slot:actions>
                 @can('komponen-gaji.create')
                     <a class="btn btn-primary" href="{{ route('komponen-gaji.create') }}">
@@ -97,7 +97,7 @@
                                 @if(in_array($data->metode_perhitungan, ['persentase', 'persentase_pengali'], true))
                                     <span class="text-body-secondary small">(dasar: gaji pokok)</span>
                                 @elseif($data->metode_perhitungan === 'per_hari')
-                                    <span class="text-body-secondary small">(dikali jumlah absensi Hadir dalam range tanggal yang diinput saat transaksi)</span>
+                                    <span class="text-body-secondary small">(dikali jumlah absensi Hadir atau Dinas dalam range tanggal yang diinput saat transaksi)</span>
                                 @elseif($data->metode_perhitungan === 'harian_manual')
                                     <span class="text-body-secondary small">(dikali jumlah hari yang diketik manual saat transaksi dibuat)</span>
                                 @elseif($data->metode_perhitungan === 'nominal_tidak_tetap')

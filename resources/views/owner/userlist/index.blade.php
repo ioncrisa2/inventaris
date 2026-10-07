@@ -6,10 +6,9 @@
 <x-app-page>
     <x-page-header
         title="User List"
-        subtitle="Daftar baca-saja seluruh akun pengguna yang terdaftar pada koperasi di platform."
     />
 
-    <x-data-table :paginator="$users" title="Akun Pengguna" subtitle="Gunakan filter untuk meninjau akun berdasarkan koperasi atau role.">
+    <x-data-table :paginator="$users" title="Akun Pengguna">
         <x-slot:toolbar>
             <x-filter-form
                 :action="route('owner.userlist.index')"

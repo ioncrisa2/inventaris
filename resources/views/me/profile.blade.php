@@ -4,7 +4,7 @@
 
 @section('content')
 <x-app-page>
-    <x-page-header title="Data Saya" subtitle="Identitas dan informasi kepegawaian yang terhubung dengan akun login Anda." />
+    <x-page-header title="Data Saya" />
     <x-flash-alert />
 
     @if(! $karyawan)

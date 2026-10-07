@@ -4,7 +4,7 @@
 
 @section('content')
     <x-app-page width="narrow">
-        <x-page-header title="Notifikasi" subtitle="Pembaruan ringkas dari pusat request produk.">
+        <x-page-header title="Notifikasi">
             @if(auth()->user()->unreadNotifications()->exists())
                 <x-slot:actions>
                     <form method="POST" action="{{ route('notifications.read-all') }}">

@@ -4,7 +4,7 @@
 
 @section('content')
 <x-app-page>
-    <x-page-header title="Slip Gaji Saya" subtitle="Slip yang sudah diterbitkan untuk {{ $karyawan->nama_lengkap }}." />
+    <x-page-header title="Slip Gaji Saya" />
     <x-flash-alert />
 
     <x-data-table :paginator="$slips">

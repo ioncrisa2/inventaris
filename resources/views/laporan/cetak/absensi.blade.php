@@ -41,7 +41,7 @@
                 <td>{{ $absensi->tanggal->translatedFormat('d F Y') }}</td>
                 <td>{{ $absensi->karyawan?->nama_lengkap ?? '-' }}</td>
                 <td>{{ $absensi->karyawan?->unitKerja?->nama_unit ?? '-' }}</td>
-                <td>{{ $absensi->status }}</td>
+                <td>{{ \App\Models\Absensi::statusLabel($absensi->status) }}</td>
                 <td>{{ $absensi->catatan ?? '-' }}</td>
             </tr>
         @empty

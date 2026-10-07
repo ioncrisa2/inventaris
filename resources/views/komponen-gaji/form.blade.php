@@ -24,14 +24,13 @@
 @section('content')
 <x-form-page
     :title="$komponenGaji->exists ? 'Edit Komponen Gaji' : 'Tambah Komponen Gaji'"
-    subtitle="Tentukan aturan tunjangan atau potongan. Nilai transaksi dapat berasal dari master, perhitungan, atau input petugas saat penggajian."
     :action="$komponenGaji->exists ? route('komponen-gaji.update', $komponenGaji) : route('komponen-gaji.store')"
     :method="$komponenGaji->exists ? 'PUT' : 'POST'"
     :cancel-route="route('komponen-gaji.index')"
     :submit-label="$komponenGaji->exists ? 'Simpan Perubahan' : 'Simpan Komponen'"
 >
     <div data-component-salary-form>
-        <x-form.section title="Aturan Komponen" description="Semua field bertanda bintang wajib diisi." />
+        <x-form.section title="Aturan Komponen" />
 
         <div class="row g-3">
             <div class="col-12">

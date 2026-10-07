@@ -15,7 +15,7 @@
 @endphp
 <x-form-page
     :title="$pageTitle"
-    :subtitle="$isProtectedSystemRole ? 'Nama role sistem dikunci; hanya susunan permission yang dapat diubah.' : null"
+    :
     :action="$role->exists ? route($routePrefix.'.update', $role) : route($routePrefix.'.store')"
     :method="$role->exists ? 'PUT' : 'POST'"
     :cancel-route="route($routePrefix.'.index')"

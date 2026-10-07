@@ -4,7 +4,7 @@
 
 @section('content')
     <x-app-page long-footer>
-        <x-page-header :title="$koperasi['nama']" subtitle="Ringkasan operasional koperasi dalam bentuk agregat.">
+        <x-page-header :title="$koperasi['nama']">
             <x-slot:actions>
                 <a class="btn btn-outline-secondary"
                     href="{{ route('owner.analytics', [

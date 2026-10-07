@@ -2,6 +2,7 @@
 
 namespace App\Repositories;
 
+use App\Models\Absensi;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
@@ -298,7 +299,10 @@ class OwnerAnalyticsRepository
 
         $result = [];
         foreach ($rows as $row) {
-            $result[(string) $row->bulan][(string) $row->status] = (int) $row->total;
+            $bulan = (string) $row->bulan;
+            $status = Absensi::normalizeStatus((string) $row->status);
+
+            $result[$bulan][$status] = ($result[$bulan][$status] ?? 0) + (int) $row->total;
         }
 
         return $result;
@@ -313,9 +317,13 @@ class OwnerAnalyticsRepository
             ->select('absensi.status')
             ->selectRaw('COUNT(*) AS total')
             ->groupBy('absensi.status')
-            ->pluck('total', 'status')
-            ->map(fn (mixed $total) => (int) $total)
-            ->all();
+            ->get()
+            ->reduce(function (array $carry, object $row) {
+                $status = Absensi::normalizeStatus((string) $row->status);
+                $carry[$status] = ($carry[$status] ?? 0) + (int) $row->total;
+
+                return $carry;
+            }, []);
 
         return [
             'total' => array_sum($perStatus),

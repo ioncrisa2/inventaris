@@ -18,7 +18,7 @@
         'nominal_tetap_list' => 'Petugas memilih satu atau beberapa rincian tetap ketika transaksi gaji dibuat.',
         'persentase' => 'Persentase dihitung dari gaji pokok.',
         'persentase_pengali' => 'Persentase dihitung dari gaji pokok, lalu dikalikan jumlah pengali pada transaksi.',
-        'per_hari' => 'Nominal dikalikan jumlah absensi Hadir dalam periode transaksi gaji.',
+        'per_hari' => 'Nominal dikalikan jumlah absensi Hadir atau Dinas dalam periode transaksi gaji.',
         'harian_manual' => 'Nominal dikalikan jumlah hari yang diisi petugas pada transaksi gaji.',
         default => 'Mengikuti aturan metode perhitungan yang dipilih.',
     };
@@ -31,7 +31,6 @@
 <x-app-page long-footer>
     <x-page-header
         title="{{ $komponenGaji->nama_komponen }}"
-        subtitle="Detail konfigurasi komponen gaji."
     >
         <x-slot:actions>
             <div class="d-flex flex-wrap gap-2">
@@ -63,7 +62,7 @@
     <x-flash-alert />
 
     <div class="content-narrow">
-        <x-section-card title="Ringkasan Komponen" subtitle="Aturan yang digunakan dalam perhitungan transaksi gaji.">
+        <x-section-card title="Ringkasan Komponen">
             <x-slot:actions>
                 <x-badge :color="$komponenGaji->jenis === 'Tunjangan' ? 'text-bg-success' : 'text-bg-secondary'">
                     {{ $komponenGaji->jenis }}
@@ -115,7 +114,6 @@
         @if($memakaiDaftarTetap)
             <x-data-table
                 title="Daftar Nominal Tetap"
-                subtitle="Pilihan rincian yang tersedia ketika komponen digunakan dalam transaksi gaji."
                 class="mt-4"
             >
                 <table class="table table-hover align-middle mb-0">

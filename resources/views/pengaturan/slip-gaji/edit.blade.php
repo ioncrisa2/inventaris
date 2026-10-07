@@ -6,7 +6,6 @@
 <x-app-page>
     <x-page-header
         title="Editor Slip Gaji"
-        subtitle="Susun blok untuk satu slot slip. Satu lembar F4 portrait memuat maksimal dua slip."
     >
         <x-slot:actions>
             <a href="{{ route('pengaturan.edit') }}#format-slip-gaji" class="btn btn-light border">

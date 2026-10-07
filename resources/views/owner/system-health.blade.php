@@ -102,7 +102,7 @@
     @endphp
 
     <x-app-page long-footer>
-        <x-page-header title="Kesehatan Sistem" subtitle="Status dependency penting dengan keluaran yang sudah disanitasi.">
+        <x-page-header title="Kesehatan Sistem">
             <x-slot:actions>
                 <a class="btn btn-outline-secondary" href="{{ route('owner.system-health') }}">
                     <i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Periksa ulang

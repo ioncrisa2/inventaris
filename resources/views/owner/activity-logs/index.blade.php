@@ -6,13 +6,13 @@
 <x-app-page long-footer>
     <x-page-header
         title="Activity Log"
-        subtitle="Jejak akses dan perubahan yang dilakukan akun System Owner pada control plane platform."
+        
     />
 
     <x-data-table
         :paginator="$logs"
         title="Aktivitas Penting Pengguna"
-        subtitle="Mencakup perubahan data, autentikasi, download, ekspor, dan cetak. Isi formulir dan payload sensitif tidak direkam."
+        
     >
         <x-slot:toolbar>
             <x-filter-form

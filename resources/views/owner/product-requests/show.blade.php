@@ -142,7 +142,7 @@
             </main>
 
             <aside class="owner-triage-panel">
-                <x-section-card title="Triase" subtitle="Perubahan status dapat dilihat tenant.">
+                <x-section-card title="Triase">
                     <form method="POST" action="{{ route('owner.product-requests.triage.update', $productRequest->ticket_number) }}">
                         @csrf
                         @method('PATCH')

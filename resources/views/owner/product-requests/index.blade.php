@@ -14,7 +14,7 @@
 
     <x-app-page long-footer>
         <x-page-header title="Inbox Request Produk"
-            subtitle="Triase masukan lintas koperasi tanpa membuka data operasional lain di luar isi yang dikirim pengguna." />
+             />
 
         <section class="request-stat-strip" aria-label="Statistik request terfilter">
             <article>
@@ -35,7 +35,7 @@
             </article>
         </section>
 
-        <x-data-table :paginator="$productRequests" title="Antrian request" subtitle="Aktivitas publik terbaru berada di urutan pertama." class="mt-4">
+        <x-data-table :paginator="$productRequests" title="Antrian request"  class="mt-4">
             <x-slot:toolbar>
                 <x-filter-form
                     :action="route('owner.product-requests.index')"

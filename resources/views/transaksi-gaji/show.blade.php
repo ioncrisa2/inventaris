@@ -12,7 +12,7 @@
 
 @section('content')
 <x-app-page>
-        <x-page-header title="Detail Transaksi Gaji" subtitle="{{ $transaksiGaji->karyawan->nama_lengkap }} — {{ $namaBulan[$transaksiGaji->bulan] }} {{ $transaksiGaji->tahun }}">
+        <x-page-header title="Detail Transaksi Gaji">
             <x-slot:actions>
                 <div class="d-flex gap-2">
                     @if($salarySlipPortalEnabled)

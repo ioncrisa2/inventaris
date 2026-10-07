@@ -6,7 +6,7 @@
 <x-app-page>
     <x-page-header
         title="Akses Fitur"
-        subtitle="Matikan akses menu operasional secara global tanpa menghapus program atau data yang sudah tersimpan."
+        
     />
     <x-flash-alert />
 

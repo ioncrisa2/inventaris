@@ -7,7 +7,7 @@
     $showTenant = auth()->user()->isSuperAdmin();
 @endphp
 <x-app-page>
-    <x-page-header title="Absensi" subtitle="Pilih karyawan untuk melihat dan mengisi kalender absensinya." />
+    <x-page-header title="Absensi" />
 
     <x-data-table :paginator="$karyawans">
         <x-slot:toolbar>

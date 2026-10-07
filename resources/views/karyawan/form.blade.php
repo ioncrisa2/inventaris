@@ -48,9 +48,7 @@
         </li>
     </ul>
 
-    <p class="text-body-secondary small mb-3">Semua field bertanda bintang (<span class="text-danger">*</span>) wajib diisi, kecuali yang ditandai opsional.</p>
-
-    <div class="tab-content" id="karyawanTabContent">
+<div class="tab-content" id="karyawanTabContent">
         <div class="tab-pane fade {{ $tabAktif === 'identitas' ? 'show active' : '' }}" id="tab-identitas" role="tabpanel" aria-labelledby="tab-identitas-btn">
             <div class="row g-3">
                 <div class="col-md-6">

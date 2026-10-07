@@ -7,7 +7,7 @@
     $showTenant = auth()->user()->isSuperAdmin();
 @endphp
 <x-app-page long-footer>
-        <x-page-header title="Transaksi Gaji" subtitle="Riwayat pembayaran per karyawan.">
+        <x-page-header title="Transaksi Gaji" >
             <x-slot:actions>
                 @can('cetak', \App\Models\TransaksiGaji::class)
                     <button

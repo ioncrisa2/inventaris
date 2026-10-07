@@ -11,7 +11,6 @@
 @section('content')
 <x-form-page
     title="Edit Data Karyawan"
-    subtitle="{{ $karyawan->nama_lengkap }} — {{ $karyawan->nik }}"
     :action="route('karyawan.riwayat.store', $karyawan)"
     :cancel-route="route('karyawan.show', $karyawan)"
     submit-label="Simpan Perubahan"
@@ -19,11 +18,6 @@
 >
     <div data-karyawan-change-form>
         <script type="application/json" data-karyawan-change-config>@json($konfigurasiJenis)</script>
-
-        <div class="alert alert-secondary small">
-            Nilai master karyawan akan diperbarui dan jejak perubahan disimpan permanen.
-            Pastikan tanggal berlaku dan dokumen dasar keputusan sudah benar.
-        </div>
 
         <div class="row g-3">
             <div class="col-12">
@@ -36,7 +30,7 @@
                     data-karyawan-change-type
                 />
                 @foreach($jenisPerubahanTersedia as $key => $jenis)
-                    <div class="form-text" data-karyawan-change-description="{{ $key }}" @if($key !== $jenisTerpilih) hidden @endif>
+                    <div class="form-text" data-karyawan-change- @if($key !== $jenisTerpilih) hidden @endif>
                         {{ $jenis['description'] }}
                     </div>
                 @endforeach

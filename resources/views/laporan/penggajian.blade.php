@@ -21,7 +21,7 @@
                 : 'Seluruh koperasi';
         @endphp
 
-        <x-page-header title="Laporan Penggajian" subtitle="Pembayaran gaji per periode dan unit kerja.">
+        <x-page-header title="Laporan Penggajian" >
             <x-slot:actions>
                 <div class="d-flex flex-wrap gap-2 d-print-none">
                     <x-report-filter-button
@@ -131,7 +131,7 @@
             <x-report-tab-pane
                 id="penggajian-ringkasan"
                 title="Ringkasan Penggajian"
-                description="Nilai utama penggajian pada periode dan unit kerja yang dipilih."
+                
                 active
             >
         <div class="report-stat-grid">
@@ -146,7 +146,7 @@
             <x-report-tab-pane
                 id="penggajian-unit"
                 title="Rekapitulasi per Unit Kerja"
-                description="Jumlah transaksi dan total gaji bersih pada setiap unit kerja."
+                
             >
             <div class="table-responsive report-tab-table">
                 <table class="table table-hover mb-0">
@@ -182,7 +182,7 @@
             <x-report-tab-pane
                 id="penggajian-detail"
                 title="Detail Transaksi Gaji"
-                description="Daftar transaksi gaji yang cocok dengan periode dan filter laporan."
+                
             >
             <div class="table-responsive report-tab-table">
                 <table class="table table-hover align-middle mb-0">

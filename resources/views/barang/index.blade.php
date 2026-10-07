@@ -7,7 +7,7 @@
     $showTenant = auth()->user()->isSuperAdmin();
 @endphp
 <x-app-page>
-        <x-page-header title="Inventaris Barang" subtitle="Kondisi terakhir dan nilai aset pada setiap unit.">
+        <x-page-header title="Inventaris Barang" >
             <x-slot:actions>
                 @can('barang.create')
                     <a class="btn btn-primary" href="{{ route('barang.create') }}">

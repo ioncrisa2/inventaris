@@ -41,7 +41,7 @@
         <div class="form-text">Nonaktifkan untuk memblokir login seluruh pengguna koperasi ini tanpa menunggu masa aktif habis.</div>
     </div>
     @else
-        <x-form.section title="Akun Admin Primer Pertama" description="Akun ini otomatis mendapat role admin_primer untuk mengelola koperasi ini." />
+        <x-form.section title="Akun Admin Primer Pertama" />
 
         <div class="row g-3">
             <div class="col-md-6">

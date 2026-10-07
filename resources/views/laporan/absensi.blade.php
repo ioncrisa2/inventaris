@@ -21,7 +21,7 @@
                 : 'Seluruh koperasi';
         @endphp
 
-        <x-page-header title="Laporan Absensi" subtitle="Kehadiran per pegawai dalam rentang yang dipilih.">
+        <x-page-header title="Laporan Absensi" >
             <x-slot:actions>
                 <div class="d-flex flex-wrap gap-2 d-print-none">
                     <x-report-filter-button
@@ -126,7 +126,7 @@
             <x-report-tab-pane
                 id="absensi-ringkasan"
                 title="Ringkasan Kehadiran"
-                description="Jumlah kehadiran dan ketidakhadiran pada periode yang dipilih."
+                
                 active
             >
         <div class="report-stat-grid">
@@ -142,7 +142,7 @@
             <x-report-tab-pane
                 id="absensi-detail"
                 :title="'Detail Absensi - '.\Illuminate\Support\Carbon::createFromDate(2000, $bulan, 1)->translatedFormat('F').' '.$tahun"
-                description="Daftar status dan catatan absensi pegawai pada periode laporan."
+                
             >
             <div class="table-responsive report-tab-table">
                 <table class="table table-hover align-middle mb-0">
@@ -165,7 +165,7 @@
                                 @if($showTenant)
                                     <td>{{ $absensi->koperasi?->nama ?? 'Tanpa koperasi' }}</td>
                                 @endif
-                                <td><x-badge :color="\App\Models\Absensi::STATUS_COLORS[$absensi->status] ?? 'bg-secondary'">{{ $absensi->status }}</x-badge></td>
+                                <td><x-badge :color="\App\Models\Absensi::STATUS_COLORS[$absensi->status] ?? 'bg-secondary'">{{ \App\Models\Absensi::statusLabel($absensi->status) }}</x-badge></td>
                                 <td>{{ $absensi->catatan ?? '-' }}</td>
                             </tr>
                         @empty

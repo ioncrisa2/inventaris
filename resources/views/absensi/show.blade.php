@@ -16,8 +16,7 @@
 
 @section('content')
     <x-app-page>
-        <x-page-header
-            subtitle="NIK {{ $karyawan->nik }} · {{ $karyawan->jabatan }} · {{ $karyawan->unitKerja?->nama_unit ?? 'Belum ditentukan' }}{{ auth()->user()->isSuperAdmin() ? ' · '.($karyawan->koperasi?->nama ?? 'Tanpa koperasi') : '' }}">
+        <x-page-header>
             <x-slot:title>
                 {{ $karyawan->nama_lengkap }}
                 <x-badge class="align-middle" :color="\App\Models\Karyawan::STATUS_COLORS[$karyawan->status_karyawan] ?? 'bg-secondary'">{{ $karyawan->status_karyawan }}</x-badge>
@@ -117,7 +116,7 @@
                                         data-bs-target="#modalAbsensi"
                                         data-tanggal="{{ $cell['tanggal']->format('Y-m-d') }}"
                                         data-tanggal-label="{{ $cell['tanggal']->translatedFormat('l, d F Y') }}"
-                                        data-status="{{ $absensiHariIni->status ?? '' }}"
+                                        data-status="{{ $absensiHariIni ? \App\Models\Absensi::normalizeStatus($absensiHariIni->status) : '' }}"
                                         data-catatan="{{ $absensiHariIni->catatan ?? '' }}"
                                         data-libur="{{ $cell['libur'] ? '1' : '0' }}"
                                         aria-label="Isi absensi tanggal {{ $cell['tanggal']->translatedFormat('d F Y') }}{{ $keteranganLibur ? '. Hari libur: '.$keteranganLibur : '' }}">
@@ -130,7 +129,7 @@
                                         </span>
                                         @if ($badgeStatus)
                                             <x-badge :color="$badgeStatus"
-                                                :title="$absensiHariIni->status">{{ \App\Models\Absensi::CALENDAR_LABELS[$absensiHariIni->status] ?? $absensiHariIni->status }}</x-badge>
+                                                :title="$absensiHariIni->status">{{ \App\Models\Absensi::statusLabel($absensiHariIni->status) }}</x-badge>
                                         @endif
                                     </button>
                                 @else
@@ -143,7 +142,7 @@
                                     </span>
                                     @if ($badgeStatus)
                                         <span class="badge {{ $badgeStatus }}"
-                                            title="{{ $absensiHariIni->status }}">{{ \App\Models\Absensi::CALENDAR_LABELS[$absensiHariIni->status] ?? $absensiHariIni->status }}</span>
+                                            title="{{ $absensiHariIni->status }}">{{ \App\Models\Absensi::statusLabel($absensiHariIni->status) }}</span>
                                     @endif
                                 @endif
                             </div>

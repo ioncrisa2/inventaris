@@ -19,7 +19,7 @@
                 : 'Seluruh koperasi';
         @endphp
 
-        <x-page-header title="Laporan Penyusutan" subtitle="Rekap penyusutan fiskal aset per tahun — dasar pelaporan SPT.">
+        <x-page-header title="Laporan Penyusutan" >
             <x-slot:actions>
                 <div class="d-flex flex-wrap gap-2 d-print-none">
                     <x-report-filter-button
@@ -131,7 +131,7 @@
             <x-report-tab-pane
                 id="penyusutan-ringkasan"
                 title="Ringkasan Penyusutan"
-                description="Nilai utama penyusutan fiskal aset untuk tahun yang dipilih."
+                
                 active
             >
         <div class="report-stat-grid">
@@ -145,7 +145,7 @@
             <x-report-tab-pane
                 id="penyusutan-rincian"
                 :title="'Rincian Penyusutan Tahun '.$tahun"
-                description="Perhitungan harga perolehan, akumulasi penyusutan, dan nilai buku tiap aset."
+                
             >
             <div class="table-responsive report-tab-table">
                 <table class="table table-hover align-middle mb-0">

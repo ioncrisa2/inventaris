@@ -5,7 +5,7 @@
 @section('content')
     <x-app-page long-footer>
         <x-page-header title="Analitik Koperasi"
-            subtitle="Bandingkan kecenderungan operasional tanpa masuk ke record individual." />
+             />
 
         <section class="owner-command-bar mb-4">
             @include('owner.partials.analytics-filter', [

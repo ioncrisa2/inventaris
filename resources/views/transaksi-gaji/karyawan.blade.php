@@ -12,7 +12,7 @@
 
 @section('content')
 <x-app-page long-footer>
-        <x-page-header title="Transaksi Gaji — {{ $karyawan->nama_lengkap }}" subtitle="Seluruh riwayat transaksi gaji karyawan ini{{ auth()->user()->isSuperAdmin() ? ' · '.($karyawan->koperasi?->nama ?? 'Tanpa koperasi') : '' }}.">
+        <x-page-header title="Transaksi Gaji — {{ $karyawan->nama_lengkap }}">
             <x-slot:actions>
                 <a href="{{ route('transaksi-gaji.index') }}" class="btn btn-light">
                     <i class="bi bi-arrow-left"></i>

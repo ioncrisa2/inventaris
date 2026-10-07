@@ -79,6 +79,15 @@ class Absensi extends Model
         return in_array($status, self::DINAS_STATUSES, true) ? 'Dinas' : $status;
     }
 
+    public static function statusLabel(?string $status): string
+    {
+        if ($status === null || $status === '') {
+            return '-';
+        }
+
+        return self::CALENDAR_LABELS[$status] ?? self::normalizeStatus($status);
+    }
+
     public function setStatusAttribute(string $status): void
     {
         $this->attributes['status'] = self::normalizeStatus($status);

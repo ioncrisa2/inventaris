@@ -10,7 +10,6 @@ $kondisi = $barang->kondisiTerakhir?->kondisi ?? 'Belum diperiksa';
 <x-app-page>
         <x-page-header
             title="{{ $barang->nama_barang }}"
-            subtitle="{{ $barang->kode_barang }} — {{ $barang->unitKerja?->nama_unit ?? 'Belum ditentukan' }}"
         >
             <x-slot:actions>
                 <div class="d-flex flex-wrap gap-2">
@@ -73,7 +72,7 @@ $kondisi = $barang->kondisiTerakhir?->kondisi ?? 'Belum diperiksa';
             </div>
 
             <div class="col-lg-7">
-                <x-data-table title="Riwayat Kondisi" subtitle="Catatan pemeriksaan dan biaya perbaikan." class="h-100">
+                <x-data-table title="Riwayat Kondisi" class="h-100">
                     <x-slot:toolbar>
                         @can('catatKondisi', $barang)
                         <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="modal" data-bs-target="#modalCatatKondisi">
@@ -114,7 +113,6 @@ $kondisi = $barang->kondisiTerakhir?->kondisi ?? 'Belum diperiksa';
             <div class="col-12">
                 <x-data-table
                     title="Rincian Penyusutan"
-                    subtitle="Metode {{ \App\Support\PenyusutanCalculator::namaMetode(\App\Support\PenyusutanCalculator::metodeUntukKategori($barang->kategori)) }}, masa manfaat {{ \App\Support\PenyusutanCalculator::masaManfaatTahun($barang->kategori) }} tahun ({{ $barang->kategori }}) — dasar pelaporan SPT."
                 >
                     <table class="table table-hover align-middle mb-0">
                         <thead>
@@ -147,7 +145,7 @@ $kondisi = $barang->kondisiTerakhir?->kondisi ?? 'Belum diperiksa';
 
         <div class="row g-4 mt-0">
             <div class="col-12">
-                <x-section-card title="Foto Pendukung" subtitle="Dokumentasi visual kondisi dan identitas barang.">
+                <x-section-card title="Foto Pendukung">
                     <x-slot:actions>
                         @can('kelolaFoto', $barang)
                         <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="modal" data-bs-target="#modalUploadFoto">

@@ -4,7 +4,7 @@
 
 @section('content')
     <x-app-page>
-        <x-page-header title="Request Produk" subtitle="Ajukan kebutuhan, pantau tindak lanjut, dan lanjutkan percakapan dengan tim produk.">
+        <x-page-header title="Request Produk">
             <x-slot:actions>
                 @can('create', \App\Models\ProductRequest::class)
                     <a class="btn btn-primary" href="{{ route('product-requests.create') }}">
@@ -16,7 +16,7 @@
 
         <x-flash-alert />
 
-        <x-data-table :paginator="$productRequests" title="Daftar request" subtitle="Diurutkan berdasarkan aktivitas publik terbaru.">
+        <x-data-table :paginator="$productRequests" title="Daftar request">
             <x-slot:toolbar>
                 <x-filter-form
                     :action="route('product-requests.index')"

@@ -4,8 +4,7 @@
 
 @section('content')
     <x-app-page long-footer>
-        <x-page-header title="Ringkasan Platform"
-            subtitle="Kondisi operasional seluruh koperasi dalam bentuk agregat, tanpa membuka data individual.">
+        <x-page-header title="Ringkasan Platform">
             <x-slot:actions>
                 <span class="owner-updated-at">
                     <i class="bi bi-clock-history" aria-hidden="true"></i>

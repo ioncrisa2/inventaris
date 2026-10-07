@@ -4,7 +4,7 @@
 
 @section('content')
     <x-app-page long-footer>
-        <x-page-header title="Dashboard" subtitle="Kondisi operasional berdasarkan data terbaru." />
+        <x-page-header title="Dashboard"  />
         @php
             $user = auth()->user();
             $hasAnyWidget = $user->canAny([

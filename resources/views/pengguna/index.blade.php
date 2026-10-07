@@ -11,7 +11,7 @@
 <x-app-page>
         <x-page-header
             title="Manajemen Pengguna"
-            :subtitle="$showTenant ? 'Kelola akun lintas koperasi dengan konteks tenant yang eksplisit.' : null"
+            :
         >
             <x-slot:actions>
                 @can('pengguna.create')

@@ -4,7 +4,7 @@
 
 @section('content')
 <x-app-page>
-    <x-page-header title="Maintenance Platform" subtitle="Batasi akses pengguna saat pembaruan aplikasi berlangsung. System Owner tetap dapat mengakses area owner." />
+    <x-page-header title="Maintenance Platform"  />
     <x-flash-alert />
 
     <div class="card content-narrow">

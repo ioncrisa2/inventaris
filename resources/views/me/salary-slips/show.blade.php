@@ -6,7 +6,6 @@
 <x-app-page>
     <x-page-header
         title="Slip Gaji {{ \Illuminate\Support\Carbon::create($transaksiGaji->tahun, $transaksiGaji->bulan, 1)->translatedFormat('F Y') }}"
-        subtitle="{{ $karyawan->nama_lengkap }} — {{ $karyawan->nik }}"
     >
         <x-slot:actions><a class="btn btn-light" href="{{ route('me.salary-slips.index') }}">Kembali</a></x-slot:actions>
     </x-page-header>

@@ -20,7 +20,7 @@
                 : 'Seluruh koperasi';
         @endphp
 
-        <x-page-header title="Laporan Kepegawaian" subtitle="Sebaran tenaga kerja, status, dan gaji pokok.">
+        <x-page-header title="Laporan Kepegawaian" >
             <x-slot:actions>
                 <div class="d-flex flex-wrap gap-2 d-print-none">
                     <x-report-filter-button
@@ -126,7 +126,7 @@
             <x-report-tab-pane
                 id="kepegawaian-ringkasan"
                 title="Ringkasan Kepegawaian"
-                description="Informasi utama tenaga kerja berdasarkan filter yang sedang diterapkan."
+                
                 active
             >
         <div class="report-stat-grid">
@@ -139,7 +139,7 @@
             <x-report-tab-pane
                 id="kepegawaian-status"
                 title="Rekapitulasi Status"
-                description="Jumlah karyawan untuk setiap status hubungan kerja."
+                
             >
                     <div class="table-responsive report-tab-table">
                         <table class="table table-hover mb-0">
@@ -166,7 +166,7 @@
             <x-report-tab-pane
                 id="kepegawaian-unit"
                 title="Distribusi per Unit Kerja"
-                description="Sebaran jumlah karyawan pada masing-masing unit kerja."
+                
             >
                     <div class="table-responsive report-tab-table">
                         <table class="table table-hover mb-0">
@@ -190,7 +190,7 @@
             <x-report-tab-pane
                 id="kepegawaian-detail"
                 title="Detail Karyawan"
-                description="Daftar identitas kerja dan gaji pokok karyawan yang cocok dengan filter."
+                
             >
             <div class="table-responsive report-tab-table">
                 <table class="table table-hover align-middle mb-0">

@@ -6,7 +6,6 @@
     <x-app-page long-footer>
         <x-page-header
             title="Sinkronisasi Hari Libur"
-            subtitle="Ambil data publik, periksa hasilnya, lalu jadikan tanggal terpilih sebagai baseline seluruh koperasi primer."
         >
             <x-slot:actions>
                 <a
@@ -36,7 +35,6 @@
 
         <x-section-card
             title="Ambil Data Publik"
-            subtitle="Pilih tahun baseline nasional yang akan diperiksa."
         >
             <form method="GET" action="{{ route('hari-libur.sinkronisasi.create') }}" class="row g-3 align-items-end">
                 <div class="col-12 col-md-4 col-xl-3">
@@ -78,7 +76,6 @@
         @if($hasil)
             <x-data-table
                 title="Tanggal Baru"
-                subtitle="{{ count($hasil['baru']) }} tanggal belum tercatat sebagai baseline nasional. Centang hanya data yang sudah diperiksa."
                 class="mt-4"
             >
                 @if(count($hasil['baru']))
@@ -151,7 +148,6 @@
 
             <x-data-table
                 title="Sudah Tercatat"
-                subtitle="{{ count($hasil['sudahAda']) }} tanggal sudah ada di baseline nasional dan tidak akan diubah."
                 class="mt-4"
             >
                 @if(count($hasil['sudahAda']))

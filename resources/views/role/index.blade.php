@@ -30,13 +30,6 @@
         <x-flash-alert />
 
         @if(! $showTenant)
-        <div class="alert alert-primary app-alert" role="note">
-            <i class="bi bi-building-lock" aria-hidden="true"></i>
-            <div>
-                <strong>Lingkup {{ auth()->user()->koperasi->nama }}.</strong>
-                Halaman ini hanya menampilkan role yang terikat ke koperasi Anda.
-                Role Admin Primer tetap ditampilkan sebagai role sistem, sedangkan role custom dapat Anda buat dan ubah.
-            </div>
         </div>
         @endif
 
