@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use App\Services\StorageUsageService;
 
 class StoredFile extends Model
 {
@@ -37,6 +38,21 @@ class StoredFile extends Model
     public function uniqueIds(): array
     {
         return ['uuid'];
+    }
+
+    protected static function booted(): void
+    {
+        static::saved(function (StoredFile $file) {
+            if ($file->koperasi_id) {
+                app(StorageUsageService::class)->clearTenantUsageCache($file->koperasi_id);
+            }
+        });
+
+        static::deleted(function (StoredFile $file) {
+            if ($file->koperasi_id) {
+                app(StorageUsageService::class)->clearTenantUsageCache($file->koperasi_id);
+            }
+        });
     }
 
     public function getRouteKeyName(): string

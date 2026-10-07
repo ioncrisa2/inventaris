@@ -150,6 +150,7 @@ class NavigationMenu
                     ['label' => 'Activity Log', 'icon' => 'bi-clock-history', 'route' => 'owner.activity-logs.index', 'active_routes' => ['owner.activity-logs.*'], 'permission' => null],
                     ['label' => 'Kesehatan Sistem', 'icon' => 'bi-heart-pulse', 'route' => 'owner.system-health', 'active_routes' => ['owner.system-health'], 'permission' => null],
                     ['label' => 'Penyimpanan', 'icon' => 'bi-device-ssd', 'route' => 'owner.storage', 'active_routes' => ['owner.storage'], 'permission' => null],
+                    ['label' => 'Backup & Restore', 'icon' => 'bi-safe', 'route' => 'owner.backup.index', 'active_routes' => ['owner.backup.*'], 'permission' => null],
                     ['label' => 'Maintenance', 'icon' => 'bi-tools', 'route' => 'owner.maintenance.edit', 'active_routes' => ['owner.maintenance.*'], 'permission' => null],
                     ['label' => 'Akses Fitur', 'icon' => 'bi-toggles', 'route' => 'owner.features.index', 'active_routes' => ['owner.features.*'], 'permission' => null],
                     ['label' => 'Pengumuman', 'icon' => 'bi-megaphone', 'route' => 'owner.announcements.index', 'active_routes' => ['owner.announcements.*'], 'permission' => null],

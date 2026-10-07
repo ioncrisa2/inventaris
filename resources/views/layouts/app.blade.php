@@ -64,6 +64,22 @@
                 </div>
             </header>
 
+            @if (session()->has('impersonated_by'))
+                <div class="alert alert-warning rounded-0 d-flex justify-content-between align-items-center mb-0 px-4 py-3" style="border-left: 0; border-right: 0;" role="alert">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+                        <div>
+                            <strong>Mode Penyamaran Aktif</strong>
+                            <span class="d-none d-sm-inline"> — Anda bertindak sebagai {{ auth()->user()->name }}.</span>
+                        </div>
+                    </div>
+                    <form action="{{ route('impersonate.leave') }}" method="POST" class="m-0">
+                        @csrf
+                        <button type="submit" class="btn btn-dark btn-sm">Kembali ke Owner</button>
+                    </form>
+                </div>
+            @endif
+
             <div class="app-main-content">
                 @yield('content')
             </div>

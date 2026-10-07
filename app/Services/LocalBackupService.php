@@ -275,4 +275,31 @@ class LocalBackupService
         }
         $this->writeMetadata(array_merge($current, $changes));
     }
+
+    /** @return array<string, mixed> */
+    public function readMetadata(): array
+    {
+        $path = (string) config('backup.metadata_path');
+        if ($path === '' || ! is_file($path)) {
+            return [];
+        }
+
+        $maxBytes = 65536;
+        $size = @filesize($path);
+        if (! is_int($size) || $size < 1 || $size > $maxBytes) {
+            return [];
+        }
+
+        try {
+            $content = @file_get_contents($path, false, null, 0, $maxBytes + 1);
+            if (! is_string($content) || strlen($content) > $maxBytes) {
+                return [];
+            }
+
+            $decoded = json_decode($content, true, 8, JSON_THROW_ON_ERROR);
+            return is_array($decoded) ? $decoded : [];
+        } catch (Throwable) {
+            return [];
+        }
+    }
 }

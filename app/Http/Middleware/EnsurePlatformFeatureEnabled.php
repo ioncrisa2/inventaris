@@ -21,7 +21,7 @@ class EnsurePlatformFeatureEnabled
 
         $featureKey = $this->featureService->featureForRoute($request->route()?->getName());
 
-        if ($featureKey && ! $this->featureService->isEnabled($featureKey)) {
+        if ($featureKey && ! $this->featureService->isEnabled($featureKey, $user->koperasi_id)) {
             abort(404);
         }
 

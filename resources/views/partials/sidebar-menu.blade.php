@@ -37,4 +37,26 @@
             </div>
         @endif
     @endforeach
+
+    @if (auth()->user()->koperasi_id !== null)
+        @php
+            $storageUsage = app(\App\Services\StorageUsageService::class)->tenantUsage(auth()->user()->koperasi_id);
+            $quotaBytes = \App\Services\StorageUsageService::TENANT_QUOTA_BYTES;
+            $percentage = min(100, round(($storageUsage / max(1, $quotaBytes)) * 100));
+            $barColor = $percentage >= 90 ? 'bg-danger' : ($percentage >= 75 ? 'bg-warning' : 'bg-primary');
+            $usageMB = number_format($storageUsage / 1048576, 1, ',', '.');
+        @endphp
+        <div class="mt-auto px-2 pt-3 pb-1 w-100 sidebar-quota border-top">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="small fw-semibold text-body-secondary"><i class="bi bi-cloud-arrow-up me-1"></i> Penyimpanan</span>
+                <span class="small text-body-secondary">{{ $percentage }}%</span>
+            </div>
+            <div class="progress" style="height: 6px;" aria-label="Penggunaan Penyimpanan" aria-valuenow="{{ $percentage }}" aria-valuemin="0" aria-valuemax="100">
+                <div class="progress-bar {{ $barColor }}" style="width: {{ $percentage }}%"></div>
+            </div>
+            <div class="small text-body-secondary mt-1">
+                {{ $usageMB }} MB / 1 GB digunakan
+            </div>
+        </div>
+    @endif
 </nav>

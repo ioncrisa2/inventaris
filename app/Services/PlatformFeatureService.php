@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\PlatformFeatureAuditLog;
 use App\Models\PlatformFeatureSetting;
+use App\Models\Koperasi;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -14,22 +15,45 @@ use Throwable;
 
 class PlatformFeatureService
 {
+    private array $koperasiOverridesCache = [];
+
     /** @return array<string, array<string, mixed>> */
     public function definitions(): array
     {
         return config('platform_features.features', []);
     }
 
-    public function isEnabled(string $featureKey): bool
+    public function isEnabled(string $featureKey, ?int $koperasiId = null): bool
     {
         if (! array_key_exists($featureKey, $this->definitions())) {
             return true;
         }
 
-        return $this->statuses()[$featureKey] ?? true;
+        $globalStatus = $this->statuses()[$featureKey] ?? true;
+
+        if ($koperasiId !== null) {
+            $override = $this->getKoperasiOverride($koperasiId, $featureKey);
+            if ($override !== null) {
+                return $override;
+            }
+        }
+
+        return $globalStatus;
     }
 
-    public function employeeSelfServiceEnabled(): bool
+    private function getKoperasiOverride(int $koperasiId, string $featureKey): ?bool
+    {
+        if (! array_key_exists($koperasiId, $this->koperasiOverridesCache)) {
+            $koperasi = Koperasi::find($koperasiId, ['id', 'feature_overrides']);
+            $this->koperasiOverridesCache[$koperasiId] = $koperasi?->feature_overrides ?? [];
+        }
+
+        $overrides = $this->koperasiOverridesCache[$koperasiId];
+        
+        return array_key_exists($featureKey, $overrides) ? (bool) $overrides[$featureKey] : null;
+    }
+
+    public function employeeSelfServiceEnabled(?int $koperasiId = null): bool
     {
         $featureKeys = config('platform_features.employee_self_service_features', []);
 
@@ -39,10 +63,8 @@ class PlatformFeatureService
             return true;
         }
 
-        $statuses = $this->statuses();
-
         foreach ($featureKeys as $featureKey) {
-            if ($statuses[$featureKey] ?? true) {
+            if ($this->isEnabled($featureKey, $koperasiId)) {
                 return true;
             }
         }

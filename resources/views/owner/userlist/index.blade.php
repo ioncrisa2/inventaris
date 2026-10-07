@@ -51,6 +51,7 @@
                     <th scope="col">Email</th>
                     <th scope="col">Unit Kerja</th>
                     <th scope="col">Role</th>
+                    <th scope="col" class="text-end">Aksi</th>
                 </tr>
             </thead>
             <tbody>
@@ -67,9 +68,19 @@
                                 <x-badge color="bg-secondary">Belum ada role</x-badge>
                             @endforelse
                         </td>
+                        <td data-label="Aksi" class="text-end">
+                            @if (! $user->isPlatformAccount())
+                                <form action="{{ route('owner.impersonate.enter', $user) }}" method="POST" class="m-0">
+                                    @csrf
+                                    <button type="submit" class="btn btn-sm btn-outline-dark" aria-label="Login sebagai {{ $user->name }}" title="Login sebagai user ini">
+                                        <i class="bi bi-box-arrow-in-right"></i> Login
+                                    </button>
+                                </form>
+                            @endif
+                        </td>
                     </tr>
                 @empty
-                    <x-empty-row :colspan="5">
+                    <x-empty-row :colspan="6">
                         @if(request()->hasAny(['search', 'koperasi_id', 'role_id']))
                             Tidak ada pengguna yang cocok dengan filter.
                             <a href="{{ route('owner.userlist.index') }}">Hapus filter</a>.

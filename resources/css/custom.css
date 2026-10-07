@@ -1804,7 +1804,8 @@ input[data-date-range] {
 .sidebar-icon-only .sidebar-brand span,
 .sidebar-icon-only .sidebar-nav .nav-link span,
 .sidebar-icon-only .sidebar-section-label,
-.sidebar-icon-only .sidebar-group-toggle {
+.sidebar-icon-only .sidebar-group-toggle,
+.sidebar-icon-only .sidebar-quota {
     display: none;
 }
 

@@ -61,6 +61,7 @@ class KoperasiService
             'nama' => $data['nama'],
             'expires_at' => $data['expires_at'] ?? null,
             'is_active' => $data['is_active'],
+            'feature_overrides' => $data['feature_overrides'] ?? [],
         ]), 3);
     }
 }

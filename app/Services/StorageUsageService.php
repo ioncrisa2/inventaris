@@ -11,6 +11,7 @@ use Throwable;
 class StorageUsageService
 {
     private const CACHE_KEY = 'owner-observability:v1:storage';
+    public const TENANT_QUOTA_BYTES = 1073741824; // 1 GB
 
     /**
      * Mengembalikan snapshot storage tanpa path file, nama file, atau record
@@ -48,6 +49,29 @@ class StorageUsageService
         }
 
         return $snapshot;
+    }
+
+    /**
+     * Menghitung total ukuran file (final_size_bytes) untuk satu tenant
+     *
+     * @param int $koperasiId
+     * @return int
+     */
+    public function tenantUsage(int $koperasiId): int
+    {
+        $cacheKey = "tenant-storage:{$koperasiId}";
+        
+        return Cache::remember($cacheKey, 300, function() use ($koperasiId) {
+            return (int) DB::table('stored_files')
+                ->where('koperasi_id', $koperasiId)
+                ->where('status', 'ready')
+                ->sum('final_size_bytes');
+        });
+    }
+
+    public function clearTenantUsageCache(int $koperasiId): void
+    {
+        Cache::forget("tenant-storage:{$koperasiId}");
     }
 
     /**

@@ -112,7 +112,7 @@ class TransaksiGajiController extends Controller
         $totalGaji = bcadd((string) $transaksiGaji->gaji_pokok, $totalTunjangan, 2);
         $penandaTangan = $this->karyawanRepository->activeOrderedList();
         $paperLayoutDefault = $this->slipGajiTemplateService->publishedPaperLayout();
-        $salarySlipPortalEnabled = $this->platformFeatureService->isEnabled('my_salary_slips');
+        $salarySlipPortalEnabled = $this->platformFeatureService->isEnabled('my_salary_slips', auth()->user()->koperasi_id);
 
         return view('transaksi-gaji.show', compact(
             'transaksiGaji',
@@ -127,7 +127,7 @@ class TransaksiGajiController extends Controller
 
     public function publish(Request $request, TransaksiGaji $transaksiGaji)
     {
-        abort_unless($this->platformFeatureService->isEnabled('my_salary_slips'), 404);
+        abort_unless($this->platformFeatureService->isEnabled('my_salary_slips', auth()->user()->koperasi_id), 404);
 
         $this->authorize('publish', $transaksiGaji);
 

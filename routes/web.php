@@ -25,6 +25,7 @@ use App\Http\Controllers\Owner\ActivityLogController;
 use App\Http\Controllers\Owner\AnnouncementController as OwnerAnnouncementController;
 use App\Http\Controllers\Owner\MaintenanceController;
 use App\Http\Controllers\Owner\PlatformFeatureController;
+use App\Http\Controllers\Owner\BackupController;
 use App\Http\Controllers\Owner\RoleController as OwnerRoleController;
 use App\Http\Controllers\Owner\UserListController;
 use App\Http\Controllers\OwnerAnalyticsController;
@@ -44,6 +45,7 @@ use App\Http\Controllers\SlipGajiTemplateController;
 use App\Http\Controllers\StorageUsageController;
 use App\Http\Controllers\SystemHealthController;
 use App\Http\Controllers\SystemOwnerDashboardController;
+use App\Http\Controllers\Owner\ImpersonateController;
 use App\Http\Controllers\TransaksiGajiController;
 use App\Http\Controllers\UnitKerjaController;
 use App\Http\Controllers\UploadController;
@@ -57,6 +59,7 @@ Auth::routes(['register' => false, 'reset' => false, 'confirm' => false, 'verify
 
 Route::middleware('auth')->group(function () {
     Route::get('koperasi/masa-aktif-berakhir', KoperasiExpiredController::class)->name('koperasi.expired');
+    Route::post('impersonate/leave', [ImpersonateController::class, 'leave'])->name('impersonate.leave');
 });
 
 Route::middleware(['auth', 'system_owner'])
@@ -64,6 +67,7 @@ Route::middleware(['auth', 'system_owner'])
     ->name('owner.')
     ->group(function () {
         Route::get('/', SystemOwnerDashboardController::class)->name('dashboard');
+        Route::post('impersonate/{user}', [ImpersonateController::class, 'enter'])->name('impersonate.enter');
         Route::get('maintenance', [MaintenanceController::class, 'edit'])->name('maintenance.edit');
         Route::put('maintenance', [MaintenanceController::class, 'update'])->name('maintenance.update');
         Route::delete('maintenance', [MaintenanceController::class, 'destroy'])->name('maintenance.destroy');
@@ -85,6 +89,8 @@ Route::middleware(['auth', 'system_owner'])
         Route::middleware('throttle:20,1')->group(function () {
             Route::get('system-health', SystemHealthController::class)->name('system-health');
             Route::get('storage', StorageUsageController::class)->name('storage');
+            Route::get('backup', [BackupController::class, 'index'])->name('backup.index');
+            Route::post('backup', [BackupController::class, 'store'])->name('backup.store');
         });
 
         Route::prefix('product-requests')->name('product-requests.')->group(function () {

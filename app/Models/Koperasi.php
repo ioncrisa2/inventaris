@@ -13,11 +13,12 @@ class Koperasi extends Model
 
     protected $table = 'koperasi';
 
-    protected $fillable = ['nama', 'expires_at', 'is_active'];
+    protected $fillable = ['nama', 'expires_at', 'is_active', 'feature_overrides'];
 
     protected $casts = [
         'expires_at' => 'datetime',
         'is_active' => 'boolean',
+        'feature_overrides' => 'array',
     ];
 
     public function users()
