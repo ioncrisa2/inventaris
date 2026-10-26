@@ -1,15 +1,16 @@
-@props(['name', 'label' => null, 'options' => [], 'value' => null, 'required' => false, 'placeholder' => null, 'help' => null])
+@props(['name', 'label' => null, 'options' => [], 'value' => null, 'required' => false, 'placeholder' => null, 'help' => null, 'id' => null])
 
 @php
+    $id ??= $name;
     $descriptionIds = collect([
-        $errors->has($name) ? $name.'-error' : null,
-        $help ? $name.'-help' : null,
+        $errors->has($name) ? $id.'-error' : null,
+        $help ? $id.'-help' : null,
     ])->filter()->implode(' ');
 @endphp
 
 <div>
     @if($label)
-    <label for="{{ $name }}" class="form-label">
+    <label for="{{ $id }}" class="form-label">
         {{ $label }}
         @if($required)<span class="text-danger">*</span>@endif
     </label>
@@ -17,7 +18,7 @@
 
     <select
         name="{{ $name }}"
-        id="{{ $name }}"
+        id="{{ $id }}"
         @if($required) required @endif
         @if($descriptionIds) aria-describedby="{{ $descriptionIds }}" @endif
         @if($errors->has($name)) aria-invalid="true" @endif
@@ -33,10 +34,10 @@
     </select>
 
     @error($name)
-    <div class="invalid-feedback" id="{{ $name }}-error">{{ $message }}</div>
+    <div class="invalid-feedback" id="{{ $id }}-error">{{ $message }}</div>
     @enderror
 
     @if($help)
-    <div class="form-text" id="{{ $name }}-help">{{ $help }}</div>
+    <div class="form-text" id="{{ $id }}-help">{{ $help }}</div>
     @endif
 </div>

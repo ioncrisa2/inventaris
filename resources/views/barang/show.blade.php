@@ -281,7 +281,7 @@ $kondisi = $barang->kondisiTerakhir?->kondisi ?? 'Belum diperiksa';
 >
     <x-form.file name="foto" label="File Foto" policy="asset_photo" required />
     <div class="mt-3">
-        <x-form.input name="keterangan" label="Keterangan" maxlength="255" help="Opsional." />
+        <x-form.input name="keterangan" id="foto_keterangan" label="Keterangan" maxlength="255" help="Opsional." />
     </div>
 </x-modal-form>
 

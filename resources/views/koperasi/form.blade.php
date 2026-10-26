@@ -53,7 +53,7 @@
                 $val = array_key_exists($key, $overrides) ? ($overrides[$key] ? '1' : '0') : '';
             @endphp
             <div class="col-md-6">
-                <label class="form-label" for="feature_{{ $key }}">{{ $definition['name'] }}</label>
+                <label class="form-label" for="feature_{{ $key }}">{{ $definition['label'] }}</label>
                 <select name="feature_overrides[{{ $key }}]" id="feature_{{ $key }}" class="form-select">
                     <option value="" @selected($val === '')>Gunakan Pengaturan Global</option>
                     <option value="1" @selected($val === '1')>Nyala (Override)</option>

@@ -29,10 +29,6 @@
 
         <x-flash-alert />
 
-        @if(! $showTenant)
-        </div>
-        @endif
-
         <x-data-table :paginator="$roles">
                 <table class="table table-hover align-middle mb-0">
                     <thead>

@@ -30,7 +30,7 @@
                     data-karyawan-change-type
                 />
                 @foreach($jenisPerubahanTersedia as $key => $jenis)
-                    <div class="form-text" data-karyawan-change- @if($key !== $jenisTerpilih) hidden @endif>
+                    <div class="form-text" data-karyawan-change-description="{{ $key }}" @if($key !== $jenisTerpilih) hidden @endif>
                         {{ $jenis['description'] }}
                     </div>
                 @endforeach
@@ -73,19 +73,19 @@
                 @if($jenisTerpilih !== 'perbaruan_data') hidden @endif
             >
                 <div class="col-md-6">
-                    <x-form.input name="nik" label="NIK Internal" :value="$karyawan->nik" maxlength="20" />
+                    <x-form.input name="nik" id="perbaruan_nik" label="NIK Internal" :value="$karyawan->nik" maxlength="20" />
                 </div>
                 <div class="col-md-6">
-                    <x-form.input name="nama_lengkap" label="Nama Lengkap" :value="$karyawan->nama_lengkap" maxlength="255" />
+                    <x-form.input name="nama_lengkap" id="perbaruan_nama_lengkap" label="Nama Lengkap" :value="$karyawan->nama_lengkap" maxlength="255" />
                 </div>
                 <div class="col-md-6">
-                    <x-form.input name="tempat_lahir" label="Tempat Lahir" :value="$karyawan->tempat_lahir" maxlength="255" />
+                    <x-form.input name="tempat_lahir" id="perbaruan_tempat_lahir" label="Tempat Lahir" :value="$karyawan->tempat_lahir" maxlength="255" />
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label" for="perubahan_tanggal_lahir">Tanggal Lahir</label>
+                    <label class="form-label" for="perbaruan_tanggal_lahir">Tanggal Lahir</label>
                     <input
                         class="form-control @error('tanggal_lahir') is-invalid @enderror"
-                        id="perubahan_tanggal_lahir"
+                        id="perbaruan_tanggal_lahir"
                         name="tanggal_lahir"
                         type="date"
                         value="{{ old('tanggal_lahir', $karyawan->tanggal_lahir?->toDateString()) }}"
@@ -96,6 +96,7 @@
                 <div class="col-md-6">
                     <x-form.select
                         name="jenis_kelamin"
+                        id="perbaruan_jenis_kelamin"
                         label="Jenis Kelamin"
                         :options="collect(config('kepegawaian.jenis_kelamin'))->mapWithKeys(fn ($opsi) => [$opsi => $opsi])"
                         :value="$karyawan->jenis_kelamin"
@@ -104,22 +105,23 @@
                 <div class="col-md-6">
                     <x-form.select
                         name="agama"
+                        id="perbaruan_agama"
                         label="Agama"
                         :options="collect(config('kepegawaian.agama'))->mapWithKeys(fn ($opsi) => [$opsi => $opsi])"
                         :value="$karyawan->agama"
                     />
                 </div>
                 <div class="col-md-6">
-                    <x-form.input name="nomor_ktp" label="Nomor KTP/NIK" :value="$karyawan->nomor_ktp" maxlength="16" />
+                    <x-form.input name="nomor_ktp" id="perbaruan_nomor_ktp" label="Nomor KTP/NIK" :value="$karyawan->nomor_ktp" maxlength="16" />
                 </div>
                 <div class="col-md-6">
-                    <x-form.input name="npwp" label="NPWP" :value="$karyawan->npwp" maxlength="30" help="Opsional — isi jika karyawan sudah memiliki NPWP." />
+                    <x-form.input name="npwp" id="perbaruan_npwp" label="NPWP" :value="$karyawan->npwp" maxlength="30" help="Opsional — isi jika karyawan sudah memiliki NPWP." />
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label" for="perubahan_alamat_ktp">Alamat sesuai KTP</label>
+                    <label class="form-label" for="perbaruan_alamat_ktp">Alamat sesuai KTP</label>
                     <textarea
                         class="form-control @error('alamat_ktp') is-invalid @enderror"
-                        id="perubahan_alamat_ktp"
+                        id="perbaruan_alamat_ktp"
                         name="alamat_ktp"
                         rows="3"
                         maxlength="2000"
@@ -127,10 +129,10 @@
                     @error('alamat_ktp')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label" for="perubahan_alamat_domisili">Alamat Domisili</label>
+                    <label class="form-label" for="perbaruan_alamat_domisili">Alamat Domisili</label>
                     <textarea
                         class="form-control @error('alamat_domisili') is-invalid @enderror"
-                        id="perubahan_alamat_domisili"
+                        id="perbaruan_alamat_domisili"
                         name="alamat_domisili"
                         rows="3"
                         maxlength="2000"
@@ -140,6 +142,7 @@
                 <div class="col-md-6">
                     <x-form.select
                         name="status_perkawinan"
+                        id="perbaruan_status_perkawinan"
                         label="Status Perkawinan"
                         :options="collect(config('kepegawaian.status_perkawinan'))->mapWithKeys(fn ($opsi) => [$opsi => $opsi])"
                         :value="$karyawan->status_perkawinan"
@@ -148,25 +151,26 @@
                 <div class="col-md-6">
                     <x-form.select
                         name="pendidikan_terakhir"
+                        id="perbaruan_pendidikan_terakhir"
                         label="Pendidikan Terakhir"
                         :options="collect(config('kepegawaian.pendidikan_terakhir'))->mapWithKeys(fn ($opsi) => [$opsi => $opsi])"
                         :value="$karyawan->pendidikan_terakhir"
                     />
                 </div>
                 <div class="col-md-6">
-                    <x-form.input name="jurusan" label="Jurusan" :value="$karyawan->jurusan" maxlength="255" />
+                    <x-form.input name="jurusan" id="perbaruan_jurusan" label="Jurusan" :value="$karyawan->jurusan" maxlength="255" />
                 </div>
                 <div class="col-md-6">
-                    <x-form.input name="nama_sekolah" label="Sekolah/Perguruan Tinggi" :value="$karyawan->nama_sekolah" maxlength="255" />
+                    <x-form.input name="nama_sekolah" id="perbaruan_nama_sekolah" label="Sekolah/Perguruan Tinggi" :value="$karyawan->nama_sekolah" maxlength="255" />
                 </div>
                 <div class="col-md-4">
-                    <x-form.input name="tahun_lulus" label="Tahun Lulus" type="number" :value="$karyawan->tahun_lulus" min="1950" :max="now()->year" />
+                    <x-form.input name="tahun_lulus" id="perbaruan_tahun_lulus" label="Tahun Lulus" type="number" :value="$karyawan->tahun_lulus" min="1950" :max="now()->year" />
                 </div>
                 <div class="col-md-4">
-                    <x-form.input name="nama_pasangan" label="Nama Pasangan" :value="$karyawan->nama_pasangan" maxlength="255" help="Opsional." />
+                    <x-form.input name="nama_pasangan" id="perbaruan_nama_pasangan" label="Nama Pasangan" :value="$karyawan->nama_pasangan" maxlength="255" help="Opsional." />
                 </div>
                 <div class="col-md-4">
-                    <x-form.input name="jumlah_anak" label="Jumlah Anak" type="number" :value="$karyawan->jumlah_anak" min="0" help="Opsional." />
+                    <x-form.input name="jumlah_anak" id="perbaruan_jumlah_anak" label="Jumlah Anak" type="number" :value="$karyawan->jumlah_anak" min="0" help="Opsional." />
                 </div>
                 <div class="col-12">
                     <div class="d-flex flex-wrap align-items-center gap-3">
@@ -179,6 +183,7 @@
                         <div class="flex-grow-1">
                             <x-form.file
                                 name="foto_karyawan"
+                                id="perbaruan_foto_karyawan"
                                 label="Ganti Foto Karyawan"
                                 policy="employee_photo"
                             />
@@ -196,19 +201,19 @@
                 @if($jenisTerpilih !== 'data_pribadi') hidden @endif
             >
                 <div class="col-md-6">
-                    <x-form.input name="nik" label="NIK Internal" :value="$karyawan->nik" maxlength="20" required />
+                    <x-form.input name="nik" id="pribadi_nik" label="NIK Internal" :value="$karyawan->nik" maxlength="20" required />
                 </div>
                 <div class="col-md-6">
-                    <x-form.input name="nama_lengkap" label="Nama Lengkap" :value="$karyawan->nama_lengkap" maxlength="255" required />
+                    <x-form.input name="nama_lengkap" id="pribadi_nama_lengkap" label="Nama Lengkap" :value="$karyawan->nama_lengkap" maxlength="255" required />
                 </div>
                 <div class="col-md-6">
-                    <x-form.input name="tempat_lahir" label="Tempat Lahir" :value="$karyawan->tempat_lahir" maxlength="255" required />
+                    <x-form.input name="tempat_lahir" id="pribadi_tempat_lahir" label="Tempat Lahir" :value="$karyawan->tempat_lahir" maxlength="255" required />
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label" for="perubahan_tanggal_lahir">Tanggal Lahir <span class="text-danger">*</span></label>
+                    <label class="form-label" for="pribadi_tanggal_lahir">Tanggal Lahir <span class="text-danger">*</span></label>
                     <input
                         class="form-control @error('tanggal_lahir') is-invalid @enderror"
-                        id="perubahan_tanggal_lahir"
+                        id="pribadi_tanggal_lahir"
                         name="tanggal_lahir"
                         type="date"
                         value="{{ old('tanggal_lahir', $karyawan->tanggal_lahir?->toDateString()) }}"
@@ -220,6 +225,7 @@
                 <div class="col-md-6">
                     <x-form.select
                         name="jenis_kelamin"
+                        id="pribadi_jenis_kelamin"
                         label="Jenis Kelamin"
                         :options="collect(config('kepegawaian.jenis_kelamin'))->mapWithKeys(fn ($opsi) => [$opsi => $opsi])"
                         :value="$karyawan->jenis_kelamin"
@@ -229,6 +235,7 @@
                 <div class="col-md-6">
                     <x-form.select
                         name="agama"
+                        id="pribadi_agama"
                         label="Agama"
                         :options="collect(config('kepegawaian.agama'))->mapWithKeys(fn ($opsi) => [$opsi => $opsi])"
                         :value="$karyawan->agama"
@@ -236,16 +243,16 @@
                     />
                 </div>
                 <div class="col-md-6">
-                    <x-form.input name="nomor_ktp" label="Nomor KTP/NIK" :value="$karyawan->nomor_ktp" maxlength="16" required />
+                    <x-form.input name="nomor_ktp" id="pribadi_nomor_ktp" label="Nomor KTP/NIK" :value="$karyawan->nomor_ktp" maxlength="16" required />
                 </div>
                 <div class="col-md-6">
-                    <x-form.input name="npwp" label="NPWP" :value="$karyawan->npwp" maxlength="30" help="Opsional — isi jika karyawan sudah memiliki NPWP." />
+                    <x-form.input name="npwp" id="pribadi_npwp" label="NPWP" :value="$karyawan->npwp" maxlength="30" help="Opsional — isi jika karyawan sudah memiliki NPWP." />
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label" for="perubahan_alamat_ktp">Alamat sesuai KTP <span class="text-danger">*</span></label>
+                    <label class="form-label" for="pribadi_alamat_ktp">Alamat sesuai KTP <span class="text-danger">*</span></label>
                     <textarea
                         class="form-control @error('alamat_ktp') is-invalid @enderror"
-                        id="perubahan_alamat_ktp"
+                        id="pribadi_alamat_ktp"
                         name="alamat_ktp"
                         rows="3"
                         maxlength="2000"
@@ -254,10 +261,10 @@
                     @error('alamat_ktp')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label" for="perubahan_alamat_domisili">Alamat Domisili <span class="text-danger">*</span></label>
+                    <label class="form-label" for="pribadi_alamat_domisili">Alamat Domisili <span class="text-danger">*</span></label>
                     <textarea
                         class="form-control @error('alamat_domisili') is-invalid @enderror"
-                        id="perubahan_alamat_domisili"
+                        id="pribadi_alamat_domisili"
                         name="alamat_domisili"
                         rows="3"
                         maxlength="2000"
@@ -268,6 +275,7 @@
                 <div class="col-md-6">
                     <x-form.select
                         name="status_perkawinan"
+                        id="pribadi_status_perkawinan"
                         label="Status Perkawinan"
                         :options="collect(config('kepegawaian.status_perkawinan'))->mapWithKeys(fn ($opsi) => [$opsi => $opsi])"
                         :value="$karyawan->status_perkawinan"
@@ -277,6 +285,7 @@
                 <div class="col-md-6">
                     <x-form.select
                         name="pendidikan_terakhir"
+                        id="pribadi_pendidikan_terakhir"
                         label="Pendidikan Terakhir"
                         :options="collect(config('kepegawaian.pendidikan_terakhir'))->mapWithKeys(fn ($opsi) => [$opsi => $opsi])"
                         :value="$karyawan->pendidikan_terakhir"
@@ -284,19 +293,19 @@
                     />
                 </div>
                 <div class="col-md-6">
-                    <x-form.input name="jurusan" label="Jurusan" :value="$karyawan->jurusan" maxlength="255" required />
+                    <x-form.input name="jurusan" id="pribadi_jurusan" label="Jurusan" :value="$karyawan->jurusan" maxlength="255" required />
                 </div>
                 <div class="col-md-6">
-                    <x-form.input name="nama_sekolah" label="Sekolah/Perguruan Tinggi" :value="$karyawan->nama_sekolah" maxlength="255" required />
+                    <x-form.input name="nama_sekolah" id="pribadi_nama_sekolah" label="Sekolah/Perguruan Tinggi" :value="$karyawan->nama_sekolah" maxlength="255" required />
                 </div>
                 <div class="col-md-4">
-                    <x-form.input name="tahun_lulus" label="Tahun Lulus" type="number" :value="$karyawan->tahun_lulus" min="1950" :max="now()->year" required />
+                    <x-form.input name="tahun_lulus" id="pribadi_tahun_lulus" label="Tahun Lulus" type="number" :value="$karyawan->tahun_lulus" min="1950" :max="now()->year" required />
                 </div>
                 <div class="col-md-4">
-                    <x-form.input name="nama_pasangan" label="Nama Pasangan" :value="$karyawan->nama_pasangan" maxlength="255" help="Opsional." />
+                    <x-form.input name="nama_pasangan" id="pribadi_nama_pasangan" label="Nama Pasangan" :value="$karyawan->nama_pasangan" maxlength="255" help="Opsional." />
                 </div>
                 <div class="col-md-4">
-                    <x-form.input name="jumlah_anak" label="Jumlah Anak" type="number" :value="$karyawan->jumlah_anak" min="0" help="Opsional." />
+                    <x-form.input name="jumlah_anak" id="pribadi_jumlah_anak" label="Jumlah Anak" type="number" :value="$karyawan->jumlah_anak" min="0" help="Opsional." />
                 </div>
                 <div class="col-12">
                     <div class="d-flex flex-wrap align-items-center gap-3">
@@ -309,6 +318,7 @@
                         <div class="flex-grow-1">
                             <x-form.file
                                 name="foto_karyawan"
+                                id="pribadi_foto_karyawan"
                                 label="Ganti Foto Karyawan"
                                 policy="employee_photo"
                             />
