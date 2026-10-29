@@ -3,240 +3,225 @@
 @section('title', 'Laporan Inventaris - Sistem Inventaris & Kepegawaian')
 
 @section('content')
-<x-app-page>
-        @php
-            $showTenant = auth()->user()->isSuperAdmin();
-            $inventarisActiveFilterCount = collect(request()->only([
-                'koperasi_id',
-                'unit_kerja_id',
-                'kategori',
-                'tanggal_awal',
-                'tanggal_akhir',
-            ]))->filter(fn ($value) => filled($value))->count();
+@php
+    $showTenant = auth()->user()->isSuperAdmin();
 
-            $inventarisSelectedUnit = request()->filled('unit_kerja_id')
-                ? ($unitKerjas->firstWhere('id', (int) request('unit_kerja_id'))?->nama_unit ?? 'Unit tidak tersedia')
-                : 'Semua unit kerja';
-            $inventarisSelectedTenant = $selectedKoperasiId
-                ? ($koperasis->firstWhere('id', $selectedKoperasiId)?->nama ?? 'Koperasi tidak tersedia')
-                : 'Seluruh koperasi';
+    $hasActiveFilters = ($selectedKoperasiId ? 1 : 0)
+        + (request()->filled('unit_kerja_id') ? 1 : 0)
+        + (request()->filled('kategori') ? 1 : 0)
+        + (request()->filled('kondisi') ? 1 : 0)
+        + (request()->filled('tanggal_awal') ? 1 : 0)
+        + (request()->filled('tanggal_akhir') ? 1 : 0)
+        + (request()->filled('search') ? 1 : 0);
 
-            $inventarisPeriod = match (true) {
-                request()->filled('tanggal_awal') && request()->filled('tanggal_akhir') => \Illuminate\Support\Carbon::parse(request('tanggal_awal'))->format('d/m/Y').' s.d. '.\Illuminate\Support\Carbon::parse(request('tanggal_akhir'))->format('d/m/Y'),
-                request()->filled('tanggal_awal') => 'Mulai '.\Illuminate\Support\Carbon::parse(request('tanggal_awal'))->format('d/m/Y'),
-                request()->filled('tanggal_akhir') => 'Sampai '.\Illuminate\Support\Carbon::parse(request('tanggal_akhir'))->format('d/m/Y'),
-                default => 'Semua tanggal',
-            };
-        @endphp
+    $excelUrl = route('laporan.inventaris.export', request()->query());
+    $printUrl = route('laporan.inventaris.cetak', request()->query());
+    $resetUrl = route('laporan.inventaris');
+@endphp
 
-        <x-page-header title="Laporan Inventaris" >
-            <x-slot:actions>
-                <div class="d-flex flex-wrap gap-2 d-print-none">
-                    <x-report-filter-button
-                        target="inventarisReportFilter"
-                        :active-count="$inventarisActiveFilterCount"
-                    />
-                    @can('laporan.inventaris.cetak')
-                    <a class="btn btn-outline-primary" href="{{ route('laporan.inventaris.cetak', request()->query()) }}" target="_blank" rel="noopener">
-                        <i class="bi bi-printer"></i>
-                        Cetak
-                    </a>
-                    @endcan
-                    @can('laporan.inventaris.export')
-                    <a class="btn btn-outline-success" href="{{ route('laporan.inventaris.export', request()->query()) }}">
-                        <i class="bi bi-file-earmark-excel"></i>
-                        Export Excel
-                    </a>
-                    @endcan
-                </div>
-            </x-slot:actions>
-        </x-page-header>
+<x-report-layout
+    title="Laporan Inventaris"
+    :excel-url="auth()->user()->can('laporan.inventaris.export') ? $excelUrl : null"
+    :print-url="auth()->user()->can('laporan.inventaris.cetak') ? $printUrl : null"
+    search-placeholder="Cari nama, kode, atau jenis barang..."
+    :has-active-filters="$hasActiveFilters > 0"
+    :reset-url="$resetUrl"
+    :paginator="$barangs"
+    unit="barang"
+>
+    {{-- Slot Filter Bar --}}
+    <x-slot:filters>
+        @if($showTenant)
+            <select class="form-select form-select-sm" name="koperasi_id" onchange="this.form.submit()" aria-label="Filter Koperasi">
+                <option value="">Koperasi: Seluruh koperasi</option>
+                @foreach($koperasis as $koperasi)
+                    <option value="{{ $koperasi->id }}" @selected((string) $selectedKoperasiId === (string) $koperasi->id)>
+                        Koperasi: {{ $koperasi->nama }}
+                    </option>
+                @endforeach
+            </select>
+        @endif
 
-        <x-report-filter-summary
-            :items="[
-                ['label' => 'Koperasi', 'value' => $showTenant ? $inventarisSelectedTenant : auth()->user()->koperasi?->nama],
-                ['label' => 'Unit', 'value' => $inventarisSelectedUnit],
-                ['label' => 'Golongan', 'value' => request('kategori') ?: 'Semua golongan'],
-                ['label' => 'Periode', 'value' => $inventarisPeriod],
-            ]"
-        />
+        <select class="form-select form-select-sm" name="unit_kerja_id" onchange="this.form.submit()" aria-label="Filter Unit Kerja">
+            <option value="">Unit: Semua unit kerja</option>
+            @foreach($unitKerjas as $unit)
+                <option value="{{ $unit->id }}" @selected((string) request('unit_kerja_id') === (string) $unit->id)>
+                    Unit: {{ $showTenant ? (($unit->koperasi?->nama ?? 'Tanpa koperasi').' — '.$unit->nama_unit) : $unit->nama_unit }}
+                </option>
+            @endforeach
+        </select>
 
-        <x-report-filter-modal
-            id="inventarisReportFilter"
-            title="Filter Laporan Inventaris"
-            :action="route('laporan.inventaris')"
-            :reset-url="route('laporan.inventaris')"
-            :has-filters="$inventarisActiveFilterCount > 0"
-            :has-errors="$errors->any()"
-        >
-            @if($showTenant)
-                <div class="col-md-6">
-                    <label class="form-label" for="inventaris_koperasi_id">Koperasi</label>
-                    <select class="form-select @error('koperasi_id') is-invalid @enderror" id="inventaris_koperasi_id" name="koperasi_id">
-                        <option value="">Seluruh koperasi</option>
-                        @foreach($koperasis as $koperasi)
-                            <option value="{{ $koperasi->id }}" @selected((string) old('koperasi_id', $selectedKoperasiId) === (string) $koperasi->id)>{{ $koperasi->nama }}</option>
-                        @endforeach
-                    </select>
-                    @error('koperasi_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                </div>
-            @endif
-            <div class="col-md-6">
-                <label class="form-label" for="inventaris_unit_kerja_id">Unit Kerja</label>
-                <select class="form-select @error('unit_kerja_id') is-invalid @enderror" id="inventaris_unit_kerja_id" name="unit_kerja_id">
-                    <option value="">Semua unit kerja</option>
-                    @foreach($unitKerjas as $unit)
-                        <option value="{{ $unit->id }}" @selected((string) old('unit_kerja_id', request('unit_kerja_id')) === (string) $unit->id)>
-                            {{ $showTenant ? (($unit->koperasi?->nama ?? 'Tanpa koperasi').' — '.$unit->nama_unit) : $unit->nama_unit }}
-                        </option>
-                    @endforeach
-                </select>
-                @error('unit_kerja_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
-            </div>
+        <select class="form-select form-select-sm" name="kategori" onchange="this.form.submit()" aria-label="Filter Golongan">
+            <option value="">Golongan: Semua golongan</option>
+            @foreach(config('inventaris.kategori') as $kategori)
+                <option value="{{ $kategori }}" @selected(request('kategori') === $kategori)>
+                    Golongan: {{ $kategori }}
+                </option>
+            @endforeach
+        </select>
 
-            <div class="col-md-6">
-                <label class="form-label" for="inventaris_kategori">Golongan</label>
-                <select class="form-select @error('kategori') is-invalid @enderror" id="inventaris_kategori" name="kategori">
-                    <option value="">Semua golongan</option>
-                    @foreach(config('inventaris.kategori') as $kategori)
-                        <option value="{{ $kategori }}" @selected(old('kategori', request('kategori')) === $kategori)>
-                            {{ $kategori }}
-                        </option>
-                    @endforeach
-                </select>
-                @error('kategori') <div class="invalid-feedback">{{ $message }}</div> @enderror
-            </div>
+        <select class="form-select form-select-sm" name="kondisi" onchange="this.form.submit()" aria-label="Filter Kondisi">
+            <option value="">Kondisi: Semua kondisi</option>
+            @foreach(config('inventaris.kondisi') as $kondisi)
+                <option value="{{ $kondisi }}" @selected(request('kondisi') === $kondisi)>
+                    Kondisi: {{ $kondisi }}
+                </option>
+            @endforeach
+        </select>
 
-            <div class="col-md-6">
-                <x-form.date-range
-                    name-awal="tanggal_awal"
-                    name-akhir="tanggal_akhir"
-                    label="Periode Perolehan"
-                    :value-awal="request('tanggal_awal')"
-                    :value-akhir="request('tanggal_akhir')"
-                />
-            </div>
-        </x-report-filter-modal>
-
-        <x-report-tabs
-            label="Bagian laporan inventaris"
-            :tabs="[
-                'inventaris-ringkasan' => [
-                    'label' => 'Ringkasan',
-                    'description' => 'Ikhtisar aset dan kondisi.',
-                    'icon' => 'bi-grid-1x2',
-                ],
-                'inventaris-rekap' => [
-                    'label' => 'Rekap Golongan',
-                    'description' => 'Jumlah dan nilai per golongan.',
-                    'icon' => 'bi-bar-chart',
-                ],
-                'inventaris-detail' => [
-                    'label' => 'Detail Inventaris',
-                    'description' => 'Daftar aset sesuai filter.',
-                    'icon' => 'bi-table',
-                ],
-            ]"
-        >
-            <x-report-tab-pane
-                id="inventaris-ringkasan"
-                title="Ringkasan Inventaris"
-                
-                active
+        {{-- Tanggal Perolehan Dropdown / Inputs --}}
+        <div class="d-inline-flex align-items-center gap-1">
+            <input
+                type="date"
+                name="tanggal_awal"
+                value="{{ request('tanggal_awal') }}"
+                class="form-control form-control-sm"
+                title="Tanggal Perolehan Awal"
+                aria-label="Tanggal Perolehan Awal"
+                style="width: 135px;"
+                onchange="this.form.submit()"
             >
-        <div class="report-stat-grid">
-            <x-stat-card icon="bi-box-seam" label="Total Barang" :value="number_format($totalBarang, 0, ',', '.')" plain />
-            <x-stat-card icon="bi-cash-stack" label="Total Nilai Buku" :value="'Rp '.number_format($totalNilai, 0, ',', '.')" compact plain />
-            <x-stat-card icon="bi-tools" label="Perlu Perbaikan" :value="number_format($barangPerluPerbaikan, 0, ',', '.')" plain accent />
+            <span class="text-secondary small">s.d.</span>
+            <input
+                type="date"
+                name="tanggal_akhir"
+                value="{{ request('tanggal_akhir') }}"
+                class="form-control form-control-sm"
+                title="Tanggal Perolehan Akhir"
+                aria-label="Tanggal Perolehan Akhir"
+                style="width: 135px;"
+                onchange="this.form.submit()"
+            >
         </div>
-            </x-report-tab-pane>
+    </x-slot:filters>
 
-            <x-report-tab-pane
-                id="inventaris-rekap"
-                title="Rekapitulasi per Golongan"
-                
-            >
-            <div class="table-responsive report-tab-table">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Golongan</th>
-                            <th class="text-end">Jumlah Barang</th>
-                            <th class="text-end">Total Nilai</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($rekapKategori as $rekap)
+    {{-- Slot Kartu Ringkasan --}}
+    <x-slot:cards>
+        <x-report-card
+            label="Total Barang (masih bernilai)"
+            :value="number_format($totalBarang, 0, ',', '.')"
+            icon="bi-box-seam"
+        />
+        <x-report-card
+            label="Total Nilai Buku"
+            :value="'Rp ' . number_format($totalNilai, 0, ',', '.')"
+            icon="bi-cash-stack"
+        />
+        <x-report-card
+            label="Perlu Perbaikan"
+            :value="number_format($barangPerluPerbaikan, 0, ',', '.')"
+            icon="bi-tools"
+            accent
+        />
+    </x-slot:cards>
+
+    {{-- Slot Panel Rekap (Rekap per Golongan) --}}
+    <x-slot:recap>
+        <x-report-recap-panel title="Rekap per Golongan">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Golongan</th>
+                        <th class="text-end">Jumlah Barang</th>
+                        <th class="text-end">Total Nilai Buku</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($rekapKategori as $rekap)
                         <tr>
                             <td>{{ $rekap->kategori }}</td>
-                            <td class="text-end">{{ number_format($rekap->total_barang, 0, ',', '.') }}</td>
-                            <td class="text-end">Rp {{ number_format($rekap->total_nilai, 0, ',', '.') }}</td>
+                            <td class="text-end tabular-nums">{{ number_format($rekap->total_barang, 0, ',', '.') }}</td>
+                            <td class="text-end tabular-nums">Rp {{ number_format($rekap->total_nilai, 0, ',', '.') }}</td>
                         </tr>
-                        @empty
-                        <x-empty-row :colspan="3">Tidak ada data untuk direkap.</x-empty-row>
-                        @endforelse
-                    </tbody>
-                    <tfoot class="table-light fw-semibold">
+                    @empty
+                        <tr>
+                            <td colspan="3" class="text-center py-3 text-body-secondary">Tidak ada data untuk direkap.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+                @if($totalBarangTerekap > 0)
+                    <tfoot>
                         <tr>
                             <td>Total</td>
-                            <td class="text-end">{{ number_format($totalBarangTerekap, 0, ',', '.') }}</td>
-                            <td class="text-end">Rp {{ number_format($totalNilai, 0, ',', '.') }}</td>
+                            <td class="text-end tabular-nums">{{ number_format($totalBarangTerekap, 0, ',', '.') }}</td>
+                            <td class="text-end tabular-nums">Rp {{ number_format($totalNilai, 0, ',', '.') }}</td>
                         </tr>
                     </tfoot>
-                </table>
-            </div>
-            </x-report-tab-pane>
+                @endif
+            </table>
+        </x-report-recap-panel>
+    </x-slot:recap>
 
-            <x-report-tab-pane
-                id="inventaris-detail"
-                title="Detail Inventaris"
-                
-            >
-            <div class="table-responsive report-tab-table">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Kode</th>
-                            <th>Nama Barang</th>
-                            @if($showTenant)
-                                <th>Koperasi</th>
-                            @endif
-                            <th>Jenis Barang</th>
-                            <th>Golongan</th>
-                            <th>Unit Kerja</th>
-                            <th>Tanggal Perolehan</th>
-                            <th>Kondisi</th>
-                            <th class="text-end">Nilai</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($barangs as $barang)
-                        @php
-                        $kondisi = $barang->kondisiTerakhir?->kondisi ?? 'Belum diperiksa';
-                        @endphp
-                        <tr>
-                            <td><strong>{{ $barang->kode_barang }}</strong></td>
-                            <td>{{ $barang->nama_barang }}</td>
-                            @if($showTenant)
-                                <td>{{ $barang->koperasi?->nama ?? 'Tanpa koperasi' }}</td>
-                            @endif
-                            <td>{{ $barang->jenis_barang ?? '—' }}</td>
-                            <td>{{ $barang->kategori }}</td>
-                            <td>{{ $barang->unitKerja?->nama_unit ?? '—' }}</td>
-                            <td>{{ $barang->tanggal_perolehan->format('d/m/Y') }}</td>
-                            <td><x-badge :color="config('inventaris.kondisi_warna')[$kondisi] ?? 'bg-secondary'">{{ $kondisi }}</x-badge></td>
-                            <td class="text-end">Rp {{ number_format($barang->nilaiBukuTerakhir(), 0, ',', '.') }}</td>
-                        </tr>
-                        @empty
-                        <x-empty-row :colspan="$showTenant ? 9 : 8">Tidak ada inventaris yang cocok dengan filter.</x-empty-row>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-
-            <x-pagination-footer :paginator="$barangs" class="d-print-none" />
-            </x-report-tab-pane>
-        </x-report-tabs>
-
-</x-app-page>
+    {{-- Slot Tabel Detail --}}
+    <table class="report-table align-middle">
+        <thead>
+            <tr>
+                <x-report-sort-th column="kode_barang" label="Barang" />
+                @if($showTenant)
+                    <th>Koperasi</th>
+                @endif
+                <x-report-sort-th column="kategori" label="Golongan" />
+                <x-report-sort-th column="unit_kerja" label="Unit Kerja" />
+                <x-report-sort-th column="tanggal_perolehan" label="Tanggal Perolehan" />
+                <x-report-sort-th column="kondisi" label="Kondisi" />
+                <x-report-sort-th column="nilai_buku" label="Nilai Buku" align="end" />
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($barangs as $barang)
+                @php
+                    $kondisi = $barang->kondisiTerakhir?->kondisi ?? 'Belum diperiksa';
+                    $badgeClass = \App\Support\KondisiBarangHelper::badgeClass($kondisi);
+                    $nilaiBuku = $barang->nilaiBukuTerakhir();
+                @endphp
+                <tr>
+                    <td>
+                        <div class="report-cell-identity">
+                            <a href="{{ route('barang.show', $barang) }}" class="report-cell-identity__primary">
+                                {{ $barang->nama_barang }}
+                            </a>
+                            <div class="report-cell-identity__secondary">
+                                <span class="fw-medium font-monospace">{{ $barang->kode_barang }}</span>
+                                <span class="text-body-tertiary">·</span>
+                                <span>{{ $barang->jenis_barang ?? '—' }}</span>
+                            </div>
+                        </div>
+                    </td>
+                    @if($showTenant)
+                        <td class="report-cell-nowrap">{{ $barang->koperasi?->nama ?? 'Tanpa koperasi' }}</td>
+                    @endif
+                    <td class="report-cell-nowrap">{{ $barang->kategori }}</td>
+                    <td class="report-cell-nowrap">{{ $barang->unitKerja?->nama_unit ?? '—' }}</td>
+                    <td class="report-cell-nowrap tabular-nums">{{ $barang->tanggal_perolehan->format('d/m/Y') }}</td>
+                    <td>
+                        <span class="badge {{ $badgeClass }}">{{ $kondisi }}</span>
+                    </td>
+                    <td class="text-end tabular-nums report-cell-nowrap">
+                        Rp {{ number_format($nilaiBuku, 0, ',', '.') }}
+                    </td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="{{ $showTenant ? 7 : 6 }}" class="text-center py-5 text-body-secondary">
+                        <i class="bi bi-inbox fs-2 d-block mb-2 text-secondary"></i>
+                        Tidak ada data yang cocok.
+                    </td>
+                </tr>
+            @endforelse
+        </tbody>
+        @if($totalBarang > 0)
+            <tfoot>
+                <tr>
+                    <td @if($showTenant) colspan="2" @endif>
+                        Total semua barang ({{ number_format($totalBarang, 0, ',', '.') }})
+                    </td>
+                    <td colspan="4"></td>
+                    <td class="text-end tabular-nums report-cell-nowrap">
+                        Rp {{ number_format($totalNilai, 0, ',', '.') }}
+                    </td>
+                </tr>
+            </tfoot>
+        @endif
+    </table>
+</x-report-layout>
 @endsection

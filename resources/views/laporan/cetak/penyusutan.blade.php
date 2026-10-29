@@ -17,9 +17,10 @@
 </x-print.header>
 
 <section class="summary-grid">
-    <x-print.summary-item label="Total Aset" :value="number_format($totalAset, 0, ',', '.')" />
+    <x-print.summary-item label="Total Aset (masih bernilai)" :value="number_format($totalAset, 0, ',', '.')" />
     <x-print.summary-item label="Total Harga Perolehan" :value="'Rp '.number_format($totalHargaPerolehan, 0, ',', '.')" />
     <x-print.summary-item label="Penyusutan Tahun {{ $tahun }}" :value="'Rp '.number_format($totalPenyusutanTahunIni, 0, ',', '.')" />
+    <x-print.summary-item label="Akumulasi s/d {{ $tahun }}" :value="'Rp '.number_format($totalAkumulasiPenyusutan, 0, ',', '.')" />
     <x-print.summary-item label="Total Nilai Buku" :value="'Rp '.number_format($totalNilaiBuku, 0, ',', '.')" />
 </section>
 
@@ -45,7 +46,7 @@
         <tr>
             <td>{{ $barang->kode_barang }}</td>
             <td>{{ $barang->nama_barang }}</td>
-            <td>{{ config('inventaris.kategori_label_singkat')[$barang->kategori] ?? $barang->kategori }}</td>
+            <td>{{ $barang->kategori }}</td>
             <td>{{ \App\Support\PenyusutanCalculator::namaMetode($r['metode']) }}</td>
             <td>{{ $barang->tanggal_perolehan->format('d/m/Y') }}</td>
             <td class="text-end">Rp {{ number_format($barang->harga_perolehan, 0, ',', '.') }}</td>

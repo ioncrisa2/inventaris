@@ -203,7 +203,8 @@ test('halaman detail barang memakai judul dan subtitle kontekstual', function ()
     $this->get(route('barang.show', $barang))
         ->assertOk()
         ->assertSee('<h1>Laptop Operasional</h1>', false)
-        ->assertSee('INV-001 — Teknologi Informasi')
+        ->assertSee('INV-001')
+        ->assertSee('Bukan Bangunan - Kelompok 1')
         ->assertSee('Riwayat Kondisi')
         ->assertDontSee('Informasi inventaris dan riwayat pemeriksaan kondisi.');
 });

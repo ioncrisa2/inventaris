@@ -28,7 +28,7 @@ class KepegawaianExport implements FromQuery, ShouldAutoSize, WithHeadings, With
 
     public function headings(): array
     {
-        return ['NIK', 'Nama Lengkap', 'Unit Kerja', 'Jabatan', 'Status', 'Gaji Pokok'];
+        return ['NIK', 'Nama Lengkap', 'Unit Kerja', 'Jabatan', 'Status Kepegawaian', 'Keaktifan', 'Gaji Pokok'];
     }
 
     public function map($karyawan): array
@@ -39,6 +39,7 @@ class KepegawaianExport implements FromQuery, ShouldAutoSize, WithHeadings, With
             $karyawan->unitKerja?->nama_unit ?? '-',
             $karyawan->jabatan,
             $karyawan->status_karyawan,
+            $karyawan->tanggal_mengundurkan_diri ? 'Nonaktif' : 'Aktif',
             (float) $karyawan->gaji_pokok,
         ];
     }

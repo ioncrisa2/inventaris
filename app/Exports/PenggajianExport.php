@@ -28,17 +28,20 @@ class PenggajianExport implements FromQuery, ShouldAutoSize, WithHeadings, WithM
 
     public function headings(): array
     {
-        return ['Karyawan', 'Unit Kerja', 'Bulan', 'Tahun', 'Gaji Pokok', 'Gaji Bersih'];
+        return ['Karyawan', 'NIK', 'Unit Kerja', 'Bulan', 'Tahun', 'Gaji Pokok', 'Tunjangan', 'Potongan', 'Gaji Bersih'];
     }
 
     public function map($transaksi): array
     {
         return [
             $transaksi->karyawan?->nama_lengkap ?? '-',
+            $transaksi->karyawan?->nik ?? '-',
             $transaksi->karyawan?->unitKerja?->nama_unit ?? '-',
             $transaksi->bulan,
             $transaksi->tahun,
             (float) $transaksi->gaji_pokok,
+            (float) ($transaksi->tunjangan ?? 0),
+            (float) ($transaksi->potongan ?? 0),
             (float) $transaksi->gaji_bersih,
         ];
     }

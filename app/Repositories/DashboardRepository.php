@@ -14,7 +14,13 @@ class DashboardRepository
     /** @return array{total: int, nilai: string} */
     public function ringkasanInventaris(): array
     {
-        $barangs = Barang::query()->with('kondisiTerakhir')->get();
+        $barangs = Barang::query()->with('kondisiTerakhir')->get()
+            ->filter(function (Barang $barang) {
+                if ($barang->kondisiTerakhir?->kondisi === 'Dihapus') {
+                    return false;
+                }
+                return bccomp($barang->nilaiBukuTerakhir(), '0.00', 2) > 0;
+            });
 
         return [
             'total' => $barangs->count(),
@@ -136,6 +142,14 @@ class DashboardRepository
     /** @return array<string, int> */
     private function jumlahPerKondisiTerakhir(): array
     {
+        $activeIds = Barang::query()->with('kondisiTerakhir')->get()
+            ->filter(function (Barang $b) {
+                if ($b->kondisiTerakhir?->kondisi === 'Dihapus') {
+                    return false;
+                }
+                return bccomp($b->nilaiBukuTerakhir(), '0.00', 2) > 0;
+            })->pluck('id');
+
         $tanggalTerakhir = DB::table('riwayat_kondisi_barang')
             ->select('barang_id')
             ->selectRaw('MAX(tanggal_pemeriksaan) AS tanggal_terakhir')
@@ -151,6 +165,7 @@ class DashboardRepository
             ->groupBy('riwayat.barang_id');
 
         return CurrentTenant::scopeQuery(DB::table('barang'))
+            ->whereIn('barang.id', $activeIds)
             ->leftJoinSub($barisTerakhir, 'baris_terakhir', 'baris_terakhir.barang_id', '=', 'barang.id')
             ->leftJoin('riwayat_kondisi_barang AS kondisi_terakhir', 'kondisi_terakhir.id', '=', 'baris_terakhir.riwayat_id')
             ->select('kondisi_terakhir.kondisi')

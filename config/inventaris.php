@@ -96,16 +96,59 @@ return [
      * perusahaan saat ini menyamakan semuanya ke garis lurus.
      */
     'metode_penyusutan_default' => 'garis_lurus',
+
     /**
-     * Jenis dokumen pendukung barang (nota pembelian, kartu garansi, dst.),
-     * dipakai oleh repeater upload dokumen di form barang.
+     * Batas selisih hari antara tanggal perolehan dan tanggal input.
+     * Jika tanggal perolehan lebih lama dari batas ini (mis. aset lama/migrasi > 1 tahun),
+     * kondisi awal wajib dipilih manual, bukan otomatis "Baru".
+     */
+    'batas_perolehan_aset_lama_hari' => 365,
+
+    /**
+     * Jenis dokumen pendukung barang (nota pembelian, sertifikat, PBG, BAST, dst.),
+     * dipakai oleh upload dokumen di form dan detail barang.
      */
     'jenis_dokumen' => [
         'Nota Pembelian',
         'Kartu Garansi',
         'Manual/Buku Petunjuk',
         'Surat Keterangan',
+        'Sertifikat',
+        'PBG / IMB',
+        'BAST',
+        'Kontrak / Faktur',
         'Lainnya',
+    ],
+
+    /**
+     * Daftar dokumen yang disarankan / wajib ada per golongan aset untuk kelengkapan data.
+     * Dokumen ini diperiksa oleh KelengkapanBarangCalculator dan ditampilkan sebagai checklist.
+     */
+    'dokumen_wajib_per_golongan' => [
+        'Bangunan - Permanen' => [
+            'Sertifikat',
+            'PBG / IMB',
+            'BAST',
+            'Kontrak / Faktur',
+        ],
+        'Bangunan - Bukan Permanen' => [
+            'PBG / IMB',
+            'BAST',
+            'Kontrak / Faktur',
+        ],
+        'Bukan Bangunan - Kelompok 1' => [
+            'Nota Pembelian',
+        ],
+        'Bukan Bangunan - Kelompok 2' => [
+            'Nota Pembelian',
+        ],
+        'Bukan Bangunan - Kelompok 3' => [
+            'Nota Pembelian',
+        ],
+        'Bukan Bangunan - Kelompok 4' => [
+            'Nota Pembelian',
+            'BAST',
+        ],
     ],
     'kondisi_warna' => [
         'Baru' => 'condition-badge--new',

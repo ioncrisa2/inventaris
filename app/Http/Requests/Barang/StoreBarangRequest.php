@@ -6,6 +6,7 @@ use App\Rules\ValidUploadFile;
 use App\Support\TenantRule;
 use App\Support\UploadPolicy;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
 
 class StoreBarangRequest extends FormRequest
@@ -18,6 +19,18 @@ class StoreBarangRequest extends FormRequest
     public function rules(): array
     {
         $jenisBarang = config('kategori_penyusutan.item_per_golongan')[$this->input('kategori')] ?? [];
+        $tanggalPerolehan = $this->input('tanggal_perolehan');
+        $batasHari = (int) config('inventaris.batas_perolehan_aset_lama_hari', 365);
+        $wajibKondisiAwal = false;
+
+        if ($tanggalPerolehan) {
+            try {
+                $selisih = Carbon::parse($tanggalPerolehan)->startOfDay()->diffInDays(now()->startOfDay(), false);
+                $wajibKondisiAwal = $selisih > $batasHari;
+            } catch (\Throwable) {
+                $wajibKondisiAwal = false;
+            }
+        }
 
         return [
             'nama_barang' => ['required', 'string', 'max:255'],
@@ -28,6 +41,7 @@ class StoreBarangRequest extends FormRequest
             'keterangan_lokasi' => ['nullable', 'string', 'max:255'],
             'tanggal_perolehan' => ['required', 'date', 'before_or_equal:today'],
             'harga_perolehan' => ['required', 'numeric', 'min:0'],
+            'kondisi_awal' => [$wajibKondisiAwal ? 'required' : 'nullable', Rule::in(config('inventaris.kondisi'))],
             'foto_sampul' => UploadPolicy::fileRules('asset_photo'),
             'foto_sampul_upload_uuid' => UploadPolicy::tokenRules('asset_photo'),
             'foto_pendukung' => UploadPolicy::collectionRules('asset_gallery'),
@@ -54,6 +68,7 @@ class StoreBarangRequest extends FormRequest
     {
         return [
             'jenis_barang.in' => 'Jenis barang tidak sesuai dengan golongan penyusutan yang dipilih.',
+            'kondisi_awal.required' => 'Untuk aset lama dengan tanggal perolehan lebih dari 1 tahun yang lalu, kondisi awal wajib dipilih.',
         ];
     }
 }

@@ -23,8 +23,13 @@ class InventarisLaporanRequest extends FormRequest
             'koperasi_id' => ['nullable', 'integer', Rule::exists('koperasi', 'id'), Rule::prohibitedIf(! $this->user()->isSuperAdmin())],
             'unit_kerja_id' => ['nullable', TenantRule::exists('unit_kerja')],
             'kategori' => ['nullable', Rule::in(config('inventaris.kategori'))],
+            'kondisi' => ['nullable', Rule::in(config('inventaris.kondisi'))],
             'tanggal_awal' => ['nullable', 'date'],
             'tanggal_akhir' => ['nullable', 'date', 'after_or_equal:tanggal_awal'],
+            'search' => ['nullable', 'string', 'max:255'],
+            'sort' => ['nullable', 'string', 'max:50'],
+            'direction' => ['nullable', 'string', Rule::in(['asc', 'desc'])],
+            'per_page' => ['nullable', 'integer'],
         ];
     }
 }

@@ -5,6 +5,14 @@
 @section('print_layout', 'payroll-landscape')
 
 @section('content')
+@php
+    $currentDate = \Carbon\CarbonImmutable::create($tahun, $bulan, 1);
+    $prevDate = $currentDate->subMonthNoOverflow();
+    $tglAwal = $prevDate->setDay(25)->translatedFormat('d M');
+    $tglAkhir = $currentDate->setDay(24)->translatedFormat('d M Y');
+    $namaBulan = $currentDate->translatedFormat('F');
+    $periodText = "{$namaBulan} {$tahun} ({$tglAwal} – {$tglAkhir})";
+@endphp
 <div class="payroll-print-report">
 <x-print.header>
     <h1 class="report-title">Laporan Penggajian</h1>
@@ -12,7 +20,7 @@
 
     <x-slot:meta>
         <p>Tanggal cetak: {{ now()->translatedFormat('d F Y H:i') }}</p>
-        <p>Periode: {{ \Illuminate\Support\Carbon::createFromDate(2000, $bulan, 1)->translatedFormat('F') }} {{ $tahun }}</p>
+        <p>Periode: {{ $periodText }}</p>
         <p>Unit kerja: {{ $selectedUnitKerja?->nama_unit ?? 'Semua unit kerja' }}</p>
     </x-slot:meta>
 </x-print.header>
@@ -61,6 +69,8 @@
             <th>Karyawan</th>
             <th>Unit Kerja</th>
             <th class="text-end">Gaji Pokok</th>
+            <th class="text-end">Tunjangan</th>
+            <th class="text-end">Potongan</th>
             <th class="text-end">Gaji Bersih</th>
         </tr>
     </thead>
@@ -70,16 +80,20 @@
                 <td>{{ $transaksi->karyawan?->nama_lengkap ?? '-' }}</td>
                 <td>{{ $transaksi->karyawan?->unitKerja?->nama_unit ?? '-' }}</td>
                 <td class="text-end">Rp {{ number_format($transaksi->gaji_pokok, 0, ',', '.') }}</td>
+                <td class="text-end">Rp {{ number_format($transaksi->tunjangan ?? 0, 0, ',', '.') }}</td>
+                <td class="text-end">Rp {{ number_format($transaksi->potongan ?? 0, 0, ',', '.') }}</td>
                 <td class="text-end">Rp {{ number_format($transaksi->gaji_bersih, 0, ',', '.') }}</td>
             </tr>
         @empty
-            <tr><td colspan="4" class="text-center muted">Tidak ada transaksi gaji yang cocok dengan filter.</td></tr>
+            <tr><td colspan="6" class="text-center muted">Tidak ada transaksi gaji yang cocok dengan filter.</td></tr>
         @endforelse
     </tbody>
     <tfoot>
         <tr>
-            <td colspan="2">Total</td>
+            <td colspan="2">Total Keseluruhan</td>
             <td class="text-end">Rp {{ number_format($totalGajiPokok, 0, ',', '.') }}</td>
+            <td class="text-end">Rp {{ number_format($totalTunjangan, 0, ',', '.') }}</td>
+            <td class="text-end">Rp {{ number_format($totalPotongan, 0, ',', '.') }}</td>
             <td class="text-end">Rp {{ number_format($totalGajiBersih, 0, ',', '.') }}</td>
         </tr>
     </tfoot>

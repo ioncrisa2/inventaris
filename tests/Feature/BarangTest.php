@@ -49,6 +49,40 @@ test('barang is created with a default initial condition', function () {
     ]);
 });
 
+test('barang dengan tanggal perolehan lama lebih dari 1 tahun wajib memilih kondisi awal manual', function () {
+    $response = $this->post(route('barang.store'), [
+        'nama_barang' => 'Gedung Lama',
+        'kategori' => 'Bangunan - Permanen',
+        'jenis_barang' => 'Gedung kantor permanen',
+        'unit_kerja_id' => $this->unitKerja->id,
+        'lokasi_penempatan' => 'Kantor Pusat',
+        'tanggal_perolehan' => now()->subYears(3)->toDateString(),
+        'harga_perolehan' => 50000000,
+    ]);
+
+    $response->assertSessionHasErrors('kondisi_awal');
+});
+
+test('barang dengan tanggal perolehan lama berhasil disimpan jika kondisi awal dipilih manual', function () {
+    $this->post(route('barang.store'), [
+        'nama_barang' => 'Gedung Lama Terawat',
+        'kategori' => 'Bangunan - Permanen',
+        'jenis_barang' => 'Gedung kantor permanen',
+        'unit_kerja_id' => $this->unitKerja->id,
+        'lokasi_penempatan' => 'Kantor Pusat',
+        'tanggal_perolehan' => now()->subYears(3)->toDateString(),
+        'harga_perolehan' => 50000000,
+        'kondisi_awal' => 'Cukup Baik',
+    ])->assertRedirect(route('barang.index'));
+
+    $barang = Barang::where('nama_barang', 'Gedung Lama Terawat')->firstOrFail();
+    $this->assertDatabaseHas('riwayat_kondisi_barang', [
+        'barang_id' => $barang->id,
+        'kondisi' => 'Cukup Baik',
+        'keterangan' => 'Kondisi awal saat barang ditambahkan (manual: Cukup Baik).',
+    ]);
+});
+
 test('form barang exposes the controlled item catalog for a dependent select', function () {
     $this->get(route('barang.create'))
         ->assertOk()

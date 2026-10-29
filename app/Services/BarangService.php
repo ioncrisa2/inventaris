@@ -62,7 +62,14 @@ class BarangService
             $dokumenToken = $this->dokumenToken($data);
 
             return DB::transaction(function () use ($data, $fotoSampul, $fotoPendukung, $dokumen, $dokumenToken) {
-                $kondisiAwal = $this->kondisiAwal((float) $data['harga_perolehan']);
+                $kondisiAwalDipilih = $data['kondisi_awal'] ?? null;
+                $kondisiAwal = filled($kondisiAwalDipilih)
+                    ? $kondisiAwalDipilih
+                    : $this->kondisiAwal((float) $data['harga_perolehan']);
+                $keteranganKondisiAwal = filled($kondisiAwalDipilih)
+                    ? "Kondisi awal saat barang ditambahkan (manual: {$kondisiAwal})."
+                    : "Kondisi awal saat barang ditambahkan (otomatis: {$kondisiAwal}).";
+
                 $data['kode_barang'] = $this->kodeBarangGenerator->generate(
                     $data['kategori'],
                     (int) $data['unit_kerja_id'],
@@ -71,6 +78,7 @@ class BarangService
                 $fotoSampulToken = $data['foto_sampul_upload_uuid'] ?? null;
                 $fotoPendukungToken = array_values($data['foto_pendukung_upload_uuids'] ?? []);
                 unset(
+                    $data['kondisi_awal'],
                     $data['foto_sampul'],
                     $data['foto_sampul_upload_uuid'],
                     $data['foto_pendukung'],
@@ -100,7 +108,7 @@ class BarangService
                 $this->riwayatKondisiBarangRepository->create($barang, [
                     'tanggal_pemeriksaan' => now()->toDateString(),
                     'kondisi' => $kondisiAwal,
-                    'keterangan' => "Kondisi awal saat barang ditambahkan (otomatis: {$kondisiAwal}).",
+                    'keterangan' => $keteranganKondisiAwal,
                     'biaya_perbaikan' => null,
                 ]);
 

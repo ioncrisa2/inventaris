@@ -3,231 +3,265 @@
 @section('title', 'Laporan Penggajian - Sistem Inventaris & Kepegawaian')
 
 @section('content')
-<x-app-page>
-        @php
-            $showTenant = auth()->user()->isSuperAdmin();
-            $penggajianActiveFilterCount = ($selectedKoperasiId ? 1 : 0)
-                + (request()->filled('unit_kerja_id') ? 1 : 0)
-                + ((int) $bulan !== now()->month ? 1 : 0)
-                + ((int) $tahun !== now()->year ? 1 : 0);
+@php
+    $showTenant = auth()->user()->isSuperAdmin();
+    $currentDate = \Carbon\CarbonImmutable::create($tahun, $bulan, 1);
+    $prevDate = $currentDate->subMonthNoOverflow();
+    $tglAwal = $prevDate->setDay(25)->translatedFormat('d M');
+    $tglAkhir = $currentDate->setDay(24)->translatedFormat('d M Y');
+    $namaBulan = $currentDate->translatedFormat('F');
+    $periodText = "{$namaBulan} {$tahun} ({$tglAwal} – {$tglAkhir})";
 
-            $penggajianSelectedUnit = request()->filled('unit_kerja_id')
-                ? ($unitKerjas->firstWhere('id', (int) request('unit_kerja_id'))?->nama_unit ?? 'Unit tidak tersedia')
-                : 'Semua unit kerja';
+    $hasActiveFilters = request()->filled('unit_kerja_id')
+        || (int) $bulan !== now()->month
+        || (int) $tahun !== now()->year
+        || request()->filled('search')
+        || (request()->filled('koperasi_id') && $showTenant);
 
-            $penggajianPeriod = \Illuminate\Support\Carbon::createFromDate(2000, $bulan, 1)->translatedFormat('F').' '.$tahun;
-            $penggajianSelectedTenant = $selectedKoperasiId
-                ? ($koperasis->firstWhere('id', $selectedKoperasiId)?->nama ?? 'Koperasi tidak tersedia')
-                : 'Seluruh koperasi';
-        @endphp
+    $excelUrl = auth()->user()->can('laporan.penggajian.export')
+        ? route('laporan.penggajian.export', request()->query())
+        : null;
 
-        <x-page-header title="Laporan Penggajian" >
-            <x-slot:actions>
-                <div class="d-flex flex-wrap gap-2 d-print-none">
-                    <x-report-filter-button
-                        target="penggajianReportFilter"
-                        :active-count="$penggajianActiveFilterCount"
-                    />
-                    @can('laporan.penggajian.cetak')
-                    <a class="btn btn-outline-primary" href="{{ route('laporan.penggajian.cetak', request()->query()) }}" target="_blank" rel="noopener">
-                        <i class="bi bi-printer"></i>
-                        Cetak
-                    </a>
-                    @endcan
-                    @can('laporan.penggajian.export')
-                    <a class="btn btn-outline-success" href="{{ route('laporan.penggajian.export', request()->query()) }}">
-                        <i class="bi bi-file-earmark-excel"></i>
-                        Export Excel
-                    </a>
-                    @endcan
-                </div>
-            </x-slot:actions>
-        </x-page-header>
+    $printUrl = auth()->user()->can('laporan.penggajian.cetak')
+        ? route('laporan.penggajian.cetak', request()->query())
+        : null;
+@endphp
 
-        <x-report-filter-summary
-            :items="[
-                ['label' => 'Koperasi', 'value' => $showTenant ? $penggajianSelectedTenant : auth()->user()->koperasi?->nama],
-                ['label' => 'Periode', 'value' => $penggajianPeriod],
-                ['label' => 'Unit', 'value' => $penggajianSelectedUnit],
-            ]"
+<x-report-layout
+    title="Laporan Penggajian"
+    :subtitle="'Periode ' . $periodText"
+    :excel-url="$excelUrl"
+    :print-url="$printUrl"
+    :paginator="$transaksiGaji"
+    unit="transaksi"
+    search-name="search"
+    :search-value="request('search')"
+    search-placeholder="Cari nama / NIK karyawan..."
+    :has-active-filters="$hasActiveFilters"
+    :reset-url="route('laporan.penggajian')"
+>
+    {{-- Slot Filter Bar --}}
+    <x-slot:filters>
+        @if($showTenant)
+            <select
+                name="koperasi_id"
+                class="form-select form-select-sm"
+                aria-label="Filter Koperasi"
+                style="min-width: 170px;"
+                onchange="this.form.submit()"
+            >
+                <option value="">Koperasi: Semua</option>
+                @foreach($koperasis as $koperasi)
+                    <option value="{{ $koperasi->id }}" @selected((string) request('koperasi_id') === (string) $koperasi->id)>
+                        {{ $koperasi->nama }}
+                    </option>
+                @endforeach
+            </select>
+        @endif
+
+        {{-- Dropdown Bulan dengan rentang tanggal periode gaji (C14) --}}
+        <select
+            name="bulan"
+            class="form-select form-select-sm"
+            aria-label="Filter Bulan"
+            style="min-width: 210px;"
+            onchange="this.form.submit()"
+        >
+            @for($m = 1; $m <= 12; $m++)
+                @php
+                    $mDate = \Carbon\CarbonImmutable::create($tahun, $m, 1);
+                    $mPrev = $mDate->subMonthNoOverflow();
+                    $mRange = $mPrev->setDay(25)->translatedFormat('d M') . '–' . $mDate->setDay(24)->translatedFormat('d M');
+                    $mName = $mDate->translatedFormat('F');
+                @endphp
+                <option value="{{ $m }}" @selected((int) old('bulan', $bulan) === $m)>
+                    {{ $mName }} · {{ $mRange }}
+                </option>
+            @endfor
+        </select>
+
+        {{-- Dropdown Tahun --}}
+        <select
+            name="tahun"
+            class="form-select form-select-sm"
+            aria-label="Filter Tahun"
+            style="width: 100px;"
+            onchange="this.form.submit()"
+        >
+            @for($y = max((int) date('Y'), $tahun); $y >= 2020; $y--)
+                <option value="{{ $y }}" @selected((int) old('tahun', $tahun) === $y)>{{ $y }}</option>
+            @endfor
+        </select>
+
+        {{-- Dropdown Unit Kerja --}}
+        <select
+            name="unit_kerja_id"
+            class="form-select form-select-sm"
+            aria-label="Filter Unit Kerja"
+            style="min-width: 170px;"
+            onchange="this.form.submit()"
+        >
+            <option value="">Unit Kerja: Semua</option>
+            @foreach($unitKerjas as $unit)
+                <option value="{{ $unit->id }}" @selected((string) request('unit_kerja_id') === (string) $unit->id)>
+                    {{ $showTenant ? (($unit->koperasi?->nama ?? 'Tanpa koperasi').' — '.$unit->nama_unit) : $unit->nama_unit }}
+                </option>
+            @endforeach
+        </select>
+    </x-slot:filters>
+
+    {{-- Slot Kartu Ringkasan (Urut sesuai rumus: Transaksi, Gaji Pokok, Tunjangan, Potongan, Gaji Bersih) --}}
+    <x-slot:cards>
+        <x-report-card
+            label="Total Transaksi"
+            :value="number_format($totalTransaksi, 0, ',', '.')"
+            icon="bi-receipt"
         />
+        <x-report-card
+            label="Gaji Pokok"
+            :value="'Rp ' . number_format($totalGajiPokok, 0, ',', '.')"
+            icon="bi-cash-stack"
+        />
+        <x-report-card
+            label="Tunjangan"
+            :value="'Rp ' . number_format($totalTunjangan, 0, ',', '.')"
+            icon="bi-plus-circle"
+        />
+        <x-report-card
+            label="Potongan"
+            :value="'Rp ' . number_format($totalPotongan, 0, ',', '.')"
+            icon="bi-dash-circle"
+        />
+        <x-report-card
+            label="Gaji Bersih"
+            :value="'Rp ' . number_format($totalGajiBersih, 0, ',', '.')"
+            icon="bi-wallet2"
+            accent
+        />
+    </x-slot:cards>
 
-        <x-report-filter-modal
-            id="penggajianReportFilter"
-            title="Filter Laporan Penggajian"
-            :action="route('laporan.penggajian')"
-            :reset-url="route('laporan.penggajian')"
-            :has-filters="$penggajianActiveFilterCount > 0"
-            :has-errors="$errors->any()"
-        >
-            @if($showTenant)
-                <div class="col-md-6">
-                    <label class="form-label" for="penggajian_koperasi_id">Koperasi</label>
-                    <select class="form-select @error('koperasi_id') is-invalid @enderror" id="penggajian_koperasi_id" name="koperasi_id">
-                        <option value="">Seluruh koperasi</option>
-                        @foreach($koperasis as $koperasi)
-                            <option value="{{ $koperasi->id }}" @selected((string) old('koperasi_id', $selectedKoperasiId) === (string) $koperasi->id)>{{ $koperasi->nama }}</option>
-                        @endforeach
-                    </select>
-                    @error('koperasi_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                </div>
-            @endif
-            <div class="col-12">
-                <label class="form-label" for="penggajian_unit_kerja_id">Unit Kerja</label>
-                <select class="form-select @error('unit_kerja_id') is-invalid @enderror" id="penggajian_unit_kerja_id" name="unit_kerja_id">
-                    <option value="">Semua unit kerja</option>
-                    @foreach($unitKerjas as $unit)
-                        <option value="{{ $unit->id }}" @selected((string) old('unit_kerja_id', request('unit_kerja_id')) === (string) $unit->id)>
-                            {{ $showTenant ? (($unit->koperasi?->nama ?? 'Tanpa koperasi').' — '.$unit->nama_unit) : $unit->nama_unit }}
-                        </option>
-                    @endforeach
-                </select>
-                @error('unit_kerja_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
-            </div>
-
-            <div class="col-md-6">
-                <label class="form-label" for="penggajian_bulan">Bulan</label>
-                <select class="form-select @error('bulan') is-invalid @enderror" id="penggajian_bulan" name="bulan">
-                    @for($i = 1; $i <= 12; $i++)
-                        <option value="{{ $i }}" @selected((int) old('bulan', $bulan) === $i)>
-                            {{ \Illuminate\Support\Carbon::createFromDate(2000, $i, 1)->translatedFormat('F') }}
-                        </option>
-                    @endfor
-                </select>
-                @error('bulan') <div class="invalid-feedback">{{ $message }}</div> @enderror
-            </div>
-
-            <div class="col-md-6">
-                <label class="form-label" for="penggajian_tahun">Tahun</label>
-                <select class="form-select @error('tahun') is-invalid @enderror" id="penggajian_tahun" name="tahun">
-                    @for($y = date('Y'); $y >= 2020; $y--)
-                        <option value="{{ $y }}" @selected((int) old('tahun', $tahun) === $y)>{{ $y }}</option>
-                    @endfor
-                </select>
-                @error('tahun') <div class="invalid-feedback">{{ $message }}</div> @enderror
-            </div>
-        </x-report-filter-modal>
-
-        <x-report-tabs
-            label="Bagian laporan penggajian"
-            :tabs="[
-                'penggajian-ringkasan' => [
-                    'label' => 'Ringkasan',
-                    'description' => 'Ikhtisar nominal penggajian.',
-                    'icon' => 'bi-grid-1x2',
-                ],
-                'penggajian-unit' => [
-                    'label' => 'Rekap per Unit',
-                    'description' => 'Transaksi dan gaji bersih per unit.',
-                    'icon' => 'bi-diagram-3',
-                ],
-                'penggajian-detail' => [
-                    'label' => 'Detail Transaksi',
-                    'description' => 'Daftar transaksi pada periode ini.',
-                    'icon' => 'bi-table',
-                ],
-            ]"
-        >
-            <x-report-tab-pane
-                id="penggajian-ringkasan"
-                title="Ringkasan Penggajian"
-                
-                active
-            >
-        <div class="report-stat-grid">
-            <x-stat-card icon="bi-receipt" label="Total Transaksi" :value="number_format($totalTransaksi, 0, ',', '.')" plain />
-            <x-stat-card icon="bi-cash-stack" label="Total Gaji Pokok" :value="'Rp '.number_format($totalGajiPokok, 0, ',', '.')" compact plain />
-            <x-stat-card icon="bi-wallet2" label="Total Gaji Bersih" :value="'Rp '.number_format($totalGajiBersih, 0, ',', '.')" compact plain />
-            <x-stat-card icon="bi-plus-circle" label="Total Tunjangan" :value="'Rp '.number_format($totalTunjangan, 0, ',', '.')" compact plain />
-            <x-stat-card icon="bi-dash-circle" label="Total Potongan" :value="'Rp '.number_format($totalPotongan, 0, ',', '.')" compact plain />
-        </div>
-            </x-report-tab-pane>
-
-            <x-report-tab-pane
-                id="penggajian-unit"
-                title="Rekapitulasi per Unit Kerja"
-                
-            >
-            <div class="table-responsive report-tab-table">
-                <table class="table table-hover mb-0">
-                    <thead class="table-light">
+    {{-- Slot Panel Rekap (Rekap per Unit Kerja) --}}
+    <x-slot:recap>
+        <x-report-recap-panel title="Rekap per Unit">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Unit Kerja</th>
+                        <th class="text-end">Jumlah Transaksi</th>
+                        <th class="text-end">Total Gaji Bersih</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($rekapUnitKerja as $rekap)
                         <tr>
-                            <th>Unit Kerja</th>
-                            <th class="text-end">Jumlah Transaksi</th>
-                            <th class="text-end">Total Gaji Bersih</th>
+                            <td>
+                                {{ $showTenant ? (($rekap->nama_koperasi ?? 'Tanpa koperasi').' — '.$rekap->nama_unit) : $rekap->nama_unit }}
+                            </td>
+                            <td class="text-end tabular-nums">{{ number_format($rekap->total_transaksi, 0, ',', '.') }}</td>
+                            <td class="text-end tabular-nums">Rp {{ number_format($rekap->total_gaji_bersih, 0, ',', '.') }}</td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($rekapUnitKerja as $rekap)
-                            <tr>
-                                <td>{{ $showTenant ? (($rekap->nama_koperasi ?? 'Tanpa koperasi').' — '.$rekap->nama_unit) : $rekap->nama_unit }}</td>
-                                <td class="text-end">{{ number_format($rekap->total_transaksi, 0, ',', '.') }}</td>
-                                <td class="text-end">Rp {{ number_format($rekap->total_gaji_bersih, 0, ',', '.') }}</td>
-                            </tr>
-                        @empty
-                            <x-empty-row :colspan="3">Tidak ada transaksi gaji pada periode ini.</x-empty-row>
-                        @endforelse
-                    </tbody>
-                    <tfoot class="table-light">
+                    @empty
                         <tr>
-                            <th scope="row">Total Keseluruhan</th>
-                            <th class="text-end">{{ number_format($totalTransaksi, 0, ',', '.') }}</th>
-                            <th class="text-end">Rp {{ number_format($totalGajiBersih, 0, ',', '.') }}</th>
+                            <td colspan="3" class="text-center py-3 text-body-secondary">Tidak ada transaksi gaji pada periode ini.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+                @if($totalTransaksi > 0)
+                    <tfoot>
+                        <tr>
+                            <td>Total Keseluruhan</td>
+                            <td class="text-end tabular-nums">{{ number_format($totalTransaksi, 0, ',', '.') }}</td>
+                            <td class="text-end tabular-nums">Rp {{ number_format($totalGajiBersih, 0, ',', '.') }}</td>
                         </tr>
                     </tfoot>
-                </table>
-            </div>
-            </x-report-tab-pane>
+                @endif
+            </table>
+        </x-report-recap-panel>
+    </x-slot:recap>
 
-            <x-report-tab-pane
-                id="penggajian-detail"
-                title="Detail Transaksi Gaji"
-                
-            >
-            <div class="table-responsive report-tab-table">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Karyawan</th>
-                            @if($showTenant)
-                                <th>Koperasi</th>
-                            @endif
-                            <th>Unit Kerja</th>
-                            <th class="text-end">Gaji Pokok</th>
-                            <th class="text-end">Gaji Bersih</th>
+    {{-- Slot Tabel Detail --}}
+    <table class="report-table align-middle">
+        <thead>
+            <tr>
+                <x-report-sort-th column="karyawan" label="Karyawan" default-direction="asc" />
+                @if($showTenant)
+                    <th>Koperasi</th>
+                @endif
+                <x-report-sort-th column="unit_kerja" label="Unit Kerja" />
+                <x-report-sort-th column="gaji_pokok" label="Gaji Pokok" align="end" />
+                <x-report-sort-th column="tunjangan" label="Tunjangan" align="end" />
+                <x-report-sort-th column="potongan" label="Potongan" align="end" />
+                <x-report-sort-th column="gaji_bersih" label="Gaji Bersih" align="end" />
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($transaksiGaji as $transaksi)
+                <tr>
+                    {{-- 2-line cell: Nama tebal (link ke detail transaksi gaji) + NIK --}}
+                    <td>
+                        <div class="report-cell-identity">
                             @can('transaksi-gaji.view')
-                            <th class="text-nowrap table-col-width-100">Aksi</th>
+                                <a href="{{ route('transaksi-gaji.show', $transaksi->id) }}" class="report-cell-identity__primary">
+                                    {{ $transaksi->karyawan?->nama_lengkap ?? '—' }}
+                                </a>
+                            @else
+                                <span class="report-cell-identity__primary">
+                                    {{ $transaksi->karyawan?->nama_lengkap ?? '—' }}
+                                </span>
                             @endcan
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($transaksiGaji as $transaksi)
-                            <tr>
-                                <td>{{ $transaksi->karyawan?->nama_lengkap ?? '—' }}</td>
-                                @if($showTenant)
-                                    <td>{{ $transaksi->koperasi?->nama ?? 'Tanpa koperasi' }}</td>
-                                @endif
-                                <td>{{ $transaksi->karyawan?->unitKerja?->nama_unit ?? '—' }}</td>
-                                <td class="text-end">Rp {{ number_format($transaksi->gaji_pokok, 0, ',', '.') }}</td>
-                                <td class="text-end">Rp {{ number_format($transaksi->gaji_bersih, 0, ',', '.') }}</td>
-                                @can('transaksi-gaji.view')
-                                <td>
-                                    <a class="btn btn-sm btn-outline-primary" href="{{ route('transaksi-gaji.show', $transaksi) }}">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
-                                </td>
-                                @endcan
-                            </tr>
-                        @empty
-                            <x-empty-row :colspan="(auth()->user()->can('transaksi-gaji.view') ? 5 : 4) + ($showTenant ? 1 : 0)">Tidak ada transaksi gaji yang cocok dengan filter.</x-empty-row>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-
-            <x-pagination-footer :paginator="$transaksiGaji" class="d-print-none" />
-            </x-report-tab-pane>
-        </x-report-tabs>
-
-</x-app-page>
+                            <span class="report-cell-identity__secondary">{{ $transaksi->karyawan?->nik ?? '' }}</span>
+                        </div>
+                    </td>
+                    @if($showTenant)
+                        <td class="text-nowrap">{{ $transaksi->koperasi?->nama ?? 'Tanpa koperasi' }}</td>
+                    @endif
+                    <td class="text-nowrap">{{ $transaksi->karyawan?->unitKerja?->nama_unit ?? '—' }}</td>
+                    <td class="text-end tabular-nums text-nowrap">
+                        Rp {{ number_format($transaksi->gaji_pokok, 0, ',', '.') }}
+                    </td>
+                    <td class="text-end tabular-nums text-nowrap text-success">
+                        + Rp {{ number_format($transaksi->tunjangan ?? 0, 0, ',', '.') }}
+                    </td>
+                    <td class="text-end tabular-nums text-nowrap text-danger">
+                        - Rp {{ number_format($transaksi->potongan ?? 0, 0, ',', '.') }}
+                    </td>
+                    <td class="text-end tabular-nums text-nowrap fw-semibold">
+                        Rp {{ number_format($transaksi->gaji_bersih, 0, ',', '.') }}
+                    </td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="{{ $showTenant ? 7 : 6 }}" class="text-center py-4 text-body-secondary">
+                        @if(filled(request('search')))
+                            Tidak ada data yang cocok.
+                        @else
+                            Tidak ada transaksi gaji pada periode ini.
+                        @endif
+                    </td>
+                </tr>
+            @endforelse
+        </tbody>
+        @if($totalTransaksi > 0)
+            <tfoot>
+                <tr>
+                    <td colspan="{{ $showTenant ? 3 : 2 }}">
+                        Total Keseluruhan ({{ number_format($totalTransaksi, 0, ',', '.') }} transaksi)
+                    </td>
+                    <td class="text-end tabular-nums text-nowrap">
+                        Rp {{ number_format($totalGajiPokok, 0, ',', '.') }}
+                    </td>
+                    <td class="text-end tabular-nums text-nowrap text-success">
+                        + Rp {{ number_format($totalTunjangan, 0, ',', '.') }}
+                    </td>
+                    <td class="text-end tabular-nums text-nowrap text-danger">
+                        - Rp {{ number_format($totalPotongan, 0, ',', '.') }}
+                    </td>
+                    <td class="text-end tabular-nums text-nowrap fw-bold">
+                        Rp {{ number_format($totalGajiBersih, 0, ',', '.') }}
+                    </td>
+                </tr>
+            </tfoot>
+        @endif
+    </table>
+</x-report-layout>
 @endsection

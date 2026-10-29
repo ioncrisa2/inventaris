@@ -87,13 +87,58 @@ class BarangController extends Controller
             'dokumen.storedFiles',
         );
         $riwayatKondisi = $this->riwayatKondisiBarangRepository->terbaruUntuk($barang);
+        $totalBiayaPerbaikan = (float) $riwayatKondisi->sum('biaya_perbaikan');
+
         $jadwalPenyusutan = PenyusutanCalculator::jadwalTahunan(
             $barang->kategori,
             (string) $barang->harga_perolehan,
             $barang->tanggal_perolehan,
         );
 
-        return view('barang.show', compact('barang', 'riwayatKondisi', 'jadwalPenyusutan'));
+        $tahunBerjalan = PenyusutanCalculator::tahunBerjalan();
+        $masaManfaatTahun = PenyusutanCalculator::masaManfaatTahun($barang->kategori);
+        $metodePenyusutan = PenyusutanCalculator::namaMetode(PenyusutanCalculator::metodeUntukKategori($barang->kategori));
+
+        $isDihapus = $barang->kondisiTerakhir?->kondisi === 'Dihapus';
+        $rincianTahunIni = $jadwalPenyusutan[$tahunBerjalan] ?? null;
+        $maxTahunJadwal = count($jadwalPenyusutan) > 0 ? max(array_keys($jadwalPenyusutan)) : $tahunBerjalan;
+        $nilaiBukuSaatIni = $isDihapus
+            ? '0.00'
+            : ($rincianTahunIni['nilai_buku_akhir_tahun'] ?? ($tahunBerjalan > $maxTahunJadwal ? '0.00' : (string) $barang->harga_perolehan));
+
+        $tahunAkhir = PenyusutanCalculator::tahunAkhirMasaManfaat($barang->kategori, $barang->tanggal_perolehan);
+        $sisaTahun = max(0, $tahunAkhir - $tahunBerjalan + 1);
+        if ($tahunBerjalan > $tahunAkhir || $isDihapus) {
+            $sisaTahun = 0;
+        }
+
+        $persentaseNilaiTersisa = ((float) $barang->harga_perolehan > 0)
+            ? round(((float) $nilaiBukuSaatIni / (float) $barang->harga_perolehan) * 100, 1)
+            : 0;
+
+        $kelengkapan = \App\Support\KelengkapanBarangCalculator::hitung($barang);
+
+        $fotoUtamaUrl = null;
+        if ($barang->fotoPendukung->isNotEmpty()) {
+            $fotoUtamaUrl = \Illuminate\Support\Facades\Storage::url($barang->fotoPendukung->first()->path);
+        } elseif ($barang->foto_sampul) {
+            $fotoUtamaUrl = \Illuminate\Support\Facades\Storage::url($barang->foto_sampul);
+        }
+
+        return view('barang.show', compact(
+            'barang',
+            'riwayatKondisi',
+            'totalBiayaPerbaikan',
+            'jadwalPenyusutan',
+            'tahunBerjalan',
+            'masaManfaatTahun',
+            'metodePenyusutan',
+            'nilaiBukuSaatIni',
+            'sisaTahun',
+            'persentaseNilaiTersisa',
+            'kelengkapan',
+            'fotoUtamaUrl',
+        ));
     }
 
     /**

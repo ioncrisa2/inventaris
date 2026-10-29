@@ -24,6 +24,10 @@ class PenggajianLaporanRequest extends FormRequest
             'unit_kerja_id' => ['nullable', TenantRule::exists('unit_kerja')],
             'bulan' => ['nullable', 'integer', 'between:1,12'],
             'tahun' => ['nullable', 'integer', 'digits:4'],
+            'search' => ['nullable', 'string', 'max:100'],
+            'sort' => ['nullable', 'string', 'max:50'],
+            'direction' => ['nullable', Rule::in(['asc', 'desc'])],
+            'per_page' => ['nullable', 'integer'],
         ];
     }
 

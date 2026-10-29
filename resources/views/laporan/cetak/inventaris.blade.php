@@ -17,7 +17,7 @@
 </x-print.header>
 
 <section class="summary-grid">
-    <x-print.summary-item label="Total Barang" :value="number_format($totalBarang, 0, ',', '.')" />
+    <x-print.summary-item label="Total Barang (masih bernilai)" :value="number_format($totalBarang, 0, ',', '.')" />
     <x-print.summary-item label="Total Nilai Buku" :value="'Rp '.number_format($totalNilai, 0, ',', '.')" />
     <x-print.summary-item label="Perlu Perbaikan" :value="number_format($barangPerluPerbaikan, 0, ',', '.')" />
     <x-print.summary-item label="Jumlah Golongan" :value="number_format($rekapKategori->count(), 0, ',', '.')" />
@@ -29,7 +29,7 @@
         <tr>
             <th>Golongan</th>
             <th class="text-end">Jumlah Barang</th>
-            <th class="text-end">Total Nilai</th>
+            <th class="text-end">Total Nilai Buku</th>
         </tr>
     </thead>
     <tbody>

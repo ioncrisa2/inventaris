@@ -76,7 +76,8 @@
             <th>Nama Lengkap</th>
             <th>Unit Kerja</th>
             <th>Jabatan</th>
-            <th>Status</th>
+            <th>Status Kepegawaian</th>
+            <th>Keaktifan</th>
             <th class="text-end">Gaji Pokok</th>
         </tr>
     </thead>
@@ -88,12 +89,21 @@
                 <td>{{ $karyawan->unitKerja?->nama_unit ?? '-' }}</td>
                 <td>{{ $karyawan->jabatan }}</td>
                 <td>{{ $karyawan->status_karyawan }}</td>
+                <td>{{ $karyawan->tanggal_mengundurkan_diri ? 'Nonaktif' : 'Aktif' }}</td>
                 <td class="text-end">Rp {{ number_format($karyawan->gaji_pokok, 0, ',', '.') }}</td>
             </tr>
         @empty
-            <tr><td colspan="6" class="text-center muted">Tidak ada karyawan yang cocok dengan filter.</td></tr>
+            <tr><td colspan="7" class="text-center muted">Tidak ada karyawan yang cocok dengan filter.</td></tr>
         @endforelse
     </tbody>
+    @if(count($karyawans) > 0)
+        <tfoot>
+            <tr>
+                <td colspan="6">Total Gaji Pokok (karyawan aktif)</td>
+                <td class="text-end">Rp {{ number_format($totalGajiAktif, 0, ',', '.') }}</td>
+            </tr>
+        </tfoot>
+    @endif
 </table>
 
 <x-print.signature />

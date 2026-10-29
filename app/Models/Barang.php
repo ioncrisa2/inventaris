@@ -56,12 +56,16 @@ class Barang extends Model
             return '0.00';
         }
 
-        return PenyusutanCalculator::hitungTahunan(
-            $this->kategori,
-            (string) $this->harga_perolehan,
-            $this->tanggal_perolehan,
-            $tahun ?? now()->year,
-        )['nilai_buku_akhir_tahun'];
+        try {
+            return PenyusutanCalculator::hitungTahunan(
+                $this->kategori,
+                (string) $this->harga_perolehan,
+                $this->tanggal_perolehan,
+                $tahun ?? PenyusutanCalculator::tahunBerjalan(),
+            )['nilai_buku_akhir_tahun'];
+        } catch (\InvalidArgumentException) {
+            return (string) $this->harga_perolehan;
+        }
     }
 
     public function fotoPendukung()

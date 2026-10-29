@@ -24,6 +24,10 @@ class PenyusutanLaporanRequest extends FormRequest
             'unit_kerja_id' => ['nullable', TenantRule::exists('unit_kerja')],
             'kategori' => ['nullable', Rule::in(config('inventaris.kategori'))],
             'tahun' => ['nullable', 'integer', 'digits:4'],
+            'search' => ['nullable', 'string', 'max:255'],
+            'sort' => ['nullable', 'string', 'max:50'],
+            'direction' => ['nullable', 'string', Rule::in(['asc', 'desc'])],
+            'per_page' => ['nullable', 'integer'],
         ];
     }
 

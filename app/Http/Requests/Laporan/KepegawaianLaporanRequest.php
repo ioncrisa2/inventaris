@@ -24,6 +24,11 @@ class KepegawaianLaporanRequest extends FormRequest
             'koperasi_id' => ['nullable', 'integer', Rule::exists('koperasi', 'id'), Rule::prohibitedIf(! $this->user()->isSuperAdmin())],
             'unit_kerja_id' => ['nullable', TenantRule::exists('unit_kerja')],
             'status_karyawan' => ['nullable', Rule::in(Karyawan::STATUSES)],
+            'keaktifan' => ['nullable', Rule::in(['semua', 'aktif', 'nonaktif'])],
+            'search' => ['nullable', 'string', 'max:100'],
+            'sort' => ['nullable', 'string', 'max:50'],
+            'direction' => ['nullable', Rule::in(['asc', 'desc'])],
+            'per_page' => ['nullable', 'integer'],
         ];
     }
 }

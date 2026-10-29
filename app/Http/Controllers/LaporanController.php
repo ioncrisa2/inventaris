@@ -28,7 +28,7 @@ class LaporanController extends Controller
     public function inventaris(InventarisLaporanRequest $request)
     {
         return view('laporan.inventaris', [
-            ...$this->laporanService->inventaris($request->validated(), PerPage::resolve($request)),
+            ...$this->laporanService->inventaris($request->validated(), PerPage::resolve($request, 25)),
             ...$this->tenantFilterData($request),
         ]);
     }
@@ -51,7 +51,7 @@ class LaporanController extends Controller
         $tahun = $request->tahun();
 
         return view('laporan.absensi', [
-            ...$this->laporanService->absensi($request->validated(), $bulan, $tahun, PerPage::resolve($request)),
+            ...$this->laporanService->absensi($request->validated(), $bulan, $tahun, PerPage::resolve($request, 25)),
             'bulan' => $bulan,
             'tahun' => $tahun,
             ...$this->tenantFilterData($request),
@@ -80,7 +80,7 @@ class LaporanController extends Controller
     public function kepegawaian(KepegawaianLaporanRequest $request)
     {
         return view('laporan.kepegawaian', [
-            ...$this->laporanService->kepegawaian($request->validated(), PerPage::resolve($request)),
+            ...$this->laporanService->kepegawaian($request->validated(), PerPage::resolve($request, 25)),
             ...$this->tenantFilterData($request),
         ]);
     }
@@ -103,7 +103,7 @@ class LaporanController extends Controller
         $tahun = $request->tahun();
 
         return view('laporan.penggajian', [
-            ...$this->laporanService->penggajian($request->validated(), $bulan, $tahun, PerPage::resolve($request)),
+            ...$this->laporanService->penggajian($request->validated(), $bulan, $tahun, PerPage::resolve($request, 25)),
             'bulan' => $bulan,
             'tahun' => $tahun,
             ...$this->tenantFilterData($request),
@@ -134,7 +134,7 @@ class LaporanController extends Controller
         $tahun = $request->tahun();
 
         return view('laporan.penyusutan', [
-            ...$this->laporanService->penyusutan($request->validated(), $tahun, PerPage::resolve($request)),
+            ...$this->laporanService->penyusutan($request->validated(), $tahun, PerPage::resolve($request, 25)),
             'tahun' => $tahun,
             ...$this->tenantFilterData($request),
         ]);

@@ -14,6 +14,23 @@ use Illuminate\Support\Carbon;
  */
 class PenyusutanCalculator
 {
+    public static function roundRupiah(string $value): string
+    {
+        $bulat = bcadd($value, '0.5', 0);
+
+        return $bulat.'.00';
+    }
+
+    public static function tahunBerjalan(): int
+    {
+        return Carbon::now(config('app.timezone', 'Asia/Jakarta'))->year;
+    }
+
+    public static function now(): Carbon
+    {
+        return Carbon::now(config('app.timezone', 'Asia/Jakarta'));
+    }
+
     public static function masaManfaatTahun(string $kategori): int
     {
         return (int) (config('inventaris.masa_manfaat_penyusutan')[$kategori] ?? 0);
@@ -78,6 +95,9 @@ class PenyusutanCalculator
      *     penyusutan_tahun_ini: string,
      *     akumulasi_akhir_tahun: string,
      *     nilai_buku_akhir_tahun: string,
+     *     jumlah_bulan: int,
+     *     is_prorata: bool,
+     *     keterangan_prorata: ?string,
      * }
      */
     public static function hitungTahunan(string $kategori, string $hargaPerolehan, Carbon $tanggalPerolehan, int $tahunLaporan): array
@@ -105,36 +125,88 @@ class PenyusutanCalculator
         $masaManfaatBulan = $masaManfaatTahun * 12;
         $bulanMulai = $tanggalPerolehan->copy()->startOfMonth();
         $bulanSelesai = $bulanMulai->copy()->addMonths($masaManfaatBulan - 1);
-        $hargaPerolehanBulat = PenggajianCalculator::round2($hargaPerolehan);
-        $penyusutanPerBulan = bcdiv($hargaPerolehan, (string) $masaManfaatBulan, 10);
+        $hargaPerolehanBulat = self::roundRupiah($hargaPerolehan);
+        $tahunMulai = $bulanMulai->year;
+        $tahunSelesai = $bulanSelesai->year;
 
-        $akumulasiAwalTahun = self::akumulasiSampaiBulan(
-            $bulanMulai,
-            $bulanSelesai,
-            $hargaPerolehanBulat,
-            $penyusutanPerBulan,
-            $masaManfaatBulan,
-            Carbon::create($tahunLaporan - 1, 12, 1),
-        );
-
-        $akumulasiAkhirTahun = self::akumulasiSampaiBulan(
-            $bulanMulai,
-            $bulanSelesai,
-            $hargaPerolehanBulat,
-            $penyusutanPerBulan,
-            $masaManfaatBulan,
-            Carbon::create($tahunLaporan, 12, 1),
-        );
-
-        return [
+        $hasilDasar = [
             'metode' => $metode,
             'masa_manfaat_tahun' => $masaManfaatTahun,
             'bulan_mulai' => $bulanMulai,
             'bulan_selesai' => $bulanSelesai,
-            'akumulasi_awal_tahun' => $akumulasiAwalTahun,
-            'penyusutan_tahun_ini' => bcsub($akumulasiAkhirTahun, $akumulasiAwalTahun, 2),
-            'akumulasi_akhir_tahun' => $akumulasiAkhirTahun,
-            'nilai_buku_akhir_tahun' => bcsub($hargaPerolehanBulat, $akumulasiAkhirTahun, 2),
+        ];
+
+        if ($tahunLaporan < $tahunMulai) {
+            return [
+                ...$hasilDasar,
+                'akumulasi_awal_tahun' => '0.00',
+                'penyusutan_tahun_ini' => '0.00',
+                'akumulasi_akhir_tahun' => '0.00',
+                'nilai_buku_akhir_tahun' => $hargaPerolehanBulat,
+                'jumlah_bulan' => 0,
+                'is_prorata' => false,
+                'keterangan_prorata' => null,
+            ];
+        }
+
+        $nilaiBuku = $hargaPerolehanBulat;
+        $akumulasi = '0.00';
+        $penyusutanPerBulan = bcdiv($hargaPerolehanBulat, (string) $masaManfaatBulan, 10);
+        $penyusutanSetahunPenuh = self::roundRupiah(bcdiv($hargaPerolehanBulat, (string) $masaManfaatTahun, 10));
+
+        for ($tahun = $tahunMulai; $tahun <= min($tahunLaporan, $tahunSelesai); $tahun++) {
+            $akumulasiAwalTahun = $akumulasi;
+
+            if ($tahun === $tahunMulai && $tahun === $tahunSelesai) {
+                $jumlahBulan = $bulanSelesai->month - $bulanMulai->month + 1;
+            } elseif ($tahun === $tahunMulai) {
+                $jumlahBulan = 13 - $bulanMulai->month;
+            } elseif ($tahun === $tahunSelesai) {
+                $jumlahBulan = $bulanSelesai->month;
+            } else {
+                $jumlahBulan = 12;
+            }
+
+            if ($tahun === $tahunSelesai) {
+                $penyusutanTahunIni = $nilaiBuku;
+            } elseif ($jumlahBulan === 12) {
+                $penyusutanTahunIni = $penyusutanSetahunPenuh;
+            } else {
+                $penyusutanTahunIni = self::roundRupiah(bcmul($penyusutanPerBulan, (string) $jumlahBulan, 10));
+            }
+
+            if (bccomp($penyusutanTahunIni, $nilaiBuku, 2) > 0) {
+                $penyusutanTahunIni = $nilaiBuku;
+            }
+
+            $nilaiBuku = bcsub($nilaiBuku, $penyusutanTahunIni, 2);
+            $akumulasi = bcadd($akumulasiAwalTahun, $penyusutanTahunIni, 2);
+
+            if ($tahun === $tahunLaporan) {
+                $isProrata = $jumlahBulan < 12;
+
+                return [
+                    ...$hasilDasar,
+                    'akumulasi_awal_tahun' => $akumulasiAwalTahun,
+                    'penyusutan_tahun_ini' => $penyusutanTahunIni,
+                    'akumulasi_akhir_tahun' => $akumulasi,
+                    'nilai_buku_akhir_tahun' => $nilaiBuku,
+                    'jumlah_bulan' => $jumlahBulan,
+                    'is_prorata' => $isProrata,
+                    'keterangan_prorata' => $isProrata ? "pro-rata {$jumlahBulan} bulan" : null,
+                ];
+            }
+        }
+
+        return [
+            ...$hasilDasar,
+            'akumulasi_awal_tahun' => $hargaPerolehanBulat,
+            'penyusutan_tahun_ini' => '0.00',
+            'akumulasi_akhir_tahun' => $hargaPerolehanBulat,
+            'nilai_buku_akhir_tahun' => '0.00',
+            'jumlah_bulan' => 0,
+            'is_prorata' => false,
+            'keterangan_prorata' => null,
         ];
     }
 
@@ -154,7 +226,7 @@ class PenyusutanCalculator
         $masaManfaatBulan = $masaManfaatTahun * 12;
         $bulanMulai = $tanggalPerolehan->copy()->startOfMonth();
         $bulanSelesai = $bulanMulai->copy()->addMonths($masaManfaatBulan - 1);
-        $hargaPerolehanBulat = PenggajianCalculator::round2($hargaPerolehan);
+        $hargaPerolehanBulat = self::roundRupiah($hargaPerolehan);
 
         $hasilDasar = [
             'metode' => 'saldo_menurun',
@@ -170,6 +242,9 @@ class PenyusutanCalculator
                 'penyusutan_tahun_ini' => '0.00',
                 'akumulasi_akhir_tahun' => '0.00',
                 'nilai_buku_akhir_tahun' => $hargaPerolehanBulat,
+                'jumlah_bulan' => 0,
+                'is_prorata' => false,
+                'keterangan_prorata' => null,
             ];
         }
 
@@ -178,12 +253,12 @@ class PenyusutanCalculator
 
         for ($tahun = $bulanMulai->year; $tahun <= min($tahunLaporan, $bulanSelesai->year); $tahun++) {
             $akumulasiAwalTahun = $akumulasi;
+            $jumlahBulan = $tahun === $bulanMulai->year ? 13 - $bulanMulai->month : ($tahun === $bulanSelesai->year ? $bulanSelesai->month : 12);
 
             if ($tahun === $bulanSelesai->year) {
                 $penyusutanTahunIni = $nilaiBuku;
             } else {
-                $jumlahBulan = $tahun === $bulanMulai->year ? 13 - $bulanMulai->month : 12;
-                $penyusutanTahunIni = PenggajianCalculator::round2(
+                $penyusutanTahunIni = self::roundRupiah(
                     bcdiv(
                         bcmul(bcmul($nilaiBuku, $tarifTahunan, 10), (string) $jumlahBulan, 10),
                         '12',
@@ -197,15 +272,20 @@ class PenyusutanCalculator
             }
 
             $nilaiBuku = bcsub($nilaiBuku, $penyusutanTahunIni, 2);
-            $akumulasi = bcadd($akumulasi, $penyusutanTahunIni, 2);
+            $akumulasi = bcadd($akumulasiAwalTahun, $penyusutanTahunIni, 2);
 
             if ($tahun === $tahunLaporan) {
+                $isProrata = $jumlahBulan < 12;
+
                 return [
                     ...$hasilDasar,
                     'akumulasi_awal_tahun' => $akumulasiAwalTahun,
                     'penyusutan_tahun_ini' => $penyusutanTahunIni,
                     'akumulasi_akhir_tahun' => $akumulasi,
                     'nilai_buku_akhir_tahun' => $nilaiBuku,
+                    'jumlah_bulan' => $jumlahBulan,
+                    'is_prorata' => $isProrata,
+                    'keterangan_prorata' => $isProrata ? "pro-rata {$jumlahBulan} bulan" : null,
                 ];
             }
         }
@@ -216,6 +296,9 @@ class PenyusutanCalculator
             'penyusutan_tahun_ini' => '0.00',
             'akumulasi_akhir_tahun' => $hargaPerolehanBulat,
             'nilai_buku_akhir_tahun' => '0.00',
+            'jumlah_bulan' => 0,
+            'is_prorata' => false,
+            'keterangan_prorata' => null,
         ];
     }
 

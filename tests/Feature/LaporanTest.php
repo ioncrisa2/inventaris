@@ -105,7 +105,7 @@ test('inventory print report uses selected filters and print layout', function (
         ->assertSee('Rp '.number_format($laptop->nilaiBukuTerakhir(), 0, ',', '.'));
 });
 
-test('inventory reports keep zero-value assets in detail but exclude them from value recaps', function () {
+test('inventory reports exclude zero-value assets from all report parts under option b', function () {
     $aktif = Barang::create([
         'kode_barang' => 'INV-AKTIF',
         'nama_barang' => 'Gedung Masih Bernilai',
@@ -144,8 +144,8 @@ test('inventory reports keep zero-value assets in detail but exclude them from v
     $this->get(route('laporan.inventaris', ['kategori' => 'Bangunan - Permanen']))
         ->assertOk()
         ->assertSee('Gedung Masih Bernilai')
-        ->assertSee('Gedung Dihapus')
-        ->assertViewHas('totalBarang', 2)
+        ->assertDontSee('Gedung Dihapus')
+        ->assertViewHas('totalBarang', 1)
         ->assertViewHas('totalNilai', $aktif->nilaiBukuTerakhir())
         ->assertViewHas('rekapKategori', function ($rekap) use ($aktif) {
             return $rekap->count() === 1
@@ -155,8 +155,8 @@ test('inventory reports keep zero-value assets in detail but exclude them from v
 
     $this->get(route('laporan.inventaris', ['kategori' => 'Bangunan - Bukan Permanen']))
         ->assertOk()
-        ->assertSee('Aset Habis Disusutkan')
-        ->assertViewHas('totalBarang', 1)
+        ->assertDontSee('Aset Habis Disusutkan')
+        ->assertViewHas('totalBarang', 0)
         ->assertViewHas('totalNilai', '0.00')
         ->assertViewHas('rekapKategori', fn ($rekap) => $rekap->isEmpty());
 });

@@ -102,6 +102,19 @@
         <div class="col-md-6">
             <x-form.money-input name="harga_perolehan" label="Harga Perolehan" :value="$barang->harga_perolehan" required />
         </div>
+
+        @unless($barang->exists)
+        <div class="col-md-6">
+            <x-form.select
+                name="kondisi_awal"
+                label="Kondisi Awal"
+                :options="collect(config('inventaris.kondisi'))->mapWithKeys(fn ($k) => [$k => $k])"
+                :value="old('kondisi_awal')"
+                placeholder="Otomatis dari harga (atau pilih manual)"
+                help="Wajib dipilih manual jika perolehan lebih dari 1 tahun yang lalu."
+            />
+        </div>
+        @endunless
     </div>
 
     <x-form.section title="Foto Barang" />
